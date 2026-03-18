@@ -2,15 +2,17 @@ import mysql.connector
 from mysql.connector import Error
 
 def get_db_connection():
-    """Establishes and returns a connection to the XAMPP MySQL database."""
     try:
         connection = mysql.connector.connect(
-            host='localhost',
-            database='ipcr_db',    # The name of the Version 13 database we built
-            user='root',           # Default XAMPP username
-            password=''            # Default XAMPP password is empty
+           host='144.21.57.156',
+           port=6767,
+           database='ipcr_db',
+           user='app_user',
+           password='cN5FTZkDnJ+RdtnANZ1xCqD/EDspz7WqHEasXc0QHFZ9xtG2XopJdsL9S83QSvvAOmRzkUpHU3K27bsGY8csNA==',
+           connection_timeout=5
         )
         if connection.is_connected():
+            print("Connection established")
             return connection
     except Error as e:
         print(f"Error while connecting to MySQL: {e}")
