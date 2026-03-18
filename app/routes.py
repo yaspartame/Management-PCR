@@ -4,7 +4,6 @@ from app.models import get_db_connection
 
 @app.route('/')
 def login():
-    # Test the database connection
     conn = get_db_connection()
     db_status = "Connected successfully to Version 13 Database!" if conn else "Database connection failed."
     
