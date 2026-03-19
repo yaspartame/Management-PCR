@@ -17,3 +17,9 @@ def get_db_connection():
     except Error as e:
         print(f"Error while connecting to MySQL: {e}")
         return None
+def get_user_by_email(cursor, email):
+    cursor.callproc('get_user_by_email', (email,))
+    return cursor.fetchall()
+def register_user(cursor, emp_id, email, password_hash):
+    cursor.callproc('register_user', (emp_id, email, password_hash))
+    
