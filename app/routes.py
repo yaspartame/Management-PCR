@@ -1,24 +1,59 @@
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, session, url_for
 from app import app
-from app.models import get_db_connection
+from .auth import hash_pass, verify_pass
+from .models import get_db_connection, get_user_by_email, register_user
+import mysql.connector, time
+
 
 @app.route('/')
 def login():
-    conn = get_db_connection()
-    db_status = "Connected successfully to Version 13 Database!" if conn else "Database connection failed."
-    
-    if conn:
-        conn.close()
+    return render_template('login.html', status="")
 
-    # Renders the login page HTML and passes the DB status to it
-    return render_template('login.html', status=db_status)
-
-# Example placeholder for when the user submits the login form
 @app.route('/authenticate', methods=['POST'])
 def authenticate():
-    email = request.form.get('email')
-    password = request.form.get('password')
+    email = request.form.get('email', '').lower().strip()
+    password = request.form.get('password', '')
     
-    # Sprint 1 Goal: Check tbl_auth_credentials and route to the correct dashboard
-    # For now, just redirect back to login
-    return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    result = get_user_by_email(cursor, email)
+    
+    conn.close()
+    
+    if not result:
+        time.sleep(0.5) # remove time abuse
+        return render_template('login.html', status="Invalid Credentials.")
+    
+    stored_hash = result[0][1]
+    
+    if verify_pass(password, stored_hash):
+        session['user_id'] = result[0][0] 
+        return render_template('login.html', status="success")
+    else:
+        time.sleep(0.5)
+        return render_template('login.html', status="Invalid Credentials.")
+        
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        emp_id = request.form.get('emp_id')
+        email = request.form.get('email', ' ').lower().strip()
+        password = request.form.get('password', '')
+        if not emp_id or not email or not password:
+            return render_template('register.html', status="All fields required.")
+        
+        hashed_pw = hash_pass(password)
+        
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            register_user(cursor, emp_id, email, hashed_pw)
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return redirect(url_for('login'))
+        except mysql.connector.Error as e:
+            return render_template('register.html', status=f"Database error: {e}")
+        
+    return render_template('register.html', status="")
