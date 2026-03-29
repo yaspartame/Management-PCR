@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold" style="color: #0B3C86;">Faculty Dashboard</h2>
+        <p class="text-muted mb-0">Academic Rank: <span class="badge bg-secondary">Instructor I</span></p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="alert alert-info d-inline-block py-2 px-3 mb-0">
+            <strong>Current Phase:</strong> Target Commitment
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4 border-primary" style="border-top: 4px solid #1E6FD9 !important;">
+            <div class="card-body">
+                <h5 class="fw-bold">Step 1: IPCR Commitment</h5>
+                <p class="text-muted">Select your indicators from the Rank-Restricted master list and submit your intended quantities for the Digital Handshake.</p>
+                <a href="#" class="btn btn-primary">Open Target Selection</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <h5 class="text-muted">Evidence Upload Locked</h5>
+                <p class="small">You must complete the Digital Handshake with your Middle Manager before uploading evidence.</p>
+                <button class="btn btn-outline-secondary" disabled>Upload PDF Evidence</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h6 class="fw-bold">Recent Notifications</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item px-0 border-bottom-0 pb-3">
+                        <small class="text-muted d-block">Today, 8:00 AM</small>
+                        <span>System term initialized. A.Y. 2026-2027 1st Semester has officially started.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

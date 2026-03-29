@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="fw-bold" style="color: #0B3C86;">System Administrator Portal</h2>
+        <p class="text-muted">Manage system governance and user access lifecycles.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white border-0 pt-4 pb-0">
+        <h5 class="fw-bold text-dark">Pending Account Verifications</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Full Name</th>
+                        <th>Corporate Email</th>
+                        <th>Requested Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2024-1045</td>
+                        <td>Juan Dela Cruz</td>
+                        <td>jdelacruz@neust.edu.ph</td>
+                        <td>Faculty Member</td>
+                        <td><span class="badge bg-warning text-dark">Pending</span></td>
+                        <td>
+                            <button class="btn btn-success btn-sm me-1">Approve</button>
+                            <button class="btn btn-outline-danger btn-sm">Reject</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
