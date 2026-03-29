@@ -57,3 +57,18 @@ def register():
             return render_template('register.html', status=f"Database error: {e}")
         
     return render_template('register.html', status="")
+
+@app.route('/admin')
+def admin_dashboard(): return render_template('admin_dashboard.html')
+
+@app.route('/faculty')
+def faculty_dashboard(): return render_template('faculty_dashboard.html')
+
+@app.route('/dean')
+def dean_dashboard(): return render_template('dean_dashboard.html')
+
+@app.route('/manager')
+def manager_dashboard(): return render_template('manager_dashboard.html')
+
+@app.route('/designated')
+def designated_dashboard(): return render_template('designated_dashboard.html')

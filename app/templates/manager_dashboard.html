@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold" style="color: #0B3C86;">Middle Manager Portal</h2>
+        <p class="text-muted mb-0">Department: BSIT Program | Role: <span class="badge bg-secondary">Program Chair</span></p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="alert alert-warning d-inline-block py-2 px-3 mb-0 shadow-sm">
+            <strong>Evidence Queue:</strong> 5 Pending Reviews
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4" style="border-left: 4px solid #1E6FD9 !important;">
+    <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold text-dark mb-0">1) Workload Allocation & Handshake</h5>
+        <button class="btn btn-primary btn-sm"><i class="bi bi-calculator"></i> Execute Auto-Divide Engine</button>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">Automatically splits the Dean's departmental quota equally among active faculty members (using math.ceil logic).</p>
+        <table class="table table-hover align-middle mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Faculty Name</th>
+                    <th>Rank</th>
+                    <th>Committed Targets</th>
+                    <th>Handshake Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Anaheim Developer</td>
+                    <td>Instructor II</td>
+                    <td>14 Indicators</td>
+                    <td><span class="badge bg-warning text-dark">Pending Review</span></td>
+                    <td>
+                        <button class="btn btn-success btn-sm">Approve (Lock)</button>
+                        <button class="btn btn-outline-secondary btn-sm">View Draft</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white pt-4 pb-2 border-0">
+        <h5 class="fw-bold text-dark">2) Real-Time Verification & Scoring</h5>
+        <p class="text-muted small mb-0">Open the Split-Screen Evaluation to rate quality, efficiency, and timeliness.</p>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Faculty Name</th>
+                    <th>Target Indicator</th>
+                    <th>Uploaded Evidence</th>
+                    <th>Date Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Juan Dela Cruz</td>
+                    <td>Course Syllabus Prep</td>
+                    <td><a href="#" class="text-decoration-none"><i class="bi bi-file-pdf text-danger"></i> syllabus_draft.pdf</a></td>
+                    <td>Oct 12, 2026</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm me-1">Open Split-Screen Evaluation</button>
+                        <button class="btn btn-outline-danger btn-sm">Return for Correction</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

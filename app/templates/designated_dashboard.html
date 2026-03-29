@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold" style="color: #0B3C86;">Designated Faculty Portal</h2>
+        <p class="text-muted mb-0">Department: BSIT | Designation: <span class="badge bg-secondary">System Administrator</span></p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="alert alert-danger d-inline-block py-2 px-3 mb-0 shadow-sm">
+            <strong><i class="bi bi-clock-history"></i> Deadline Timer:</strong> 14 Days Remaining
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted fw-bold">Target Progress</h6>
+                <h3 class="text-primary mt-2">15%</h3>
+                <p class="small text-muted">Evidence Uploaded</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted fw-bold">Current Rating</h6>
+                <h3 class="text-secondary mt-2">--</h3>
+                <p class="small text-muted">Awaiting Manager Scoring</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center">
+                <h6 class="text-muted fw-bold">Handshake Status</h6>
+                <h3 class="text-warning mt-2"><i class="bi bi-unlock-fill"></i> Unlocked</h3>
+                <p class="small text-muted">Drafting Commitments</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #1E6FD9 !important;">
+            <div class="card-header bg-white pt-3 pb-0 border-0">
+                <h5 class="fw-bold mb-3">1) IPCR Commitment (75/25 Dual-Tab Workflow)</h5>
+                <ul class="nav nav-tabs" id="ipcrTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-content" type="button" role="tab" style="color: #0B3C86;">
+                            Tab 1: Administrative (75%)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="teaching-tab" data-bs-toggle="tab" data-bs-target="#teaching-content" type="button" role="tab" style="color: #2A9D8F;">
+                            Tab 2: Instruction (25%)
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="tab-content" id="ipcrTabContent">
+                    <div class="tab-pane fade show active" id="admin-content" role="tabpanel">
+                        <p class="text-muted small">Select targets specific to your university designation. These will account for 75% of your total E-Score.</p>
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Master Indicator</th>
+                                    <th>Intended Quantity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Server Maintenance & Uptime Management</td>
+                                    <td><input type="number" class="form-control form-control-sm w-50" placeholder="e.g., 2"></td>
+                                    <td><button class="btn btn-outline-primary btn-sm">Add to Draft</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tab-pane fade" id="teaching-content" role="tabpanel">
+                        <p class="text-muted small">Select your classroom-based targets. These are strictly capped at 25% of your total E-Score.</p>
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Master Indicator</th>
+                                    <th>Intended Quantity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Course Syllabi Preparation</td>
+                                    <td><input type="number" class="form-control form-control-sm w-50" placeholder="e.g., 3"></td>
+                                    <td><button class="btn btn-outline-success btn-sm">Add to Draft</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light text-end py-3 border-0">
+                <button class="btn btn-primary px-4 fw-bold">Submit for Handshake</button>
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-header bg-white pt-3 pb-0 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold">2) Accomplishment & Evidence Repo</h5>
+                <button class="btn btn-secondary btn-sm" disabled>Handshake Required First</button>
+            </div>
+            <div class="card-body text-center py-5">
+                <p class="text-muted small mb-0">Submit your targets and await manager approval to unlock evidence uploading.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white pt-4 pb-0 border-0">
+                <h6 class="fw-bold">Recent Notifications</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item px-0 border-bottom-0 pb-2">
+                        <small class="text-muted d-block">System Alert</small>
+                        <span class="small">Ensure your Administrative tab targets sum to appropriate workload limits before submitting.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

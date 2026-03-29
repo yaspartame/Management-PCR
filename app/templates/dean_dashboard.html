@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold" style="color: #0B3C86;">College Dean's Executive Portal</h2>
+        <p class="text-muted mb-0">College of Information Technology | Rank: <span class="badge bg-secondary">Professor VI</span></p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <button class="btn btn-primary"><i class="bi bi-file-earmark-pdf"></i> Generate Summary of Ratings (VPAA)</button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-success border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Overall Completion</h6>
+                <h2 class="display-6 fw-bold text-success">84%</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Pending Batch Approvals</h6>
+                <h2 class="display-6 fw-bold text-warning">12</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Top Performing Dept</h6>
+                <h2 class="display-6 fw-bold text-primary" style="font-size: 1.8rem; margin-top: 10px;">BSIT Program</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="fw-bold text-dark">Phase 1: Institutional Quota Cascading</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Master Indicator</th>
+                            <th>Category</th>
+                            <th>Total College Target</th>
+                            <th>Assigned to Dept</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Published Research Papers</td>
+                            <td><span class="badge bg-info text-dark">Research</span></td>
+                            <td class="fw-bold">40 Papers</td>
+                            <td>BSIT, BSIS</td>
+                            <td><button class="btn btn-outline-primary btn-sm">Distribute Quota</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
+            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-dark mb-0">Phase 6: Final Digital Batch Approvals</h5>
+                <button class="btn btn-success btn-sm"><i class="bi bi-pen"></i> Approve All Selected</button>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Apply your digital signature to verified IPCRs before generating the official Standardized CSC documents.</p>
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th><input class="form-check-input" type="checkbox"></th>
+                            <th>Faculty Name</th>
+                            <th>Department</th>
+                            <th>Final Truncated Rating</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input class="form-check-input" type="checkbox"></td>
+                            <td>Anaheim Developer</td>
+                            <td>BSIT</td>
+                            <td class="fw-bold text-success">4.85 (Outstanding)</td>
+                            <td><span class="badge bg-warning text-dark">Awaiting Dean Signature</span></td>
+                            <td><button class="btn btn-outline-secondary btn-sm">Review IPCR</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
