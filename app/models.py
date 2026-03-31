@@ -20,8 +20,8 @@ def get_db_connection():
         return None
     
     
-def login_user(cursor,email):
-    cursor.callproc('get_login_data,'(email,))
+def get_user_by_email(cursor,email):
+    cursor.callproc('get_user_by_email',(email,))
     for result in cursor.stored_results():
         return result.fetchall()
     return []
