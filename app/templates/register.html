@@ -1,37 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accrual - Register</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        .container { border: 1px solid #ccc; padding: 20px; width: 300px; margin: auto; border-radius: 10px; }
-        .status { color: red; font-weight: bold; margin-bottom: 20px;}
-        input { width: 90%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-        button { width: 95%; padding: 10px; border-radius: 5px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        a { text-decoration: none; color: #333; }
-        a:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
+{% extends "auth_layout.html" %}
+{% block title %}Claim Your Account{% endblock %}
 
-    <div class="container">
-        <h2>Accrual System - Register</h2>
-
-        <p class="status">{{ status }}</p>
-
-        <form action="{{ url_for('register') }}" method="POST">
-            <input type="number" name="emp_id" placeholder="Employee ID" required><br><br>
-            <input type="email" name="email" placeholder="Corporate Email" required><br><br>
-            <input type="password" name="password" placeholder="Password" required><br><br>
-            <button type="submit">Register</button>
-        </form>
-
-        <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+{% block auth_content %}
+<div class="text-center mb-4">
+    <h4 class="fw-bold">Claim Your Account</h4>
+    <div class="alert alert-warning border-0 shadow-sm mt-3" style="font-size: 0.85em; text-align: left;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>HR Notice:</strong> Your profile must be pre-registered by HR. If your ID is not recognized, please contact the System Administrator.
     </div>
+</div>
 
-</body>
-</html>
-<!-- help -->
+<form action="{{ url_for('register') }}" method="POST">
+    <div class="mb-3">
+        <label for="employee_id_number" class="form-label text-muted small fw-bold">Employee ID Number</label>
+        <input type="text" name="employee_id_number" id="employee_id_number" class="form-control" placeholder="Official ID (e.g. 2024-1045)" required autofocus>
+    </div>
+    
+    <div class="mb-3">
+        <label for="email" class="form-label text-muted small fw-bold">Corporate Email</label>
+        <input type="email" name="email" id="email" class="form-control" placeholder="name@company.com" required>
+    </div>
+    
+    <div class="mb-4">
+        <label for="password" class="form-label text-muted small fw-bold">Create Password</label>
+        <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required>
+    </div>
+    
+    <button type="submit" class="btn btn-accrual w-100 mb-3">Claim Account</button>
+</form>
+
+<div class="text-center">
+    <p class="mb-0 small text-muted">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+</div>
+{% endblock %}

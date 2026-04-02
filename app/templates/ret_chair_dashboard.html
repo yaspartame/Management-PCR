@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold" style="color: #0B3C86;">RET Chair Portal</h2>
+        <p class="text-muted mb-0">Department: Research, Extension, and Training | Role: <span class="badge bg-secondary text-uppercase">RET Chair</span></p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="alert alert-info d-inline-block py-2 px-3 mb-0 shadow-sm border-0">
+            <strong>Research Output:</strong> 3 Manuscripts for Review
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4" style="border-left: 4px solid #1E6FD9 !important;">
+    <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold text-dark mb-0">1) Research & Extension Monitoring</h5>
+        <button class="btn btn-primary btn-sm"><i class="bi bi-graph-up"></i> Institutional Research Report</button>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">Monitoring targets for research production, community extensions, and technical training programs.</p>
+        <table class="table table-hover align-middle mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Lead Proponent</th>
+                    <th>Project Category</th>
+                    <th>Milestone Targets</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Anaheim Developer</td>
+                    <td>Research Publication</td>
+                    <td>Scopus Indexed Journal</td>
+                    <td><span class="badge bg-warning text-dark">Under Review</span></td>
+                    <td>
+                        <button class="btn btn-success btn-sm">Verify Output</button>
+                        <button class="btn btn-outline-secondary btn-sm">View Draft</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white pt-4 pb-2 border-0">
+        <h5 class="fw-bold text-dark">2) Evidence Verification (Research & EXT)</h5>
+        <p class="text-muted small mb-0">Reviewing submitted evidence for Research and Community Extension indicators.</p>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Faculty Name</th>
+                    <th>Indicator</th>
+                    <th>Evidence Upload</th>
+                    <th>Date Submitted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Juan Dela Cruz</td>
+                    <td>Community Outreach</td>
+                    <td><a href="#" class="text-decoration-none"><i class="bi bi-file-pdf text-danger"></i> extension_report.pdf</a></td>
+                    <td>Oct 15, 2026</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm me-1">Evaluator Dashboard</button>
+                        <button class="btn btn-outline-danger btn-sm">Return for Edit</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

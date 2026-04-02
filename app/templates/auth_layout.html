@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accrual - {% block title %}{% endblock %}</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #F8FAFC; /* Soft UI background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 15px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-radius: 15px;
+        }
+        .brand-header {
+            color: #0B3C86;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .btn-accrual {
+            background-color: #0B3C86;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        .btn-accrual:hover {
+            background-color: #082d66;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(11, 60, 134, 0.2);
+        }
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .form-control:focus {
+            border-color: #0B3C86;
+            box-shadow: 0 0 0 0.25 anonymous rgba(11, 60, 134, 0.1);
+        }
+        .text-accrual {
+            color: #0B3C86;
+        }
+        a {
+            color: #0B3C86;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="card p-4">
+            <div class="text-center mb-4">
+                <h2 class="brand-header mb-1">ACCRUAL</h2>
+                <p class="text-muted small">Digital IPCR System</p>
+            </div>
+
+            <!-- Centralized Flash Message Handling -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm mb-4" role="alert" style="font-size: 0.9em;">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            {% block auth_content %}{% endblock %}
+        </div>
+        
+        <div class="text-center mt-4">
+            <p class="text-muted small">&copy; 2026 Accrual Performance Management. <br> Institutional Security Level: <strong>HIGH</strong></p>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

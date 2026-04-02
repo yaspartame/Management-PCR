@@ -26,6 +26,11 @@ def get_user_by_email(cursor,email):
         return result.fetchall()
     return []
 
-def register_user(cursor, emp_id, email, password_hash):
-    cursor.callproc('register_user', (emp_id, email, password_hash))
+def register_user(conn, cursor, employee_id_number, email, password_hash):
+    try:
+        cursor.callproc('register_user', (employee_id_number, email, password_hash))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
     
