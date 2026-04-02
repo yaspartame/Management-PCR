@@ -30,6 +30,9 @@ def authenticate():
     
     emp_id, stored_hash, verification, role = result[0]
     
+    # Normalize role for matching
+    role = role.upper() if role else ""
+    
     if verification != "APPROVED":
         flash("Account not approved. Please contact the administrator.", "danger")
         return redirect(url_for('login'))
@@ -55,7 +58,7 @@ def authenticate():
     elif role == "DESIGNATED":
         return redirect(url_for('designated_dashboard'))
     else: 
-        flash("No system role assigned to this account.", "danger")
+        flash(f"No system role assigned to this account (Role: {role}).", "danger")
         return redirect(url_for('login'))
     
 @app.route('/register', methods=['GET', 'POST'])
