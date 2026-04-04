@@ -7,7 +7,8 @@
         <p class="text-muted mb-0">College of Information Technology | Rank: <span class="badge bg-secondary">Professor VI</span></p>
     </div>
     <div class="col-md-4 text-md-end">
-        <button class="btn btn-primary"><i class="bi bi-file-earmark-pdf"></i> Generate Summary of Ratings (VPAA)</button>
+        <a href="#" class="btn btn-success fw-bold mb-2 shadow-sm"><i class="bi bi-file-earmark-excel"></i> Export & Print DPCR</a>
+        <button class="btn btn-primary mb-2"><i class="bi bi-file-earmark-pdf"></i> Generate Summary of Ratings (VPAA)</button>
     </div>
 </div>
 
@@ -45,26 +46,70 @@
                 <h5 class="fw-bold text-dark">Phase 1: Institutional Quota Cascading</h5>
             </div>
             <div class="card-body">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Master Indicator</th>
-                            <th>Category</th>
-                            <th>Total College Target</th>
-                            <th>Assigned to Dept</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Published Research Papers</td>
-                            <td><span class="badge bg-info text-dark">Research</span></td>
-                            <td class="fw-bold">40 Papers</td>
-                            <td>BSIT, BSIS</td>
-                            <td><button class="btn btn-outline-primary btn-sm">Distribute Quota</button></td>
-                        </tr>
-                    </tbody>
-                </table>
+                
+                <div class="alert alert-info shadow-sm border-0 mb-3 small py-2 rounded">
+                    <strong><i class="bi bi-calendar-check me-1"></i>Active Term Target:</strong> A.Y. 2026-2027 (1st Semester)
+                </div>
+                
+                <form action="#" method="POST">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle shadow-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Master Indicator</th>
+                                    <th width="10%">WST Program</th>
+                                    <th width="10%">DST Program</th>
+                                    <th width="10%">NST Program</th>
+                                    <th width="10%">BSDS Program</th>
+                                    <th width="10%">RET / Extension</th>
+                                    <th width="11%">College-Wide</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="table-secondary">
+                                    <td colspan="7" class="fw-bold text-uppercase text-dark border-bottom border-2">
+                                        <i class="bi bi-folder2-open me-2"></i> 1. Strategic Priorities (50%) - A. Instructions
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4">
+                                        Number of course syllabi prepared/updated.
+                                        <span class="badge bg-dark ms-2">Quantity-Based</span>
+                                    </td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-primary shadow-sm fw-bold" min="0" placeholder="0" disabled></td>
+                                    <td><input type="number" class="form-control form-control-sm text-success shadow-sm fw-bold" min="0" placeholder="0" disabled></td>
+                                </tr>
+
+                                <tr class="table-secondary">
+                                    <td colspan="7" class="fw-bold text-uppercase text-dark border-bottom border-2">
+                                        <i class="bi bi-folder2-open me-2"></i> 2. Core Functions (40%) - A. Research
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4">
+                                        Number of research papers published in accredited journals.
+                                        <span class="badge bg-dark ms-2">Quantity-Based</span>
+                                    </td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-primary shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-success shadow-sm fw-bold" min="0" placeholder="0"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-3 border-top pt-3">
+                        <button type="button" class="btn btn-primary fw-bold shadow-sm px-4 disabled">
+                            Cascade Institutional Targets <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
