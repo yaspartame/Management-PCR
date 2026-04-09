@@ -3,136 +3,149 @@
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">Designated Faculty Portal</h2>
-        <p class="text-muted mb-0">Department: BSIT | Designation: <span class="badge bg-secondary">System Administrator</span></p>
+        <h2 class="fw-bold" style="color: #0B3C86;">Designated Faculty Dashboard</h2>
+        <p class="text-muted mb-0">BSIT Department | Rank: <span class="badge bg-secondary">Assistant Professor II</span> | Designation: <span class="badge" style="background-color: #6610f2;">OJT Coordinator</span></p>
     </div>
     <div class="col-md-4 text-md-end">
-        <div class="alert alert-danger d-inline-block py-2 px-3 mb-0 shadow-sm">
-            <strong><i class="bi bi-clock-history"></i> Deadline Timer:</strong> 14 Days Remaining
-        </div>
+        <button class="btn btn-primary fw-bold shadow-sm"><i class="bi bi-file-earmark-pdf"></i> Generate Official IPCR PDF</button>
     </div>
 </div>
 
 <div class="row mb-4">
     <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <h6 class="text-muted fw-bold">Target Progress</h6>
-                <h3 class="text-primary mt-2">15%</h3>
-                <p class="small text-muted">Evidence Uploaded</p>
+        <div class="card shadow-sm border-0 h-100 border-start border-success border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">IPCR Contract Status</h6>
+                <h2 class="display-6 fw-bold text-success"><i class="bi bi-lock-fill"></i> Locked</h2>
+                <span class="small text-muted">Approved by Program Chair</span>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <h6 class="text-muted fw-bold">Current Rating</h6>
-                <h3 class="text-secondary mt-2">--</h3>
-                <p class="small text-muted">Awaiting Manager Scoring</p>
+        <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Evidence Uploaded</h6>
+                <h2 class="display-6 fw-bold text-info">5 <span class="text-muted fs-4">/ 12</span></h2>
+                <span class="small text-muted">Targets with submitted proof</span>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <h6 class="text-muted fw-bold">Handshake Status</h6>
-                <h3 class="text-warning mt-2"><i class="bi bi-unlock-fill"></i> Unlocked</h3>
-                <p class="small text-muted">Drafting Commitments</p>
+        <div class="card shadow-sm border-0 h-100 border-start border-danger border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Term Deadline</h6>
+                <h2 class="display-6 fw-bold text-danger">45</h2>
+                <span class="small text-muted">Days remaining to upload evidence</span>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #1E6FD9 !important;">
-            <div class="card-header bg-white pt-3 pb-0 border-0">
-                <h5 class="fw-bold mb-3">1) IPCR Commitment (75/25 Dual-Tab Workflow)</h5>
-                <ul class="nav nav-tabs" id="ipcrTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fw-bold" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-content" type="button" role="tab" style="color: #0B3C86;">
-                            Tab 1: Administrative (75%)
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold" id="teaching-tab" data-bs-toggle="tab" data-bs-target="#teaching-content" type="button" role="tab" style="color: #2A9D8F;">
-                            Tab 2: Instruction (25%)
-                        </button>
-                    </li>
-                </ul>
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-dark mb-0">Phase 1: Your IPCR Commitments</h5>
+                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Contract Locked</span>
             </div>
-            
-            <div class="card-body p-4">
-                <div class="tab-content" id="ipcrTabContent">
-                    <div class="tab-pane fade show active" id="admin-content" role="tabpanel">
-                        <p class="text-muted small">Select targets specific to your university designation. These will account for 75% of your total E-Score.</p>
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Master Indicator</th>
-                                    <th>Intended Quantity</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Server Maintenance & Uptime Management</td>
-                                    <td><input type="number" class="form-control form-control-sm w-50" placeholder="e.g., 2"></td>
-                                    <td><button class="btn btn-outline-primary btn-sm">Add to Draft</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="tab-pane fade" id="teaching-content" role="tabpanel">
-                        <p class="text-muted small">Select your classroom-based targets. These are strictly capped at 25% of your total E-Score.</p>
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Master Indicator</th>
-                                    <th>Intended Quantity</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Course Syllabi Preparation</td>
-                                    <td><input type="number" class="form-control form-control-sm w-50" placeholder="e.g., 3"></td>
-                                    <td><button class="btn btn-outline-success btn-sm">Add to Draft</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="card-body">
+                <p class="text-muted small">Your baseline targets assigned by the Program Chair and the research targets you selected from the RET menu.</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle shadow-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th width="60%">Target Description</th>
+                                <th class="text-center">Required (From Manager)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge bg-secondary">Standard (Instruction)</span></td>
+                                <td>Number of course syllabi prepared/updated.</td>
+                                <td class="text-center fw-bold">2</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-info text-dark">Research (Self-Selected)</span></td>
+                                <td>Number of research papers published in accredited journals.</td>
+                                <td class="text-center fw-bold">1</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-            <div class="card-footer bg-light text-end py-3 border-0">
-                <button class="btn btn-primary px-4 fw-bold">Submit for Handshake</button>
-            </div>
-        </div>
-
-        <div class="card mb-4 shadow-sm border-0">
-            <div class="card-header bg-white pt-3 pb-0 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold">2) Accomplishment & Evidence Repo</h5>
-                <button class="btn btn-secondary btn-sm" disabled>Handshake Required First</button>
-            </div>
-            <div class="card-body text-center py-5">
-                <p class="text-muted small mb-0">Submit your targets and await manager approval to unlock evidence uploading.</p>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white pt-4 pb-0 border-0">
-                <h6 class="fw-bold">Recent Notifications</h6>
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0" style="border-top: 4px solid #17a2b8 !important;">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="fw-bold text-dark mb-0">Phase 2: Standard Evidence Gathering</h5>
             </div>
             <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item px-0 border-bottom-0 pb-2">
-                        <small class="text-muted d-block">System Alert</small>
-                        <span class="small">Ensure your Administrative tab targets sum to appropriate workload limits before submitting.</span>
-                    </li>
-                </ul>
+                <p class="text-muted small">Upload verifiable PDF documents (certificates, attendance, syllabi) to prove your instructional and research accomplishments.</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40%">Target Description</th>
+                                <th class="text-center">Actual (Q) Achieved</th>
+                                <th>Co-Authors / Sharers</th>
+                                <th>Evidence Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="small">Number of course syllabi prepared/updated.</td>
+                                <td><input type="number" class="form-control form-control-sm text-center fw-bold shadow-sm" placeholder="e.g. 2"></td>
+                                <td><span class="text-muted small">N/A</span></td>
+                                <td><span class="badge bg-danger"><i class="bi bi-x-circle"></i> Missing File</span></td>
+                                <td class="text-end"><button class="btn btn-sm btn-outline-primary"><i class="bi bi-upload"></i> Upload PDF</button></td>
+                            </tr>
+                            <tr>
+                                <td class="small">Number of research papers published in accredited journals.</td>
+                                <td><input type="number" class="form-control form-control-sm text-center fw-bold shadow-sm" value="1"></td>
+                                <td><span class="badge bg-light text-dark border"><i class="bi bi-person-fill"></i> Oks328 Dev</span></td>
+                                <td><span class="badge bg-success"><i class="bi bi-file-earmark-check"></i> file_1204.pdf</span></td>
+                                <td class="text-end"><button class="btn btn-sm btn-success"><i class="bi bi-save"></i> Save Changes</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0" style="border-top: 4px solid #6610f2 !important;">
+            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-briefcase-fill" style="color: #6610f2;"></i> Phase 3: Designation & Administrative Targets</h5>
+                <span class="badge" style="background-color: #6610f2;">OJT Coordinator Duties</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">These targets are strictly tied to your administrative designation. Standard faculty do not see this section.</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40%">Administrative Target</th>
+                                <th class="text-center">Actual (Q) Achieved</th>
+                                <th>Evidence Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="small fw-bold" style="color: #6610f2;">Evaluate and approve student OJT deployment portfolios.</td>
+                                <td><input type="number" class="form-control form-control-sm text-center fw-bold shadow-sm" placeholder="e.g. 50"></td>
+                                <td><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Awaiting Upload</span></td>
+                                <td class="text-end"><button class="btn btn-sm btn-outline-primary"><i class="bi bi-upload"></i> Upload PDF</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

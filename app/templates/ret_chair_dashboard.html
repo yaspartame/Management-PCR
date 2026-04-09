@@ -3,78 +3,191 @@
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">RET Chair Portal</h2>
-        <p class="text-muted mb-0">Department: Research, Extension, and Training | Role: <span class="badge bg-secondary text-uppercase">RET Chair</span></p>
+        <h2 class="fw-bold" style="color: #0B3C86;">RET Chair Dashboard</h2>
+        <p class="text-muted mb-0">Research, Extension & Training Sector | <span class="badge bg-secondary">Middle
+                Manager</span></p>
     </div>
-    <div class="col-md-4 text-md-end">
-        <div class="alert alert-info d-inline-block py-2 px-3 mb-0 shadow-sm border-0">
-            <strong>Research Output:</strong> 3 Manuscripts for Review
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Configured Ranks</h6>
+                <h2 class="display-6 fw-bold text-primary">4</h2>
+                <span class="small text-muted">Active rank-based rules set</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Active Research Options</h6>
+                <h2 class="display-6 fw-bold text-info">15</h2>
+                <span class="small text-muted">Total master indicators mapped</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Pending Approvals</h6>
+                <h2 class="display-6 fw-bold text-warning">8</h2>
+                <span class="small text-muted">Faculty selections awaiting review</span>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm border-0 mb-4" style="border-left: 4px solid #1E6FD9 !important;">
-    <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold text-dark mb-0">1) Research & Extension Monitoring</h5>
-        <button class="btn btn-primary btn-sm"><i class="bi bi-graph-up"></i> Institutional Research Report</button>
-    </div>
-    <div class="card-body">
-        <p class="text-muted small">Monitoring targets for research production, community extensions, and technical training programs.</p>
-        <table class="table table-hover align-middle mt-3">
-            <thead class="table-light">
-                <tr>
-                    <th>Lead Proponent</th>
-                    <th>Project Category</th>
-                    <th>Milestone Targets</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Anaheim Developer</td>
-                    <td>Research Publication</td>
-                    <td>Scopus Indexed Journal</td>
-                    <td><span class="badge bg-warning text-dark">Under Review</span></td>
-                    <td>
-                        <button class="btn btn-success btn-sm">Verify Output</button>
-                        <button class="btn btn-outline-secondary btn-sm">View Draft</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-dark mb-0">Phase 1: Research Menu Configuration</h5>
+                <span class="badge bg-primary"><i class="bi bi-gear-fill me-1"></i> Setup Rules</span>
+            </div>
+            <div class="card-body bg-light rounded m-3 p-4 border">
+                <form action="#" method="POST">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">1. Select Academic Rank</label>
+                            <select class="form-select shadow-sm">
+                                <option selected disabled>-- Choose Rank --</option>
+                                <option value="Instructor I">Instructor I</option>
+                                <option value="Assistant Professor I">Assistant Professor I</option>
+                                <option value="Associate Professor III">Associate Professor III</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">2. Required Target Selections</label>
+                            <input type="number" class="form-control shadow-sm" value="1" min="1" max="10"
+                                placeholder="How many must they pick?">
+                            <div class="form-text">Example: "Instructors must select exactly 1 from the list below."
+                            </div>
+                        </div>
+                    </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white pt-4 pb-2 border-0">
-        <h5 class="fw-bold text-dark">2) Evidence Verification (Research & EXT)</h5>
-        <p class="text-muted small mb-0">Reviewing submitted evidence for Research and Community Extension indicators.</p>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">3. Map Allowed Master Indicators</label>
+                        <div class="card shadow-sm border-0">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item py-3">
+                                    <input class="form-check-input me-2" type="checkbox" id="ind1" checked>
+                                    <label class="form-check-label" for="ind1">
+                                        Number of research papers published in accredited journals.
+                                    </label>
+                                </li>
+                                <li class="list-group-item py-3">
+                                    <input class="form-check-input me-2" type="checkbox" id="ind2" checked>
+                                    <label class="form-check-label" for="ind2">
+                                        Number of ongoing externally funded research projects.
+                                    </label>
+                                </li>
+                                <li class="list-group-item py-3">
+                                    <input class="form-check-input me-2" type="checkbox" id="ind3">
+                                    <label class="form-check-label" for="ind3">
+                                        Number of research presentations in international conferences.
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary fw-bold px-4 shadow-sm"><i class="bi bi-save"></i>
+                            Save Research Menu Rules</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Faculty Name</th>
-                    <th>Indicator</th>
-                    <th>Evidence Upload</th>
-                    <th>Date Submitted</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Juan Dela Cruz</td>
-                    <td>Community Outreach</td>
-                    <td><a href="#" class="text-decoration-none"><i class="bi bi-file-pdf text-danger"></i> extension_report.pdf</a></td>
-                    <td>Oct 15, 2026</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm me-1">Evaluator Dashboard</button>
-                        <button class="btn btn-outline-danger btn-sm">Return for Edit</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="fw-bold text-dark mb-0">Phase 2: Active Research Rules</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Current logic mappings dictating what faculty see on their dashboards.</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Academic Rank</th>
+                                <th class="text-center">Required Target Count</th>
+                                <th class="text-center">Mapped Options Available</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold text-primary">Instructor I</td>
+                                <td class="text-center fw-bold">1</td>
+                                <td class="text-center"><span class="badge bg-secondary">4 Options</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i>
+                                        Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary">Associate Professor III</td>
+                                <td class="text-center fw-bold">2</td>
+                                <td class="text-center"><span class="badge bg-secondary">6 Options</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i>
+                                        Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0" style="border-top: 4px solid #FFC107 !important;">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="fw-bold text-dark mb-0">Phase 3: Research Commitment Verification</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Review and approve the specific research targets selected by faculty members
+                    for this semester.</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border shadow-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Faculty Name</th>
+                                <th>Rank</th>
+                                <th width="40%">Chosen Research Targets</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold small">Chester Developer</td>
+                                <td class="small">Instructor I</td>
+                                <td class="small text-muted">
+                                    <ul class="mb-0 ps-3">
+                                        <li>Number of research papers published in accredited journals.</li>
+                                    </ul>
+                                </td>
+                                <td><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i>
+                                        Awaiting Review</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-success me-1"><i class="bi bi-check-circle"></i>
+                                        Approve</button>
+                                    <button class="btn btn-sm btn-danger"><i class="bi bi-x-circle"></i> Reject</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

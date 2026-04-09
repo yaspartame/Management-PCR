@@ -3,78 +3,164 @@
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">Program Chair Portal</h2>
-        <p class="text-muted mb-0">Department: BSIT Program | Role: <span class="badge bg-secondary text-uppercase">Program Chair</span></p>
+        <h2 class="fw-bold" style="color: #0B3C86;">Program Chair Dashboard</h2>
+        <p class="text-muted mb-0">Department of Information Technology (BSIT) | <span class="badge bg-secondary">Middle
+                Manager</span></p>
     </div>
-    <div class="col-md-4 text-md-end">
-        <div class="alert alert-warning d-inline-block py-2 px-3 mb-0 shadow-sm border-0">
-            <strong>Evidence Queue:</strong> 5 Pending Reviews
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Target Allocation Progress</h6>
+                <h2 class="display-6 fw-bold text-primary">100%</h2>
+                <span class="small text-muted">All quotas distributed</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Pending Faculty Drafts</h6>
+                <h2 class="display-6 fw-bold text-warning">4</h2>
+                <span class="small text-muted">Awaiting the Digital Handshake</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100 border-start border-success border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Pending Evidence to Grade</h6>
+                <h2 class="display-6 fw-bold text-success">12</h2>
+                <span class="small text-muted">Ready for E & T Evaluation</span>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm border-0 mb-4" style="border-left: 4px solid #1E6FD9 !important;">
-    <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold text-dark mb-0">1) Workload Allocation & Handshake</h5>
-        <button class="btn btn-primary btn-sm"><i class="bi bi-calculator"></i> Execute Auto-Divide Engine</button>
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-dark mb-0">Phase 1: Standard Target Allocation</h5>
+                <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i> Distribute the Dean's
+                    Quota</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Assign the baseline operational targets to all faculty members under
+                    your department.</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle shadow-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40%">Master Indicator</th>
+                                <th>Dept Quota (From Dean)</th>
+                                <th>Assigned Per Faculty</th>
+                                <th>Total Distributed</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Number of course syllabi prepared/updated.</td>
+                                <td class="text-center fw-bold text-primary">20</td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm shadow-sm text-center"
+                                        value="2" min="1">
+                                </td>
+                                <td class="text-center text-success fw-bold">20 / 20</td>
+                                <td><button class="btn btn-sm btn-outline-primary"><i class="bi bi-save"></i>
+                                        Save</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <p class="text-muted small">Automatically splits the Dean's departmental quota equally among active faculty members (using math.ceil logic).</p>
-        <table class="table table-hover align-middle mt-3">
-            <thead class="table-light">
-                <tr>
-                    <th>Faculty Name</th>
-                    <th>Rank</th>
-                    <th>Committed Targets</th>
-                    <th>Handshake Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Anaheim Developer</td>
-                    <td>Instructor II</td>
-                    <td>14 Indicators</td>
-                    <td><span class="badge bg-warning text-dark">Pending Review</span></td>
-                    <td>
-                        <button class="btn btn-success btn-sm">Approve (Lock)</button>
-                        <button class="btn btn-outline-secondary btn-sm">View Draft</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white pt-4 pb-2 border-0">
-        <h5 class="fw-bold text-dark">2) Real-Time Verification & Scoring</h5>
-        <p class="text-muted small mb-0">Open the Split-Screen Evaluation to rate quality, efficiency, and timeliness.</p>
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0" style="border-top: 4px solid #FFC107 !important;">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="fw-bold text-dark mb-0">Phase 2: IPCR Commitment Verification (Digital Handshake)</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Review your faculty's proposed targets (Standard Workload + their chosen
+                    Research selections) and lock them for the semester.</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Faculty Name</th>
+                                <th>Rank</th>
+                                <th>Proposed Targets</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Chester Developer</td>
+                                <td>Instructor I</td>
+                                <td><span class="badge bg-secondary">10 Standard</span> + <span
+                                        class="badge bg-info text-dark">1 Research</span></td>
+                                <td><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i>
+                                        Awaiting Review</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View
+                                        IPCR</button>
+                                    <button class="btn btn-sm btn-success"><i class="bi bi-lock-fill"></i> Lock
+                                        Commitment</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Faculty Name</th>
-                    <th>Target Indicator</th>
-                    <th>Uploaded Evidence</th>
-                    <th>Date Submitted</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Juan Dela Cruz</td>
-                    <td>Course Syllabus Prep</td>
-                    <td><a href="#" class="text-decoration-none"><i class="bi bi-file-pdf text-danger"></i> syllabus_draft.pdf</a></td>
-                    <td>Oct 12, 2026</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm me-1">Open Split-Screen Evaluation</button>
-                        <button class="btn btn-outline-danger btn-sm">Return for Correction</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="fw-bold text-dark mb-0">Phase 3: End-of-Semester Evaluation (Grading Engine)</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Review the uploaded evidence and input the qualitative Efficiency (E) and
+                    Timeliness (T) ratings (Scale 1 to 5).</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle shadow-sm border">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Faculty</th>
+                                <th width="30%">Target Description</th>
+                                <th>Evidence File</th>
+                                <th class="text-center">Actual (Q)</th>
+                                <th class="text-center" width="10%">Score (E)</th>
+                                <th class="text-center" width="10%">Score (T)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold small">Chester Dev</td>
+                                <td class="small">Number of course syllabi prepared/updated.</td>
+                                <td><a href="#" class="btn btn-sm btn-outline-danger"><i
+                                            class="bi bi-file-earmark-pdf-fill"></i> View PDF</a></td>
+                                <td class="text-center fw-bold text-primary">2</td>
+                                <td><input type="number" class="form-control form-control-sm text-center fw-bold"
+                                        min="1" max="5" placeholder="-"></td>
+                                <td><input type="number" class="form-control form-control-sm text-center fw-bold"
+                                        min="1" max="5" placeholder="-"></td>
+                                <td><button class="btn btn-sm btn-primary"><i class="bi bi-calculator"></i> Submit to
+                                        Math Engine</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

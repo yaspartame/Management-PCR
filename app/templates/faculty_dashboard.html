@@ -4,112 +4,169 @@
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
         <h2 class="fw-bold" style="color: #0B3C86;">Faculty Dashboard</h2>
-        <p class="text-muted mb-0">Academic Rank: <span class="badge bg-secondary">Instructor I</span> | Program: BSIT</p>
+        <p class="text-muted mb-0">Department of Information Technology (BSIT) | Rank: <span
+                class="badge bg-secondary">Instructor I</span></p>
     </div>
     <div class="col-md-4 text-md-end">
-        <div class="alert alert-danger d-inline-block py-2 px-3 mb-0 shadow-sm">
-            <strong><i class="bi bi-clock-history"></i> Deadline Timer:</strong> 14 Days Remaining
-        </div>
+        <button class="btn btn-primary fw-bold shadow-sm" disabled><i class="bi bi-file-earmark-pdf"></i> Generate
+            Official IPCR PDF</button>
+        <div class="form-text small mt-1">Available once semester is graded.</div>
     </div>
 </div>
 
 <div class="row mb-4">
     <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <h6 class="text-muted fw-bold">Target Progress</h6>
-                <h3 class="text-primary mt-2">45%</h3>
-                <p class="small text-muted">Evidence Uploaded</p>
+        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">IPCR Contract Status</h6>
+                <h2 class="display-6 fw-bold text-warning"><i class="bi bi-pencil-square"></i> Draft</h2>
+                <span class="small text-muted">Awaiting your research selection</span>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <h6 class="text-muted fw-bold">Current Rating</h6>
-                <h3 class="text-success mt-2">4.25</h3>
-                <p class="small text-muted">Very Satisfactory (Draft)</p>
+        <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Evidence Uploaded</h6>
+                <h2 class="display-6 fw-bold text-info">0 <span class="text-muted fs-4">/ 11</span></h2>
+                <span class="small text-muted">Targets with submitted proof</span>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <h6 class="text-muted fw-bold">Handshake Status</h6>
-                <h3 class="text-warning mt-2"><i class="bi bi-lock-fill"></i> Locked</h3>
-                <p class="small text-muted">Approved by Program Chair</p>
+        <div class="card shadow-sm border-0 h-100 border-start border-danger border-4">
+            <div class="card-body text-center py-4">
+                <h6 class="text-muted text-uppercase fw-bold">Term Deadline</h6>
+                <h2 class="display-6 fw-bold text-danger">45</h2>
+                <span class="small text-muted">Days remaining in the semester</span>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4 shadow-sm border-0" style="border-top: 4px solid #1E6FD9 !important;">
-            <div class="card-header bg-white pt-3 pb-0 border-0">
-                <h5 class="fw-bold">1) IPCR Commitment Phase</h5>
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-dark mb-0">Phase 1: Your IPCR Commitments (Digital Handshake)</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted small">Select your indicators from the Rank-Restricted master list and submit your intended quantities for the Digital Handshake.</p>
-                <button class="btn btn-primary btn-sm mb-3">Open Rank-Restricted Target Selection</button>
-            </div>
-        </div>
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-clipboard-check me-2"></i>Standard Targets
+                            (Assigned)</h6>
+                        <p class="text-muted small">These are the baseline instructional and core targets assigned to
+                            you by your Program Chair.</p>
+                        <ul class="list-group list-group-flush small">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Number of course syllabi prepared/updated.
+                                <span class="badge bg-secondary rounded-pill">Target: 2</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Percentage of students who passed the subject.
+                                <span class="badge bg-secondary rounded-pill">Target: 100%</span>
+                            </li>
+                            <li
+                                class="list-group-item d-flex justify-content-between align-items-center text-muted fst-italic">
+                                + 8 more standard targets...
+                            </li>
+                        </ul>
+                    </div>
 
-        <div class="card mb-4 shadow-sm border-0">
-            <div class="card-header bg-white pt-3 pb-0 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold">2) Accomplishment & Evidence Repo</h5>
-                <button class="btn btn-success btn-sm">+ Upload Evidence</button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Target Description</th>
-                                <th>Status</th>
-                                <th>Evidence</th>
-                                <th>Final Score (Q,T,E)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="small">Submit Course Syllabus</td>
-                                <td><span class="badge bg-success">Verified</span></td>
-                                <td><a href="#">syllabus.pdf</a></td>
-                                <td><span class="fw-bold text-dark">5, 4, 5</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="fw-bold mb-1">Official Document Generation</h5>
-                    <p class="text-muted small mb-0">Generates the Standardized CSC (Civil Service Commission) Format.</p>
-                </div>
-                <div>
-                    <button class="btn btn-outline-secondary me-2">Preview IPCR</button>
-                    <button class="btn btn-success">Download Final PDF</button>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-success mb-3"><i class="bi bi-journal-text me-2"></i>Research Targets
+                            (Required Selection)</h6>
+                        <div class="alert alert-success py-2 small border-0 shadow-sm">
+                            <strong>Action Required:</strong> Based on your rank (Instructor I), you must select exactly
+                            <strong>1</strong> research target from the menu below.
+                        </div>
+                        <form action="#" method="POST">
+                            <div class="list-group mb-3 shadow-sm">
+                                <label class="list-group-item d-flex gap-2">
+                                    <input class="form-check-input flex-shrink-0" type="checkbox" value="" checked>
+                                    <span>
+                                        <small class="d-block text-dark">Number of research papers published in
+                                            accredited journals.</small>
+                                    </span>
+                                </label>
+                                <label class="list-group-item d-flex gap-2">
+                                    <input class="form-check-input flex-shrink-0" type="checkbox" value="">
+                                    <span>
+                                        <small class="d-block text-dark">Number of research presentations in
+                                            international conferences.</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="text-end">
+                                <button type="button" class="btn btn-primary fw-bold shadow-sm"><i
+                                        class="bi bi-send-check"></i> Submit Proposed IPCR for Approval</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white pt-4 pb-0 border-0">
-                <h6 class="fw-bold">Recent Notifications</h6>
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-0" style="border-top: 4px solid #17a2b8 !important;">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="fw-bold text-dark mb-0">Phase 2: Evidence Gathering</h5>
+                <p class="text-muted small mt-1 mb-0">Upload verifiable PDF documents (certificates, attendance,
+                    syllabi) to prove your accomplishments for this semester.</p>
             </div>
             <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item px-0 border-bottom-0 pb-2">
-                        <small class="text-muted d-block">Today, 9:00 AM</small>
-                        <span class="small">"Your Commitment has been approved."</span>
-                    </li>
-                </ul>
+                <div class="alert alert-warning py-2 small border-0 shadow-sm mb-4">
+                    <i class="bi bi-lock-fill me-1"></i> You can begin uploading evidence once your Program Chair locks
+                    your IPCR Commitments in Phase 1.
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="35%">Target Description</th>
+                                <th class="text-center" width="15%">Actual (Q) Achieved</th>
+                                <th>Co-Authors / Sharers</th>
+                                <th>Evidence Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="small">Number of course syllabi prepared/updated.</td>
+                                <td><input type="number"
+                                        class="form-control form-control-sm text-center fw-bold shadow-sm"
+                                        placeholder="Qty"></td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white"><i class="bi bi-person-plus"></i></span>
+                                        <input type="text" class="form-control" placeholder="Search faculty...">
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-danger"><i class="bi bi-x-circle"></i> Missing File</span>
+                                </td>
+                                <td class="text-end"><button class="btn btn-sm btn-outline-primary"><i
+                                            class="bi bi-upload"></i> Upload PDF</button></td>
+                            </tr>
+
+                            <tr>
+                                <td class="small">Number of research papers published in accredited journals.</td>
+                                <td><input type="number"
+                                        class="form-control form-control-sm text-center fw-bold shadow-sm" value="1"
+                                        disabled></td>
+                                <td><span class="badge bg-light text-dark border"><i class="bi bi-person-fill"></i>
+                                        Oks328 Dev</span></td>
+                                <td><span class="badge bg-success"><i class="bi bi-file-earmark-check"></i>
+                                        final_paper_v2.pdf</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i>
+                                        Remove</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
