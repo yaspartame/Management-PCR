@@ -4,11 +4,18 @@
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
         <h2 class="fw-bold" style="color: #0B3C86;">College Dean's Executive Portal</h2>
-        <p class="text-muted mb-0">College of Information Technology | Rank: <span class="badge bg-secondary">Professor VI</span></p>
+        <p class="text-muted mb-0">
+            College of Information Technology | 
+            Rank: <span class="badge bg-secondary">Professor VI</span>
+            {% if active_term %}
+            | Active Term: <span class="badge bg-info">{{ active_term.academic_year }} ({{ active_term.semester }})</span>
+            {% endif %}
+        </p>
     </div>
     <div class="col-md-4 text-md-end">
-        <a href="#" class="btn btn-success fw-bold mb-2 shadow-sm"><i class="bi bi-file-earmark-excel"></i> Export & Print DPCR</a>
-        <button class="btn btn-primary mb-2"><i class="bi bi-file-earmark-pdf"></i> Generate Summary of Ratings (VPAA)</button>
+        <button class="btn btn-success fw-bold mb-2 shadow-sm" onclick="alert('Export feature coming soon')">
+            <i class="bi bi-file-earmark-excel"></i> Export & Print DPCR
+        </button>
     </div>
 </div>
 
@@ -17,7 +24,8 @@
         <div class="card shadow-sm border-0 h-100 border-start border-success border-4">
             <div class="card-body text-center py-4">
                 <h6 class="text-muted text-uppercase fw-bold">Overall Completion</h6>
-                <h2 class="display-6 fw-bold text-success">84%</h2>
+                <h2 class="display-6 fw-bold text-success">{{ completion_rate }}%</h2>
+                <small class="text-muted">Across all programs and categories</small>
             </div>
         </div>
     </div>
@@ -25,7 +33,8 @@
         <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
             <div class="card-body text-center py-4">
                 <h6 class="text-muted text-uppercase fw-bold">Pending Batch Approvals</h6>
-                <h2 class="display-6 fw-bold text-warning">12</h2>
+                <h2 class="display-6 fw-bold text-warning">{{ pending_count }}</h2>
+                <small class="text-muted">Awaiting final digital signature</small>
             </div>
         </div>
     </div>
@@ -33,25 +42,34 @@
         <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
             <div class="card-body text-center py-4">
                 <h6 class="text-muted text-uppercase fw-bold">Top Performing Dept</h6>
-                <h2 class="display-6 fw-bold text-primary" style="font-size: 1.8rem; margin-top: 10px;">BSIT Program</h2>
+                <h2 class="display-6 fw-bold text-primary" style="font-size: 1.8rem; margin-top: 10px;">
+                    {{ top_dept }} Program
+                </h2>
+                <small class="text-muted">Highest average final rating</small>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row">
+    <!-- Phase 1: Institutional Quota Cascading -->
     <div class="col-md-12 mb-4">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white pt-4 pb-2 border-0">
                 <h5 class="fw-bold text-dark">Phase 1: Institutional Quota Cascading</h5>
             </div>
             <div class="card-body">
-                
+                {% if active_term %}
                 <div class="alert alert-info shadow-sm border-0 mb-3 small py-2 rounded">
-                    <strong><i class="bi bi-calendar-check me-1"></i>Active Term Target:</strong> A.Y. 2026-2027 (1st Semester)
+                    <strong><i class="bi bi-calendar-check me-1"></i>Active Term Target:</strong> 
+                    {{ active_term.academic_year }} ({{ active_term.semester }}) 
+                    | Deadline: {{ active_term.deadline_date.strftime('%B %d, %Y') if active_term.deadline_date else 'N/A' }}
                 </div>
                 
-                <form action="#" method="POST">
+                {% if master_indicators %}
+                <form action="{{ url_for('cascade_quotas') }}" method="POST" id="cascadeForm" onsubmit="return validateQuotas()">
+                    <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+                    
                     <div class="table-responsive">
                         <table class="table table-hover align-middle shadow-sm">
                             <thead class="table-light">
@@ -66,86 +84,249 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="table-secondary">
-                                    <td colspan="7" class="fw-bold text-uppercase text-dark border-bottom border-2">
-                                        <i class="bi bi-folder2-open me-2"></i> 1. Strategic Priorities (50%) - A. Instructions
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="ps-4">
-                                        Number of course syllabi prepared/updated.
-                                        <span class="badge bg-dark ms-2">Quantity-Based</span>
-                                    </td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-primary shadow-sm fw-bold" min="0" placeholder="0" disabled></td>
-                                    <td><input type="number" class="form-control form-control-sm text-success shadow-sm fw-bold" min="0" placeholder="0" disabled></td>
-                                </tr>
-
-                                <tr class="table-secondary">
-                                    <td colspan="7" class="fw-bold text-uppercase text-dark border-bottom border-2">
-                                        <i class="bi bi-folder2-open me-2"></i> 2. Core Functions (40%) - A. Research
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="ps-4">
-                                        Number of research papers published in accredited journals.
-                                        <span class="badge bg-dark ms-2">Quantity-Based</span>
-                                    </td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-primary shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-success shadow-sm fw-bold" min="0" placeholder="0"></td>
-                                </tr>
+                                {% set current_category = namespace(name='') %}
+                                {% for indicator in master_indicators %}
+                                    {% if indicator.category_name != current_category.name %}
+                                    {% set current_category.name = indicator.category_name %}
+                                    <tr class="table-secondary">
+                                        <td colspan="7" class="fw-bold text-uppercase text-dark border-bottom border-2">
+                                            <i class="bi bi-folder2-open me-2"></i> {{ indicator.category_name }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <input type="hidden" name="indicator_id[]" value="{{ indicator.indicator_id }}">
+                                            {{ indicator.indicator_description }}
+                                            <span class="badge bg-dark ms-2">{{ indicator.efficiency_type }}</span>
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
+                                                   name="wst[]" 
+                                                   min="0" 
+                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('WST Program', 0) }}"
+                                                   data-indicator="{{ indicator.indicator_id }}"
+                                                   onchange="updateTotals()">
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
+                                                   name="dst[]" 
+                                                   min="0" 
+                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('DST Program', 0) }}"
+                                                   data-indicator="{{ indicator.indicator_id }}"
+                                                   onchange="updateTotals()">
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
+                                                   name="nst[]" 
+                                                   min="0" 
+                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('NST Program', 0) }}"
+                                                   data-indicator="{{ indicator.indicator_id }}"
+                                                   onchange="updateTotals()">
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
+                                                   name="bsds[]" 
+                                                   min="0" 
+                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('BSDS Program', 0) }}"
+                                                   data-indicator="{{ indicator.indicator_id }}"
+                                                   onchange="updateTotals()">
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm text-primary shadow-sm fw-bold" 
+                                                   name="ret[]" 
+                                                   min="0" 
+                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('RET / Extension', 0) }}"
+                                                   disabled>
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm text-success shadow-sm fw-bold" 
+                                                   name="college[]" 
+                                                   min="0" 
+                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('College-Wide', 0) }}"
+                                                   disabled>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    
+                    <div id="validationMessage" class="alert d-none mt-2"></div>
+                    
                     <div class="text-end mt-3 border-top pt-3">
-                        <button type="button" class="btn btn-primary fw-bold shadow-sm px-4 disabled">
+                        <button type="submit" class="btn btn-primary fw-bold shadow-sm px-4" id="cascadeBtn">
                             Cascade Institutional Targets <i class="bi bi-arrow-right-circle-fill ms-1"></i>
                         </button>
                     </div>
                 </form>
+                {% else %}
+                <div class="alert alert-warning">
+                    No master indicators found for the active term. Please ensure indicators are configured.
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="alert alert-warning">
+                    <strong>No Active Term:</strong> Please activate an academic term to begin cascading targets.
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
+    <!-- Phase 6: Final Digital Batch Approvals -->
     <div class="col-md-12">
         <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
             <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold text-dark mb-0">Phase 6: Final Digital Batch Approvals</h5>
-                <button class="btn btn-success btn-sm"><i class="bi bi-pen"></i> Approve All Selected</button>
+                <button class="btn btn-success btn-sm" onclick="approveSelected()">
+                    <i class="bi bi-pen"></i> Approve All Selected
+                </button>
+                <button class="btn btn-warning btn-sm" onclick="revertSelected()">
+                    <i class="bi bi-arrow-return-left"></i> Revert to Manager
+                </button>
             </div>
             <div class="card-body">
-                <p class="text-muted small">Apply your digital signature to verified IPCRs before generating the official Standardized CSC documents.</p>
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th><input class="form-check-input" type="checkbox"></th>
-                            <th>Faculty Name</th>
-                            <th>Department</th>
-                            <th>Final Truncated Rating</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><input class="form-check-input" type="checkbox"></td>
-                            <td>Anaheim Developer</td>
-                            <td>BSIT</td>
-                            <td class="fw-bold text-success">4.85 (Outstanding)</td>
-                            <td><span class="badge bg-warning text-dark">Awaiting Dean Signature</span></td>
-                            <td><button class="btn btn-outline-secondary btn-sm">Review IPCR</button></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <p class="text-muted small">
+                    Apply your digital signature to verified IPCRs before generating the official Standardized CSC documents.
+                </p>
+                
+                {% if pending_approvals %}
+                <form id="approvalForm" action="{{ url_for('batch_approve') }}" method="POST">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th><input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                                <th>Faculty Name</th>
+                                <th>Department</th>
+                                <th>Final Truncated Rating</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for approval in pending_approvals %}
+                            <tr>
+                                <td>
+                                    <input class="form-check-input approval-checkbox" type="checkbox" name="score_ids[]" value="{{ approval.score_id }}">
+                                </td>
+                                <td>{{ approval.faculty_name }}</td>
+                                <td>{{ approval.department }}</td>
+                                <td class="fw-bold text-success">
+                                    {{ "%.2f"|format(approval.final_score) }} ({{ approval.adjectival_rating }})
+                                </td>
+                                <td>
+                                    {% if approval.dean_approval_status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark">Awaiting Dean Signature</span>
+                                    {% elif approval.dean_approval_status == 'Approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ approval.dean_approval_status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="alert('Review IPCR feature coming soon')">
+                                        Review IPCR
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <input type="hidden" name="action" id="batchAction" value="">
+                </form>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">No pending approvals. All IPCRs have been processed.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateTotals() {
+    console.log('Quota values updated');
+}
+
+function validateQuotas() {
+    const inputs = document.querySelectorAll('.quota-input');
+    let hasValue = false;
+    
+    inputs.forEach(input => {
+        if (parseInt(input.value) > 0) {
+            hasValue = true;
+        }
+    });
+    
+    if (!hasValue) {
+        alert('Please enter at least one quota value before cascading.');
+        return false;
+    }
+    
+    return true;
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.approval-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+function approveSelected() {
+    const checked = document.querySelectorAll('.approval-checkbox:checked');
+    if (checked.length === 0) {
+        alert('Please select at least one IPCR to approve.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to approve ${checked.length} selected IPCR(s)? This will apply your digital signature.`)) {
+        document.getElementById('batchAction').value = 'approve';
+        document.getElementById('approvalForm').submit();
+    }
+}
+
+function revertSelected() {
+    const checked = document.querySelectorAll('.approval-checkbox:checked');
+    if (checked.length === 0) {
+        alert('Please select at least one IPCR to revert.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to revert ${checked.length} selected IPCR(s) back to the Middle Manager?`)) {
+        document.getElementById('batchAction').value = 'revert';
+        document.getElementById('approvalForm').submit();
+    }
+}
+
+function viewIPCR(scoreId) {
+    // This would redirect to a review page
+    window.location.href = `/dean/review_ipcr/${scoreId}`;
+}
+
+
+function generateSummary() {
+    // This would trigger PDF generation
+    alert('Generating Summary of Ratings for VPAA...');
+    // In production, this would call a backend endpoint
+}
+
+// Real-time quota validation could be added here
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dean Dashboard loaded successfully');
+});
+
+
+</script>
 {% endblock %}

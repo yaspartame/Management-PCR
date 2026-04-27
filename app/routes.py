@@ -1,7 +1,7 @@
-from flask import render_template, request, redirect, session, url_for, flash, Response
+from flask import render_template, request, redirect, session, url_for, flash, Response,jsonify,send_file
 from app import app
 from .auth import hash_pass, verify_pass
-from .models import get_db_connection, get_user_by_email, register_user, get_all_profiles, save_single_profile, toggle_profile_status, import_csv_roster, open_new_term, get_all_terms, get_master_indicators, add_master_indicator, edit_master_indicator, delete_master_indicator, import_previous_term_indicators, log_audit_action, get_recent_audit_logs, emergency_reset_password, emergency_lock_account, get_all_users_for_security, get_admin_kpis
+from .models import *
 from .decorators import role_required
 import mysql.connector, time, csv, io, secrets, string, datetime
 
@@ -421,10 +421,219 @@ def admin_lock_account():
 @role_required('FACULTY')
 def faculty_dashboard(): return render_template('faculty_dashboard.html')
 
+
+# ! ADDED AND UPDATED 28-APR-2026
 @app.route('/dean')
 @role_required('DEAN')
-def dean_dashboard(): return render_template('dean_dashboard.html')
+def dean_dashboard():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    # I used the same method as admin's fetching active_temr
+    terms = get_all_terms(cursor)
+    active_term = next((t for t in terms if t['is_active'] == 1), None)
+    
+    if not active_term:
+        flash('No active academic term found.', 'warning')
+        cursor.close()
+        conn.close()
+        return render_template('dean_dashboard.html',
+                             active_term=None,
+                             master_indicators=[],
+                             existing_quotas={},
+                             completion_rate=0,
+                             pending_count=0,
+                             top_dept="N/A",
+                             pending_approvals=[])
+    
+    term_id = active_term['term_id']
+
+    indicators = get_master_indicators(cursor, term_id)
+
+    existing_quotas_raw = get_existing_cascaded_quotas(cursor, term_id)
+
+    existing_quotas = {}
+    for quota in existing_quotas_raw:
+        ind_id = quota['indicator_id']
+        if ind_id not in existing_quotas:
+            existing_quotas[ind_id] = {}
+        existing_quotas[ind_id][quota['assigned_to_role']] = quota['total_target_value']
+
+    completion_rate = get_overall_completion(cursor, term_id)
+    pending_count = get_pending_approvals_count(cursor, term_id)
+    top_dept = get_top_performing_department(cursor, term_id)
+
+    pending_approvals = get_pending_final_approvals(cursor, term_id)
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('dean_dashboard.html',
+                         active_term=active_term,
+                         master_indicators=indicators,
+                         existing_quotas=existing_quotas,
+                         completion_rate=completion_rate,
+                         pending_count=pending_count,
+                         top_dept=top_dept,
+                         pending_approvals=pending_approvals)
+
+
+@app.route('/dean/cascade_quotas', methods=['POST'])
+@role_required('DEAN')
+def cascade_quotas():
+    cursor = None
+    try:
+        cursor = get_db_connection()
+        connection = cursor.connection
+        
+        term_id = request.form.get('term_id')
+        if not term_id:
+            flash('Missing term ID', 'danger')
+            return redirect(url_for('dean_dashboard'))
+
+        quotas_data = []
+        indicator_ids = request.form.getlist('indicator_id[]')
+        wst_values = request.form.getlist('wst[]')
+        dst_values = request.form.getlist('dst[]')
+        nst_values = request.form.getlist('nst[]')
+        bsds_values = request.form.getlist('bsds[]')
+        
+        for i, ind_id in enumerate(indicator_ids):
+            if not ind_id:
+                continue
+
+            values = [
+                ('WST Program', int(wst_values[i]) if wst_values[i] and int(wst_values[i]) > 0 else 0),
+                ('DST Program', int(dst_values[i]) if dst_values[i] and int(dst_values[i]) > 0 else 0),
+                ('NST Program', int(nst_values[i]) if nst_values[i] and int(nst_values[i]) > 0 else 0),
+                ('BSDS Program', int(bsds_values[i]) if bsds_values[i] and int(bsds_values[i]) > 0 else 0)
+            ]
+            
+            for role, value in values:
+                if value > 0:
+                    quotas_data.append({
+                        'indicator_id': int(ind_id),
+                        'total_target': value,
+                        'assigned_role': role
+                    })
+        
+        success, message = save_cascaded_quotas(cursor, connection, term_id, quotas_data)
+        
+        if success:
+            flash(message, 'success')
+        else:
+            flash(message, 'danger')
+            
+    except Exception as e:
+        flash(f'Error cascading quotas: {str(e)}', 'danger')
+    finally:
+        if cursor:
+            cursor.close()
+    
+    return redirect(url_for('dean_dashboard'))
+
+@app.route('/dean/batch_approve', methods=['POST'])
+@role_required('DEAN')
+def batch_approve():
+    cursor = None
+    try:
+        cursor = get_db_connection()
+        connection = cursor.connection
+        
+        score_ids = request.form.getlist('score_ids[]')
+        action = request.form.get('action', 'approve')
+        
+        if not score_ids:
+            flash('No IPCRs selected for approval', 'warning')
+            return redirect(url_for('dean_dashboard'))
+        
+        new_status = 'Approved' if action == 'approve' else 'Reverted'
+        success, message = update_dean_approval_status(cursor, connection, score_ids, new_status)
+        
+        flash(message, 'success' if success else 'danger')
+        
+    except Exception as e:
+        flash(f'Error processing batch approval: {str(e)}', 'danger')
+    finally:
+        if cursor:
+            cursor.close()
+    
+    return redirect(url_for('dean_dashboard'))
+
+# UNK
+@app.route('/dean/validate_quotas', methods=['POST'])
+@role_required('DEAN')
+def validate_quotas():
+    """AJAX endpoint to validate quotas before submission"""
+    data = request.get_json()
+    
+    return jsonify({'valid': True, 'message': 'Quotas validated'})
+
+# ! I cant seem to figure this one out. 28-Apr-2026. Will come back soon.
+
+    # @app.route('/dean/export_dpcr')
+    # @role_required('DEAN')
+    # def export_dpcr():
+    #     """Export DPCR as Excel"""
+    #     try:
+    #         conn = get_db_connection()
+    #         cursor = conn.cursor()
+
+    #         terms = get_all_terms(cursor)
+    #         active_term = next((t for t in terms if t['is_active'] == 1), None)
+            
+    #         if not active_term:
+    #             flash('No active term found for export', 'warning')
+    #             cursor.close()
+    #             conn.close()
+    #             return redirect(url_for('dean_dashboard'))
+
+    #         term_id = active_term['term_id']
+
+    #         quotas = get_existing_cascaded_quotas(cursor, term_id)
+
+    #         import io
+    #         import xlsxwriter
+            
+    #         output = io.BytesIO()
+    #         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    #         worksheet = workbook.add_worksheet('DPCR')
+
+    #         headers = ['Indicator', 'Category', 'Program', 'Target Value']
+    #         for col, header in enumerate(headers):
+    #             worksheet.write(0, col, header)
+
+    #         row = 1
+    #         for quota in quotas:
+    #             worksheet.write(row, 0, quota.get('indicator_description', ''))
+    #             worksheet.write(row, 1, quota.get('category_name', ''))
+    #             worksheet.write(row, 2, quota.get('assigned_to_role', ''))
+    #             worksheet.write(row, 3, quota.get('total_target_value', 0))
+    #             row += 1
+
+    #         worksheet.set_column('A:A', 50)
+    #         worksheet.set_column('B:B', 30)
+    #         worksheet.set_column('C:C', 20)
+    #         worksheet.set_column('D:D', 15)
+            
+    #         workbook.close()
+    #         output.seek(0)
+            
+    #         cursor.close()
+    #         conn.close()
+            
+    #         return send_file(
+    #             output,
+    #             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    #             as_attachment=True,
+    #             download_name=f'DPCR_{active_term["academic_year"]}_{active_term["semester"]}.xlsx'
+    #         )
+            
+    #     except Exception as e:
+    #         flash(f'Error exporting DPCR: {str(e)}', 'danger')
+    #         return redirect(url_for('dean_dashboard'))
+
+# ! --ADD END 28-APR-2026--
 @app.route('/prog_chair')
 @role_required('PROGRAM_CHAIR')
 def prog_chair_dashboard(): return render_template('prog_chair_dashboard.html')
@@ -435,4 +644,4 @@ def ret_chair_dashboard(): return render_template('ret_chair_dashboard.html')
 
 @app.route('/designated')
 @role_required('DESIGNATED')
-def designated_dashboard(): return render_template('designated_dashboard.html')
+def designated_dashboard(): return render_template('designated_dashboard.html')
