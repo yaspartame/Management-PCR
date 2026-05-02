@@ -7,7 +7,8 @@
         <p class="text-muted mb-0">BSIT Department | Rank: <span class="badge bg-secondary">Assistant Professor II</span> | Designation: <span class="badge" style="background-color: #6610f2;">OJT Coordinator</span></p>
     </div>
     <div class="col-md-4 text-md-end">
-        <button class="btn btn-primary fw-bold shadow-sm"><i class="bi bi-file-earmark-pdf"></i> Generate Official IPCR PDF</button>
+        <button class="btn btn-primary fw-bold shadow-sm" disabled><i class="bi bi-file-earmark-pdf"></i> Generate Official IPCR PDF</button>
+        <div class="form-text small mt-1">Available once semester is graded.</div>
     </div>
 </div>
 
@@ -118,34 +119,56 @@
         </div>
     </div>
 
-    <div class="col-md-12">
+    <div class="col-md-12 mb-4">
         <div class="card shadow-sm border-0" style="border-top: 4px solid #6610f2 !important;">
             <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-briefcase-fill" style="color: #6610f2;"></i> Phase 3: Designation & Administrative Targets</h5>
-                <span class="badge" style="background-color: #6610f2;">OJT Coordinator Duties</span>
+                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-briefcase-fill me-2" style="color: #6610f2;"></i>Phase 3: Administrative Designation Targets</h5>
+                <span class="badge" style="background-color: #6610f2;">OJT Coordinator</span>
             </div>
             <div class="card-body">
-                <p class="text-muted small">These targets are strictly tied to your administrative designation. Standard faculty do not see this section.</p>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle border">
-                        <thead class="table-light">
-                            <tr>
-                                <th width="40%">Administrative Target</th>
-                                <th class="text-center">Actual (Q) Achieved</th>
-                                <th>Evidence Status</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="small fw-bold" style="color: #6610f2;">Evaluate and approve student OJT deployment portfolios.</td>
-                                <td><input type="number" class="form-control form-control-sm text-center fw-bold shadow-sm" placeholder="e.g. 50"></td>
-                                <td><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Awaiting Upload</span></td>
-                                <td class="text-end"><button class="btn btn-sm btn-outline-primary"><i class="bi bi-upload"></i> Upload PDF</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="alert alert-info py-2 small border-0 shadow-sm mb-4">
+                    <i class="bi bi-info-circle-fill me-1"></i> Below is the complete list of active DPCR targets cascaded by the Dean for this semester. Please select the specific targets that apply to your administrative designation.
                 </div>
+                
+                <form action="#" method="POST">
+                    <div class="table-responsive mb-3">
+                        <table class="table table-hover align-middle border shadow-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%" class="text-center">Select</th>
+                                    <th width="65%">Official DPCR Target (From Dean)</th>
+                                    <th class="text-center">Your Target Commitment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center">
+                                        <input class="form-check-input fs-5" type="checkbox" checked>
+                                    </td>
+                                    <td class="small fw-bold" style="color: #6610f2;">Evaluate and approve student OJT deployment portfolios.</td>
+                                    <td><input type="number" class="form-control form-control-sm text-center shadow-sm" value="150" min="1"></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center">
+                                        <input class="form-check-input fs-5" type="checkbox">
+                                    </td>
+                                    <td class="small text-muted">Facilitate college-wide extension training programs for LGU.</td>
+                                    <td><input type="number" class="form-control form-control-sm text-center shadow-sm" placeholder="Qty" disabled></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center">
+                                        <input class="form-check-input fs-5" type="checkbox">
+                                    </td>
+                                    <td class="small text-muted">Number of faculty trained on the new digital IPCR system.</td>
+                                    <td><input type="number" class="form-control form-control-sm text-center shadow-sm" placeholder="Qty" disabled></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn fw-bold text-white shadow-sm" style="background-color: #6610f2;"><i class="bi bi-plus-circle me-1"></i> Add Selected DPCR Targets to My IPCR</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
