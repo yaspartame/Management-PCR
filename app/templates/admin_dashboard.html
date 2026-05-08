@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block flash_messages %}{% endblock %}
+
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
@@ -89,9 +91,18 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <input type="text" id="rosterSearch" class="form-control"
-                                placeholder="Search by ID, Name, Program, or Designation...">
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <input type="text" id="rosterSearch" class="form-control"
+                                    placeholder="Search by ID, Name, Program, or Designation...">
+                            </div>
+                            <div class="col-md-4">
+                                <select id="rosterStatusFilter" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive / Others</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle" id="rosterTable">
@@ -383,9 +394,19 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <input type="text" id="securitySearch" class="form-control"
-                                placeholder="Search by name, role, or status...">
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <input type="text" id="securitySearch" class="form-control"
+                                    placeholder="Search by name, role, or status...">
+                            </div>
+                            <div class="col-md-4">
+                                <select id="securityStatusFilter" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="locked">Locked / Inactive</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle" id="securityTable">
@@ -643,6 +664,8 @@
                                 <option value="Program Chair">Program Chair</option>
                                 <option value="RET Chair">RET Chair</option>
                                 <option value="Dean">Dean</option>
+                                <option value="Designated Faculty">Designated Faculty</option>
+                                <option value="Regular Faculty">Regular Faculty</option>
                             </select>
                         </div>
                     </div>
@@ -686,25 +709,54 @@
 </div>
 
 <script>
-    // Live Search Script - Roster
-    document.getElementById('rosterSearch').addEventListener('keyup', function () {
-        let filter = this.value.toLowerCase();
+    // Live Search and Filter Script - Roster
+    function filterRoster() {
+        let textFilter = document.getElementById('rosterSearch').value.toLowerCase();
+        let statusFilter = document.getElementById('rosterStatusFilter').value;
         let rows = document.querySelectorAll('#rosterTable tbody tr');
+        
         rows.forEach(row => {
+            if (row.cells.length === 1) return; // Skip empty message row
+            
             let text = row.innerText.toLowerCase();
-            row.style.display = text.includes(filter) ? '' : 'none';
+            let statusCell = row.querySelector('td:nth-child(7)');
+            let status = statusCell ? statusCell.innerText.toLowerCase().trim() : '';
+            
+            let matchesText = text.includes(textFilter);
+            let matchesStatus = statusFilter === "" || 
+                                (statusFilter === "active" && status === "active") || 
+                                (statusFilter === "inactive" && status !== "active");
+            
+            row.style.display = (matchesText && matchesStatus) ? '' : 'none';
         });
-    });
+    }
 
-    // Live Search Script - Security Users
-    document.getElementById('securitySearch').addEventListener('keyup', function () {
-        let filter = this.value.toLowerCase();
+    document.getElementById('rosterSearch').addEventListener('keyup', filterRoster);
+    document.getElementById('rosterStatusFilter').addEventListener('change', filterRoster);
+
+    // Live Search and Filter Script - Security Users
+    function filterSecurity() {
+        let textFilter = document.getElementById('securitySearch').value.toLowerCase();
+        let statusFilter = document.getElementById('securityStatusFilter').value;
         let rows = document.querySelectorAll('#securityTable tbody tr');
+        
         rows.forEach(row => {
+            if (row.cells.length === 1) return; // Skip empty message row
+            
             let text = row.innerText.toLowerCase();
-            row.style.display = text.includes(filter) ? '' : 'none';
+            let statusCell = row.querySelector('td:nth-child(4)');
+            let status = statusCell ? statusCell.innerText.toLowerCase().trim() : '';
+            
+            let matchesText = text.includes(textFilter);
+            let matchesStatus = statusFilter === "" || 
+                                (statusFilter === "locked" ? status !== "active" && status !== "pending" : status === statusFilter);
+            
+            row.style.display = (matchesText && matchesStatus) ? '' : 'none';
         });
-    });
+    }
+
+    document.getElementById('securitySearch').addEventListener('keyup', filterSecurity);
+    document.getElementById('securityStatusFilter').addEventListener('change', filterSecurity);
 
     // Populate Indicator Edit Modal
     function fillEditModal(btn) {
