@@ -4,8 +4,13 @@
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
         <h2 class="fw-bold" style="color: #0B3C86;">Program Chair Dashboard</h2>
-        <p class="text-muted mb-0">Department of Information Technology (BSIT) | <span class="badge bg-secondary">Middle
-                Manager</span></p>
+        <p class="text-muted mb-0">
+            Department of Information Technology (BSIT) | 
+            <span class="badge bg-secondary">Middle Manager</span>
+            {% if specialization %}
+            <span class="badge bg-primary ms-1">{{ specialization }}</span>
+            {% endif %}
+        </p>
     </div>
 </div>
 
@@ -44,8 +49,10 @@
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold text-dark mb-0">Phase 1: Standard Target Allocation</h5>
-                <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i> Distribute the Dean's
-                    Quota</span>
+                <div>
+                    <span class="badge bg-primary me-2"><i class="bi bi-funnel"></i> A. Instructions & Support Functions</span>
+                    <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i> Distribute the Dean's Quota</span>
+                </div>
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">Assign the baseline operational targets to all faculty members under
@@ -62,17 +69,31 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% for ind in indicators %}
                             <tr>
-                                <td class="fw-bold">Number of course syllabi prepared/updated.</td>
-                                <td class="text-center fw-bold text-primary">20</td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm shadow-sm text-center"
-                                        value="2" min="1">
+                                <td class="fw-bold">
+                                    <span class="badge bg-secondary mb-1">{{ ind.category_name }}</span><br>
+                                    {{ ind.indicator_description }}
                                 </td>
-                                <td class="text-center text-success fw-bold">20 / 20</td>
-                                <td><button class="btn btn-sm btn-outline-primary"><i class="bi bi-save"></i>
-                                        Save</button></td>
+                                <td class="text-center fw-bold text-primary">{{ ind.dept_quota }}</td>
+                                <td>
+                                    <input type="number" name="assigned_quantity" form="form_{{ ind.indicator_id }}" class="form-control form-control-sm shadow-sm text-center"
+                                        value="{{ ind.assigned_per_faculty }}" min="0">
+                                </td>
+                                <td class="text-center text-success fw-bold">{{ ind.total_distributed }} / {{ ind.dept_quota }}</td>
+                                <td>
+                                    <form id="form_{{ ind.indicator_id }}" action="{{ url_for('assign_chair_target') }}" method="POST">
+                                        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+                                        <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-save"></i> Save</button>
+                                    </form>
+                                </td>
                             </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No targets assigned to your specialization for this term.</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>

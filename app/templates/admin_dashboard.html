@@ -19,7 +19,8 @@
             <div class="card-body">
                 <h6 class="text-muted fw-bold mb-1">Roster Adoption Rate</h6>
                 <h3 class="text-dark mb-0">{{ kpis.adoption_rate }}%
-                    <span class="fs-6 text-muted ps-1">{{ kpis.claimed_accounts }} / {{ kpis.total_roster }} Accounts Claimed</span>
+                    <span class="fs-6 text-muted ps-1">{{ kpis.claimed_accounts }} / {{ kpis.total_roster }} Accounts
+                        Claimed</span>
                 </h3>
             </div>
         </div>
@@ -38,100 +39,120 @@
     <div class="col-md-12">
         <!-- Flash messages for CSV imports and saving -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-              </div>
-            {% endfor %}
-          {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
         <!-- Tabs Header -->
         <ul class="nav nav-pills mb-4" id="admin-pills-tab" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pills-roster-tab" data-bs-toggle="pill" data-bs-target="#nav-roster" type="button" role="tab" aria-selected="true">HR Roster</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pills-term-tab" data-bs-toggle="pill" data-bs-target="#nav-term" type="button" role="tab" aria-selected="false">Term Configuration</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pills-indicators-tab" data-bs-toggle="pill" data-bs-target="#nav-indicators" type="button" role="tab" aria-selected="false">Master Indicators</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pills-security-tab" data-bs-toggle="pill" data-bs-target="#nav-security" type="button" role="tab" aria-selected="false"><i class="bi bi-shield-lock-fill me-1"></i>System Security</button>
-          </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-roster-tab" data-bs-toggle="pill" data-bs-target="#nav-roster"
+                    type="button" role="tab" aria-selected="true">HR Roster</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-term-tab" data-bs-toggle="pill" data-bs-target="#nav-term"
+                    type="button" role="tab" aria-selected="false">Term Configuration</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-indicators-tab" data-bs-toggle="pill"
+                    data-bs-target="#nav-indicators" type="button" role="tab" aria-selected="false">Master
+                    Indicators</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-security-tab" data-bs-toggle="pill" data-bs-target="#nav-security"
+                    type="button" role="tab" aria-selected="false"><i class="bi bi-shield-lock-fill me-1"></i>System
+                    Security</button>
+            </li>
         </ul>
 
         <div class="tab-content" id="pills-tabContent">
             <!-- HR ROSTER TAB -->
             <div class="tab-pane fade show active" id="nav-roster" role="tabpanel">
                 <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0">HR Roster Management</h5>
-                <div>
-                    <button class="btn btn-outline-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#csvUploadModal">
-                        <i class="bi bi-upload"></i> Upload CSV Roster
-                    </button>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#facultyModal" onclick="resetForm()">
-                        <i class="bi bi-person-plus"></i> Add New Faculty
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <input type="text" id="rosterSearch" class="form-control" placeholder="Search by ID, Name, Program, or Designation...">
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle" id="rosterTable">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Employee ID</th>
-                                <th>Full Name</th>
-                                <th>Program</th>
-                                <th>Rank</th>
-                                <th>Designation</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for p in profiles %}
-                            <tr>
-                                <td>{{ p.employee_id_number }}</td>
-                                <td>{{ p.last_name }}, {{ p.first_name }}</td>
-                                <td>{{ p.college }} / {{ p.assigned_program }}</td>
-                                <td>{{ p.academic_rank }}</td>
-                                <td>{{ p.designation or 'None' }}</td>
-                                <td>
-                                    {% if p.leave_status == 'Active' %}
-                                        <span class="badge bg-success">Active</span>
+                    <div
+                        class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-dark mb-0">HR Roster Management</h5>
+                        <div>
+                            <button class="btn btn-outline-success btn-sm me-2" data-bs-toggle="modal"
+                                data-bs-target="#csvUploadModal">
+                                <i class="bi bi-upload"></i> Upload CSV Roster
+                            </button>
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#facultyModal"
+                                onclick="resetForm()">
+                                <i class="bi bi-person-plus"></i> Add New Faculty
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input type="text" id="rosterSearch" class="form-control"
+                                placeholder="Search by ID, Name, Program, or Designation...">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="rosterTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Full Name</th>
+                                        <th>Program</th>
+                                        <th>Specialization</th>
+                                        <th>Rank</th>
+                                        <th>Designation</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in profiles %}
+                                    <tr>
+                                        <td>{{ p.employee_id_number }}</td>
+                                        <td>{{ p.last_name }}, {{ p.first_name }}</td>
+                                        <td>{{ p.college }} / {{ p.assigned_program }}</td>
+                                        <td>{{ p.specialization or 'None' }}</td>
+                                        <td>{{ p.academic_rank }}</td>
+                                        <td>{{ p.designation or 'None' }}</td>
+                                        <td>
+                                            {% if p.leave_status == 'Active' %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">{{ p.leave_status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-primary btn-sm me-1"
+                                                onclick='editFaculty({{ p | tojson | safe }})'>Edit</button>
+                                            <form method="POST" action="{{ url_for('toggle_status') }}"
+                                                class="d-inline">
+                                                <input type="hidden" name="employee_id_number"
+                                                    value="{{ p.employee_id_number }}">
+                                                {% if p.leave_status == 'Active' %}
+                                                <button type="submit"
+                                                    class="btn btn-outline-danger btn-sm">Deactivate</button>
+                                                {% else %}
+                                                <button type="submit"
+                                                    class="btn btn-outline-success btn-sm">Activate</button>
+                                                {% endif %}
+                                            </form>
+                                        </td>
+                                    </tr>
                                     {% else %}
-                                        <span class="badge bg-secondary">{{ p.leave_status }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <button class="btn btn-outline-primary btn-sm me-1" onclick='editFaculty({{ p | tojson | safe }})'>Edit</button>
-                                    <form method="POST" action="{{ url_for('toggle_status') }}" class="d-inline">
-                                        <input type="hidden" name="employee_id_number" value="{{ p.employee_id_number }}">
-                                        {% if p.leave_status == 'Active' %}
-                                            <button type="submit" class="btn btn-outline-danger btn-sm">Deactivate</button>
-                                        {% else %}
-                                            <button type="submit" class="btn btn-outline-success btn-sm">Activate</button>
-                                        {% endif %}
-                                    </form>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="7" class="text-center text-muted py-4">No HR Roster data available. Update via CSV to populate.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">No HR Roster data available.
+                                            Update via CSV to populate.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-            </div>
-            
+
             <!-- TERM CONFIGURATION TAB -->
             <div class="tab-pane fade" id="nav-term" role="tabpanel">
                 <div class="row">
@@ -144,7 +165,8 @@
                                 <form action="{{ url_for('admin_open_term') }}" method="POST">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Academic Year</label>
-                                        <input type="text" class="form-control" name="academic_year" placeholder="e.g. 2024-2025" required>
+                                        <input type="text" class="form-control" name="academic_year"
+                                            placeholder="e.g. 2024-2025" required>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Semester</label>
@@ -158,7 +180,8 @@
                                         <label class="form-label small fw-bold">Submission Deadline</label>
                                         <input type="date" class="form-control" name="deadline_date" required>
                                     </div>
-                                    <button type="submit" class="btn btn-primary w-100 fw-bold">Open Term & Deactivate Others</button>
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold">Open Term & Deactivate
+                                        Others</button>
                                 </form>
                             </div>
                         </div>
@@ -187,14 +210,17 @@
                                                 <td>{{ term.deadline_date }}</td>
                                                 <td>
                                                     {% if term.is_active == 1 %}
-                                                        <span class="badge bg-success">Active</span>
+                                                    <span class="badge bg-success">Active</span>
                                                     {% else %}
-                                                        <span class="badge bg-secondary">Locked</span>
+                                                    <span class="badge bg-secondary">Locked</span>
                                                     {% endif %}
                                                 </td>
                                             </tr>
                                             {% else %}
-                                            <tr><td colspan="4" class="text-center text-muted py-4">No academic terms found.</td></tr>
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted py-4">No academic terms
+                                                    found.</td>
+                                            </tr>
                                             {% endfor %}
                                         </tbody>
                                     </table>
@@ -218,7 +244,8 @@
                                 {% if active_term %}
                                 <div class="alert alert-primary border-0 small mb-3">
                                     <i class="bi bi-calendar-check-fill me-1"></i>
-                                    Active Term: <strong>{{ active_term.academic_year }} &mdash; {{ active_term.semester }}</strong>
+                                    Active Term: <strong>{{ active_term.academic_year }} &mdash; {{ active_term.semester
+                                        }}</strong>
                                 </div>
                                 <form action="{{ url_for('admin_add_indicator') }}" method="POST">
                                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
@@ -230,7 +257,8 @@
                                             </optgroup>
                                             <optgroup label="Core Functions (40%)">
                                                 <option value="A. Research">A. Research</option>
-                                                <option value="B. Extension Services / Training / Advisory">B. Extension Services / Training / Advisory</option>
+                                                <option value="B. Extension Services / Training / Advisory">B. Extension
+                                                    Services / Training / Advisory</option>
                                             </optgroup>
                                             <optgroup label="Support Functions (10%)">
                                                 <option value="Support Functions">Support Functions</option>
@@ -239,7 +267,9 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Indicator Description</label>
-                                        <textarea class="form-control" name="description" rows="4" placeholder="Enter performance indicator description..." required></textarea>
+                                        <textarea class="form-control" name="description" rows="4"
+                                            placeholder="Enter performance indicator description..."
+                                            required></textarea>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Efficiency Type</label>
@@ -256,7 +286,8 @@
                                 {% else %}
                                 <div class="alert alert-warning border-0">
                                     <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                    No active term found. Please open a term under <strong>Term Configuration</strong> before adding indicators.
+                                    No active term found. Please open a term under <strong>Term Configuration</strong>
+                                    before adding indicators.
                                 </div>
                                 {% endif %}
                             </div>
@@ -266,7 +297,8 @@
                     <!-- RIGHT: Data Table -->
                     <div class="col-md-8">
                         <div class="card shadow-sm border-0 mb-4">
-                            <div class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+                            <div
+                                class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
                                 <h5 class="fw-bold text-dark mb-0">Indicators for Active Term</h5>
                                 {% if active_term and not indicators %}
                                 <form action="{{ url_for('admin_import_indicators') }}" method="POST">
@@ -293,30 +325,39 @@
                                             {% for ind in indicators %}
                                             <tr>
                                                 <td class="text-muted small">{{ ind.indicator_id }}</td>
-                                                <td><span class="badge bg-light text-dark border">{{ ind.category_name }}</span></td>
+                                                <td><span class="badge bg-light text-dark border">{{ ind.category_name
+                                                        }}</span></td>
                                                 <td class="small">{{ ind.indicator_description }}</td>
-                                                <td><span class="badge bg-info text-dark">{{ ind.efficiency_type }}</span></td>
+                                                <td><span class="badge bg-info text-dark">{{ ind.efficiency_type
+                                                        }}</span></td>
                                                 <td>
                                                     {% if ind.is_cascaded %}
-                                                    <span class="badge bg-secondary"><i class="bi bi-lock-fill me-1"></i>Locked (Cascaded)</span>
+                                                    <span class="badge bg-secondary"><i
+                                                            class="bi bi-lock-fill me-1"></i>Locked (Cascaded)</span>
                                                     {% else %}
                                                     <button class="btn btn-outline-primary btn-sm me-1"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#editIndicatorModal"
+                                                        data-bs-toggle="modal" data-bs-target="#editIndicatorModal"
                                                         data-ind-id="{{ ind.indicator_id }}"
                                                         data-ind-category="{{ ind.category_name | e }}"
                                                         data-ind-desc="{{ ind.indicator_description | e }}"
                                                         data-ind-type="{{ ind.efficiency_type | e }}"
                                                         onclick="fillEditModal(this)">Edit</button>
-                                                    <form method="POST" action="{{ url_for('admin_delete_indicator') }}" class="d-inline" onsubmit="return confirm('Delete this indicator? This cannot be undone.')">
-                                                        <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
-                                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                                    <form method="POST" action="{{ url_for('admin_delete_indicator') }}"
+                                                        class="d-inline"
+                                                        onsubmit="return confirm('Delete this indicator? This cannot be undone.')">
+                                                        <input type="hidden" name="indicator_id"
+                                                            value="{{ ind.indicator_id }}">
+                                                        <button type="submit"
+                                                            class="btn btn-outline-danger btn-sm">Delete</button>
                                                     </form>
                                                     {% endif %}
                                                 </td>
                                             </tr>
                                             {% else %}
-                                            <tr><td colspan="5" class="text-center text-muted py-4">No indicators for the active term yet.</td></tr>
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted py-4">No indicators for
+                                                    the active term yet.</td>
+                                            </tr>
                                             {% endfor %}
                                         </tbody>
                                     </table>
@@ -332,15 +373,19 @@
 
                 <!-- Section 1: Emergency Access Controls -->
                 <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+                    <div
+                        class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
                         <div>
-                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-person-fill-lock me-2 text-danger"></i>Emergency Access Controls</h5>
-                            <p class="text-muted small mb-0">Use with caution. All actions below are permanently recorded in the audit log.</p>
+                            <h5 class="fw-bold text-dark mb-0"><i
+                                    class="bi bi-person-fill-lock me-2 text-danger"></i>Emergency Access Controls</h5>
+                            <p class="text-muted small mb-0">Use with caution. All actions below are permanently
+                                recorded in the audit log.</p>
                         </div>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <input type="text" id="securitySearch" class="form-control" placeholder="Search by name, role, or status...">
+                            <input type="text" id="securitySearch" class="form-control"
+                                placeholder="Search by name, role, or status...">
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle" id="securityTable">
@@ -358,35 +403,41 @@
                                     <tr>
                                         <td class="fw-semibold">{{ u[2] }}, {{ u[1] }}</td>
                                         <td class="text-muted small">{{ u[0] }}</td>
-                                        <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ u[3] }}</span></td>
+                                        <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ u[3] }}</span>
+                                        </td>
                                         <td>
                                             {% if u[4] == 'Active' or u[4] == 'Pending' %}
-                                                <span class="badge bg-success">{{ u[4] }}</span>
+                                            <span class="badge bg-success">{{ u[4] }}</span>
                                             {% elif u[4] == 'Locked' %}
-                                                <span class="badge bg-danger">Locked</span>
+                                            <span class="badge bg-danger">Locked</span>
                                             {% else %}
-                                                <span class="badge bg-secondary">{{ u[4] }}</span>
+                                            <span class="badge bg-secondary">{{ u[4] }}</span>
                                             {% endif %}
                                         </td>
                                         <td class="d-flex gap-1">
-                                            <form method="POST" action="{{ url_for('admin_reset_password') }}" class="d-inline"
-                                                  onsubmit="return confirm('Issue a temporary password for this account? The admin must relay the new password to the user directly.')">
+                                            <form method="POST" action="{{ url_for('admin_reset_password') }}"
+                                                class="d-inline"
+                                                onsubmit="return confirm('Issue a temporary password for this account? The admin must relay the new password to the user directly.')">
                                                 <input type="hidden" name="emp_id" value="{{ u[0] }}">
                                                 <button type="submit" class="btn btn-warning btn-sm">
                                                     <i class="bi bi-key-fill me-1"></i>Issue Temp Password
                                                 </button>
                                             </form>
-                                            <form method="POST" action="{{ url_for('admin_lock_account') }}" class="d-inline"
-                                                  onsubmit="return confirm('Force lock this account? The user will be unable to log in.')">
+                                            <form method="POST" action="{{ url_for('admin_lock_account') }}"
+                                                class="d-inline"
+                                                onsubmit="return confirm('Force lock this account? The user will be unable to log in.')">
                                                 <input type="hidden" name="emp_id" value="{{ u[0] }}">
-                                                <button type="submit" class="btn btn-danger btn-sm" {% if u[4] == 'Locked' %}disabled{% endif %}>
+                                                <button type="submit" class="btn btn-danger btn-sm" {% if u[4]=='Locked'
+                                                    %}disabled{% endif %}>
                                                     <i class="bi bi-lock-fill me-1"></i>Lock Account
                                                 </button>
                                             </form>
                                         </td>
                                     </tr>
                                     {% else %}
-                                    <tr><td colspan="5" class="text-center text-muted py-4">No system users found.</td></tr>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">No system users found.</td>
+                                    </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -397,7 +448,8 @@
                 <!-- Section 2: Activity Audit Log -->
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white border-0 pt-4 pb-2">
-                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-journal-text me-2 text-secondary"></i>Activity Audit Log</h5>
+                        <h5 class="fw-bold text-dark mb-0"><i
+                                class="bi bi-journal-text me-2 text-secondary"></i>Activity Audit Log</h5>
                         <p class="text-muted small mb-0">Last 50 system actions, most recent first. Read-only.</p>
                     </div>
                     <div class="card-body">
@@ -415,24 +467,28 @@
                                 <tbody>
                                     {% for log in audit_logs %}
                                     <tr>
-                                        <td class="text-nowrap small text-muted">{{ log[0].strftime('%b %d, %Y %H:%M') if log[0] else '—' }}</td>
+                                        <td class="text-nowrap small text-muted">{{ log[0].strftime('%b %d, %Y %H:%M')
+                                            if log[0] else '—' }}</td>
                                         <td class="small fw-semibold">{{ log[1] or '—' }}</td>
                                         <td>
                                             {% if 'Lock' in log[2] %}
-                                                <span class="badge bg-danger bg-opacity-75">{{ log[2] }}</span>
+                                            <span class="badge bg-danger bg-opacity-75">{{ log[2] }}</span>
                                             {% elif 'Reset' in log[2] %}
-                                                <span class="badge bg-warning text-dark">{{ log[2] }}</span>
+                                            <span class="badge bg-warning text-dark">{{ log[2] }}</span>
                                             {% elif 'Import' in log[2] %}
-                                                <span class="badge bg-info text-dark">{{ log[2] }}</span>
+                                            <span class="badge bg-info text-dark">{{ log[2] }}</span>
                                             {% else %}
-                                                <span class="badge bg-secondary">{{ log[2] }}</span>
+                                            <span class="badge bg-secondary">{{ log[2] }}</span>
                                             {% endif %}
                                         </td>
                                         <td class="small">{{ log[3] }}</td>
                                         <td class="small text-muted">{{ log[4] or '—' }}</td>
                                     </tr>
                                     {% else %}
-                                    <tr><td colspan="5" class="text-center text-muted py-4">No audit log entries yet.</td></tr>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">No audit log entries yet.
+                                        </td>
+                                    </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -448,174 +504,190 @@
 
 <!-- Edit Indicator Modal -->
 <div class="modal fade" id="editIndicatorModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content border-0 shadow">
-      <form action="{{ url_for('admin_edit_indicator') }}" method="POST">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title fw-bold">Edit Master Indicator</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" name="indicator_id" id="editIndicatorId">
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Category (OPCR Group)</label>
-                <select class="form-select" name="category_name" id="editIndicatorCategory" required>
-                    <optgroup label="Strategic Priorities (50%)">
-                        <option value="A. Instructions">A. Instructions</option>
-                    </optgroup>
-                    <optgroup label="Core Functions (40%)">
-                        <option value="A. Research">A. Research</option>
-                        <option value="B. Extension Services / Training / Advisory">B. Extension Services / Training / Advisory</option>
-                    </optgroup>
-                    <optgroup label="Support Functions (10%)">
-                        <option value="Support Functions">Support Functions</option>
-                    </optgroup>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Indicator Description</label>
-                <textarea class="form-control" name="description" id="editIndicatorDesc" rows="4" required></textarea>
-            </div>
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Efficiency Type</label>
-                <select class="form-select" name="efficiency_type" id="editIndicatorType" required>
-                    <option value="Quantity-Based">Quantity-Based</option>
-                    <option value="Adjectival">Adjectival</option>
-                    <option value="Client Satisfaction">Client Satisfaction</option>
-                </select>
-            </div>
-          </div>
-          <div class="modal-footer border-0">
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-          </div>
-      </form>
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('admin_edit_indicator') }}" method="POST">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold">Edit Master Indicator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="indicator_id" id="editIndicatorId">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Category (OPCR Group)</label>
+                        <select class="form-select" name="category_name" id="editIndicatorCategory" required>
+                            <optgroup label="Strategic Priorities (50%)">
+                                <option value="A. Instructions">A. Instructions</option>
+                            </optgroup>
+                            <optgroup label="Core Functions (40%)">
+                                <option value="A. Research">A. Research</option>
+                                <option value="B. Extension Services / Training / Advisory">B. Extension Services /
+                                    Training / Advisory</option>
+                            </optgroup>
+                            <optgroup label="Support Functions (10%)">
+                                <option value="Support Functions">Support Functions</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Indicator Description</label>
+                        <textarea class="form-control" name="description" id="editIndicatorDesc" rows="4"
+                            required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Efficiency Type</label>
+                        <select class="form-select" name="efficiency_type" id="editIndicatorType" required>
+                            <option value="Quantity-Based">Quantity-Based</option>
+                            <option value="Adjectival">Adjectival</option>
+                            <option value="Client Satisfaction">Client Satisfaction</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- Single Add/Edit Modal -->
 <div class="modal fade" id="facultyModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content border-0 shadow">
-      <form action="{{ url_for('save_faculty') }}" method="POST">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title fw-bold" id="modalTitle">Add New Faculty</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Employee ID Number</label>
-                <input type="text" class="form-control" name="employee_id_number" id="emp_id_input" required>
-            </div>
-            <div class="row mb-3">
-                <div class="col-6">
-                    <label class="form-label small fw-bold">First Name</label>
-                    <input type="text" class="form-control" name="first_name" id="first_name_input" required>
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('save_faculty') }}" method="POST">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold" id="modalTitle">Add New Faculty</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="col-6">
-                    <label class="form-label small fw-bold">Last Name</label>
-                    <input type="text" class="form-control" name="last_name" id="last_name_input" required>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Employee ID Number</label>
+                        <input type="text" class="form-control" name="employee_id_number" id="emp_id_input" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">First Name</label>
+                            <input type="text" class="form-control" name="first_name" id="first_name_input" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Last Name</label>
+                            <input type="text" class="form-control" name="last_name" id="last_name_input" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">College</label>
+                            <select class="form-select" name="college" id="college_input">
+                                <option value="CICT">CICT</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Assigned Program</label>
+                            <select class="form-select" name="assigned_program" id="program_input">
+                                <option value="BSIT">BSIT</option>
+                                <option value="BSCS">BSCS</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Specialization</label>
+                            <select class="form-select" name="specialization" id="specialization_input">
+                                <option value="">None</option>
+                                <option value="WST Program">Web Systems and Technologies (WST)</option>
+                                <option value="DST Program">Database Systems Technology (DST)</option>
+                                <option value="NST Program">Network Systems Technology (NST)</option>
+                                <option value="BSDS Program">Bachelor of Science in Data Science (BSDS)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Academic Rank</label>
+                            <select class="form-select" name="academic_rank" id="rank_input">
+                                <option value="Instructor I">Instructor I</option>
+                                <option value="Instructor II">Instructor II</option>
+                                <option value="Instructor III">Instructor III</option>
+                                <option value="Asst. Professor I">Asst. Professor I</option>
+                                <option value="Asso. Professor I">Asso. Professor I</option>
+                                <option value="Professor I">Professor I</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Employment Status</label>
+                            <select class="form-select" name="employment_status" id="status_input">
+                                <option value="Regular">Regular</option>
+                                <option value="Part-Time">Part-Time</option>
+                                <option value="Temporary">Temporary</option>
+                                <option value="Contractual">Contractual</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Leave Status</label>
+                            <select class="form-select" name="leave_status" id="leave_status_input">
+                                <option value="Active">Active</option>
+                                <option value="On-Leave">On-Leave</option>
+                                <option value="Sabbatical">Sabbatical</option>
+                                <option value="Resigned">Resigned</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Designation</label>
+                            <select class="form-select" name="designation" id="designation_input">
+                                <option value="">None</option>
+                                <option value="Program Chair">Program Chair</option>
+                                <option value="RET Chair">RET Chair</option>
+                                <option value="Dean">Dean</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-6">
-                    <label class="form-label small fw-bold">College</label>
-                    <select class="form-select" name="college" id="college_input">
-                        <option value="CICT">CICT</option>
-                    </select>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Profile</button>
                 </div>
-                <div class="col-6">
-                    <label class="form-label small fw-bold">Assigned Program</label>
-                    <select class="form-select" name="assigned_program" id="program_input">
-                        <option value="BSIT">BSIT</option>
-                        <option value="BSCS">BSCS</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-6">
-                    <label class="form-label small fw-bold">Academic Rank</label>
-                    <select class="form-select" name="academic_rank" id="rank_input">
-                        <option value="Instructor I">Instructor I</option>
-                        <option value="Instructor II">Instructor II</option>
-                        <option value="Instructor III">Instructor III</option>
-                        <option value="Asst. Professor I">Asst. Professor I</option>
-                        <option value="Asso. Professor I">Asso. Professor I</option>
-                        <option value="Professor I">Professor I</option>
-                    </select>
-                </div>
-                <div class="col-6">
-                    <label class="form-label small fw-bold">Employment Status</label>
-                    <select class="form-select" name="employment_status" id="status_input">
-                        <option value="Regular">Regular</option>
-                        <option value="Part-Time">Part-Time</option>
-                        <option value="Temporary">Temporary</option>
-                        <option value="Contractual">Contractual</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-6">
-                    <label class="form-label small fw-bold">Leave Status</label>
-                    <select class="form-select" name="leave_status" id="leave_status_input">
-                        <option value="Active">Active</option>
-                        <option value="On-Leave">On-Leave</option>
-                        <option value="Sabbatical">Sabbatical</option>
-                        <option value="Resigned">Resigned</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
-                <div class="col-6">
-                    <label class="form-label small fw-bold">Designation</label>
-                    <select class="form-select" name="designation" id="designation_input">
-                        <option value="">None</option>
-                        <option value="Program Chair">Program Chair</option>
-                        <option value="RET Chair">RET Chair</option>
-                        <option value="Dean">Dean</option>
-                    </select>
-                </div>
-            </div>
-          </div>
-          <div class="modal-footer border-0">
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Profile</button>
-          </div>
-      </form>
+            </form>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- CSV Upload Modal -->
 <div class="modal fade" id="csvUploadModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content border-0 shadow">
-      <form action="{{ url_for('import_csv') }}" method="POST" enctype="multipart/form-data">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title fw-bold">Upload HR Roster (CSV)</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="alert alert-info small border-0 shadow-sm">
-                <strong>Format Required:</strong> The CSV must contain headers matching: <em>employee_id_number, first_name, last_name, college, assigned_program, academic_rank, employment_status, leave_status, designation</em>.
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-bold small">Select File</label>
-                <input class="form-control form-control-lg" type="file" name="csv_file" accept=".csv" required>
-            </div>
-          </div>
-          <div class="modal-footer border-0">
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">Start Import</button>
-          </div>
-      </form>
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('import_csv') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold">Upload HR Roster (CSV)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info small border-0 shadow-sm">
+                        <strong>Format Required:</strong> The CSV must contain headers matching: <em>employee_id_number,
+                            first_name, last_name, college, assigned_program, specialization, academic_rank, employment_status,
+                            leave_status, designation</em>.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Select File</label>
+                        <input class="form-control form-control-lg" type="file" name="csv_file" accept=".csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Start Import</button>
+                </div>
+            </form>
+        </div>
     </div>
-  </div>
 </div>
 
 <script>
     // Live Search Script - Roster
-    document.getElementById('rosterSearch').addEventListener('keyup', function() {
+    document.getElementById('rosterSearch').addEventListener('keyup', function () {
         let filter = this.value.toLowerCase();
         let rows = document.querySelectorAll('#rosterTable tbody tr');
         rows.forEach(row => {
@@ -625,7 +697,7 @@
     });
 
     // Live Search Script - Security Users
-    document.getElementById('securitySearch').addEventListener('keyup', function() {
+    document.getElementById('securitySearch').addEventListener('keyup', function () {
         let filter = this.value.toLowerCase();
         let rows = document.querySelectorAll('#securityTable tbody tr');
         rows.forEach(row => {
@@ -651,11 +723,12 @@
         document.getElementById('last_name_input').value = data.last_name;
         document.getElementById('college_input').value = data.college || 'CICT';
         document.getElementById('program_input').value = data.assigned_program || 'BSIT';
+        document.getElementById('specialization_input').value = data.specialization || '';
         document.getElementById('rank_input').value = data.academic_rank || 'Instructor I';
         document.getElementById('status_input').value = data.employment_status || 'Regular';
         document.getElementById('leave_status_input').value = data.leave_status || 'Active';
         document.getElementById('designation_input').value = data.designation || '';
-        
+
         var modal = new bootstrap.Modal(document.getElementById('facultyModal'));
         modal.show();
     }
@@ -668,6 +741,7 @@
         document.getElementById('last_name_input').value = '';
         document.getElementById('college_input').value = 'CICT';
         document.getElementById('program_input').value = 'BSIT';
+        document.getElementById('specialization_input').value = '';
         document.getElementById('rank_input').value = 'Instructor I';
         document.getElementById('status_input').value = 'Regular';
         document.getElementById('leave_status_input').value = 'Active';

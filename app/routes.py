@@ -101,6 +101,10 @@ def authenticate():
     cursor.execute("SELECT account_status FROM tbl_system_access WHERE emp_id = %s", (emp_id,))
     acc_status_row = cursor.fetchone()
     
+    cursor.execute("SELECT specialization FROM tbl_employee_profiles WHERE emp_id = %s", (emp_id,))
+    spec_rows = cursor.fetchall()
+    specialization = spec_rows[0][0] if spec_rows else ''
+    
     cursor.close()
     conn.close()
     
@@ -122,6 +126,7 @@ def authenticate():
         
     session['user_id'] = emp_id
     session['role'] = role
+    session['specialization'] = specialization
     
     if role == "ADMIN":
         return redirect(url_for('admin_dashboard'))
@@ -222,6 +227,7 @@ def save_faculty():
         'last_name': request.form.get('last_name'),
         'college': request.form.get('college'),
         'assigned_program': request.form.get('assigned_program'),
+        'specialization': request.form.get('specialization'),
         'academic_rank': request.form.get('academic_rank'),
         'employment_status': request.form.get('employment_status'),
         'leave_status': request.form.get('leave_status'),
@@ -481,10 +487,11 @@ def dean_dashboard():
 @app.route('/dean/cascade_quotas', methods=['POST'])
 @role_required('DEAN')
 def cascade_quotas():
+    conn = None
     cursor = None
     try:
-        cursor = get_db_connection()
-        connection = cursor.connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
         term_id = request.form.get('term_id')
         if not term_id:
@@ -517,7 +524,7 @@ def cascade_quotas():
                         'assigned_role': role
                     })
         
-        success, message = save_cascaded_quotas(cursor, connection, term_id, quotas_data)
+        success, message = save_cascaded_quotas(cursor, conn, term_id, quotas_data)
         
         if success:
             flash(message, 'success')
@@ -529,16 +536,19 @@ def cascade_quotas():
     finally:
         if cursor:
             cursor.close()
+        if conn:
+            conn.close()
     
     return redirect(url_for('dean_dashboard'))
 
 @app.route('/dean/batch_approve', methods=['POST'])
 @role_required('DEAN')
 def batch_approve():
+    conn = None
     cursor = None
     try:
-        cursor = get_db_connection()
-        connection = cursor.connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
         score_ids = request.form.getlist('score_ids[]')
         action = request.form.get('action', 'approve')
@@ -548,7 +558,7 @@ def batch_approve():
             return redirect(url_for('dean_dashboard'))
         
         new_status = 'Approved' if action == 'approve' else 'Reverted'
-        success, message = update_dean_approval_status(cursor, connection, score_ids, new_status)
+        success, message = update_dean_approval_status(cursor, conn, score_ids, new_status)
         
         flash(message, 'success' if success else 'danger')
         
@@ -557,6 +567,8 @@ def batch_approve():
     finally:
         if cursor:
             cursor.close()
+        if conn:
+            conn.close()
     
     return redirect(url_for('dean_dashboard'))
 
@@ -636,7 +648,77 @@ def validate_quotas():
 # ! --ADD END 28-APR-2026--
 @app.route('/prog_chair')
 @role_required('PROGRAM_CHAIR')
-def prog_chair_dashboard(): return render_template('prog_chair_dashboard.html')
+def prog_chair_dashboard():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    specialization = session.get('specialization')
+    if not specialization:
+        cursor.execute("SELECT specialization FROM tbl_employee_profiles WHERE emp_id = %s", (session.get('user_id'),))
+        spec_rows = cursor.fetchall()
+        specialization = spec_rows[0][0] if spec_rows else ''
+        session['specialization'] = specialization
+
+    if not specialization:
+        flash("Your account does not have a designated specialization. Please contact HR/Admin.", "warning")
+    
+    try:
+        terms = get_all_terms(cursor)
+        active_term = next((t for t in terms if t['is_active'] == 1), None)
+        
+        indicators = []
+        faculty_count = 0
+        faculty_list = []
+        
+        if active_term and specialization:
+            indicators = get_chair_indicators(cursor, active_term['term_id'], specialization)
+            faculty_list = get_specialization_faculty(cursor, specialization)
+            faculty_count = len(faculty_list)
+            faculty_ids = [f['emp_id'] for f in faculty_list]
+            
+            for ind in indicators:
+                assigned_qty = get_assigned_quantity(cursor, active_term['term_id'], ind['indicator_id'], faculty_ids)
+                ind['assigned_per_faculty'] = assigned_qty
+                ind['total_distributed'] = assigned_qty * faculty_count
+                
+        return render_template('prog_chair_dashboard.html', 
+                               active_term=active_term,
+                               specialization=specialization,
+                               indicators=indicators,
+                               faculty_count=faculty_count)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/prog_chair/assign_target', methods=['POST'])
+@role_required('PROGRAM_CHAIR')
+def assign_chair_target():
+    specialization = session.get('specialization')
+    term_id = request.form.get('term_id')
+    indicator_id = request.form.get('indicator_id')
+    assigned_quantity = request.form.get('assigned_quantity')
+    
+    if not specialization or not term_id or not indicator_id or not assigned_quantity:
+        flash("Missing required data for assignment.", "danger")
+        return redirect(url_for('prog_chair_dashboard'))
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        faculty_list = get_specialization_faculty(cursor, specialization)
+        faculty_ids = [f['emp_id'] for f in faculty_list]
+        
+        success, msg = save_chair_allocation(conn, cursor, int(term_id), int(indicator_id), int(assigned_quantity), faculty_ids)
+        if success:
+            flash(msg, "success")
+        else:
+            flash(msg, "danger")
+    finally:
+        cursor.close()
+        conn.close()
+        
+    return redirect(url_for('prog_chair_dashboard'))
 
 @app.route('/ret_chair')
 @role_required('RET_CHAIR')

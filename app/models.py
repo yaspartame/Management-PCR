@@ -41,13 +41,14 @@ def get_all_profiles(cursor):
 def save_single_profile(conn, cursor, data):
     sql = """
         INSERT INTO tbl_employee_profiles 
-        (employee_id_number, first_name, last_name, college, assigned_program, academic_rank, employment_status, leave_status, designation)
-        VALUES (%(employee_id_number)s, %(first_name)s, %(last_name)s, %(college)s, %(assigned_program)s, %(academic_rank)s, %(employment_status)s, %(leave_status)s, %(designation)s)
+        (employee_id_number, first_name, last_name, college, assigned_program, specialization, academic_rank, employment_status, leave_status, designation)
+        VALUES (%(employee_id_number)s, %(first_name)s, %(last_name)s, %(college)s, %(assigned_program)s, %(specialization)s, %(academic_rank)s, %(employment_status)s, %(leave_status)s, %(designation)s)
         ON DUPLICATE KEY UPDATE 
         first_name = VALUES(first_name),
         last_name = VALUES(last_name),
         college = VALUES(college),
         assigned_program = VALUES(assigned_program),
+        specialization = VALUES(specialization),
         academic_rank = VALUES(academic_rank),
         employment_status = VALUES(employment_status),
         leave_status = VALUES(leave_status),
@@ -85,7 +86,7 @@ def import_csv_roster(conn, cursor, csv_rows):
     unchanged = 0
     
     try:
-        cursor.execute("SELECT employee_id_number, first_name, last_name, college, assigned_program, academic_rank, employment_status, leave_status, designation FROM tbl_employee_profiles")
+        cursor.execute("SELECT employee_id_number, first_name, last_name, college, assigned_program, specialization, academic_rank, employment_status, leave_status, designation FROM tbl_employee_profiles")
         columns = [col[0] for col in cursor.description]
         existing_profiles = {}
         for row in cursor.fetchall():
@@ -97,14 +98,14 @@ def import_csv_roster(conn, cursor, csv_rows):
 
         insert_sql = """
             INSERT INTO tbl_employee_profiles 
-            (employee_id_number, first_name, last_name, college, assigned_program, academic_rank, employment_status, leave_status, designation)
-            VALUES (%(employee_id_number)s, %(first_name)s, %(last_name)s, %(college)s, %(assigned_program)s, %(academic_rank)s, %(employment_status)s, %(leave_status)s, %(designation)s)
+            (employee_id_number, first_name, last_name, college, assigned_program, specialization, academic_rank, employment_status, leave_status, designation)
+            VALUES (%(employee_id_number)s, %(first_name)s, %(last_name)s, %(college)s, %(assigned_program)s, %(specialization)s, %(academic_rank)s, %(employment_status)s, %(leave_status)s, %(designation)s)
         """
         
         update_sql = """
             UPDATE tbl_employee_profiles 
             SET first_name=%(first_name)s, last_name=%(last_name)s, college=%(college)s, 
-                assigned_program=%(assigned_program)s, academic_rank=%(academic_rank)s, 
+                assigned_program=%(assigned_program)s, specialization=%(specialization)s, academic_rank=%(academic_rank)s, 
                 employment_status=%(employment_status)s, leave_status=%(leave_status)s, designation=%(designation)s
             WHERE employee_id_number=%(employee_id_number)s
         """
@@ -120,6 +121,7 @@ def import_csv_roster(conn, cursor, csv_rows):
                 'last_name': row.get('last_name', '').strip(),
                 'college': row.get('college', '').strip(),
                 'assigned_program': row.get('assigned_program', '').strip(),
+                'specialization': row.get('specialization', '').strip(),
                 'academic_rank': row.get('academic_rank', '').strip(),
                 'employment_status': row.get('employment_status', '').strip(),
                 'leave_status': row.get('leave_status', '').strip(),
@@ -132,7 +134,7 @@ def import_csv_roster(conn, cursor, csv_rows):
             else:
                 existing = existing_profiles[emp_id]
                 differs = False
-                for key in ['first_name', 'last_name', 'college', 'assigned_program', 'academic_rank', 'employment_status', 'leave_status', 'designation']:
+                for key in ['first_name', 'last_name', 'college', 'assigned_program', 'specialization', 'academic_rank', 'employment_status', 'leave_status', 'designation']:
                     if str(current_row[key]) != str(existing[key]):
                         differs = True
                         break
@@ -429,4 +431,71 @@ def update_dean_approval_status(cursor, connection, score_ids, new_status):
     except Exception as e:
         connection.rollback()
         return False, f"Error updating approvals: {str(e)}"
-# ! --ADD END 28-APR-2026--
+
+# ! -- ADDED FOR PROG CHAIR --
+def get_chair_indicators(cursor, term_id, specialization):
+    query = """
+        SELECT mi.indicator_id, mi.indicator_description, mi.efficiency_type, tc.category_name, cq.total_target_value as dept_quota
+        FROM tbl_master_indicators mi
+        JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        JOIN tbl_cascaded_quotas cq ON mi.indicator_id = cq.indicator_id AND cq.term_id = mi.term_id
+        WHERE mi.term_id = %s
+          AND tc.category_name IN ('A. Instructions', 'Support Functions')
+          AND cq.assigned_to_role = %s
+        ORDER BY tc.category_name, mi.indicator_id
+    """
+    cursor.execute(query, (term_id, specialization))
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+def get_specialization_faculty(cursor, specialization):
+    query = """
+        SELECT emp_id, first_name, last_name, academic_rank, leave_status
+        FROM tbl_employee_profiles
+        WHERE specialization = %s AND leave_status = 'Active'
+    """
+    cursor.execute(query, (specialization,))
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+def get_assigned_quantity(cursor, term_id, indicator_id, faculty_ids):
+    if not faculty_ids:
+        return 0
+    format_strings = ','.join(['%s'] * len(faculty_ids))
+    query = f"""
+        SELECT assigned_quantity
+        FROM tbl_committed_targets
+        WHERE term_id = %s AND indicator_id = %s AND emp_id IN ({format_strings})
+        LIMIT 1
+    """
+    cursor.execute(query, [term_id, indicator_id] + faculty_ids)
+    res = cursor.fetchall()
+    return res[0][0] if res else 0
+
+def save_chair_allocation(conn, cursor, term_id, indicator_id, assigned_quantity, faculty_ids):
+    try:
+        if not faculty_ids:
+            return False, "No active faculty found for this specialization."
+            
+        for emp_id in faculty_ids:
+            # Check if exists
+            check_query = "SELECT target_id FROM tbl_committed_targets WHERE emp_id = %s AND term_id = %s AND indicator_id = %s"
+            cursor.execute(check_query, (emp_id, term_id, indicator_id))
+            existing = cursor.fetchall()
+            
+            if existing:
+                update_query = "UPDATE tbl_committed_targets SET assigned_quantity = %s WHERE target_id = %s"
+                cursor.execute(update_query, (assigned_quantity, existing[0][0]))
+            else:
+                insert_query = """
+                    INSERT INTO tbl_committed_targets (emp_id, term_id, indicator_id, assigned_quantity, status)
+                    VALUES (%s, %s, %s, %s, 'Draft')
+                """
+                cursor.execute(insert_query, (emp_id, term_id, indicator_id, assigned_quantity))
+        
+        conn.commit()
+        return True, "Targets distributed successfully to all faculty in your specialization."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+# ! -- ADD END --
