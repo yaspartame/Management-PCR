@@ -504,6 +504,7 @@ def cascade_quotas():
         dst_values = request.form.getlist('dst[]')
         nst_values = request.form.getlist('nst[]')
         bsds_values = request.form.getlist('bsds[]')
+        ret_values = request.form.getlist('ret[]')
         
         for i, ind_id in enumerate(indicator_ids):
             if not ind_id:
@@ -513,7 +514,8 @@ def cascade_quotas():
                 ('WST Program', int(wst_values[i]) if wst_values[i] and int(wst_values[i]) > 0 else 0),
                 ('DST Program', int(dst_values[i]) if dst_values[i] and int(dst_values[i]) > 0 else 0),
                 ('NST Program', int(nst_values[i]) if nst_values[i] and int(nst_values[i]) > 0 else 0),
-                ('BSDS Program', int(bsds_values[i]) if bsds_values[i] and int(bsds_values[i]) > 0 else 0)
+                ('BSDS Program', int(bsds_values[i]) if bsds_values[i] and int(bsds_values[i]) > 0 else 0),
+                ('RET / Extension', int(ret_values[i]) if ret_values[i] and int(ret_values[i]) > 0 else 0)
             ]
             
             for role, value in values:
@@ -750,49 +752,6 @@ def ret_chair_dashboard():
     finally:
         cursor.close()
         conn.close()
-
-@app.route('/ret_chair/add_target', methods=['POST'])
-@role_required('RET_CHAIR')
-def ret_chair_add_target():
-    term_id = request.form.get('term_id')
-    description = request.form.get('description')
-    
-    if not term_id or not description:
-        flash("Term ID and description are required.", "danger")
-        return redirect(url_for('ret_chair_dashboard'))
-        
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Since RET registers research targets directly derived from Dean's mandates
-        category_name = request.form.get('category_name', 'A. Research')
-        efficiency_type = 'Quantity-Based'
-        
-        add_master_indicator(conn, cursor, category_name, description, efficiency_type, term_id)
-        
-        cursor.close()
-        conn.close()
-        flash("Target successfully registered.", "success")
-    except Exception as e:
-        flash(f"Error adding target: {str(e)}", "danger")
-        
-    return redirect(url_for('ret_chair_dashboard'))
-
-@app.route('/ret_chair/delete_target', methods=['POST'])
-@role_required('RET_CHAIR')
-def ret_chair_delete_target():
-    indicator_id = request.form.get('indicator_id')
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        delete_master_indicator(conn, cursor, indicator_id)
-        cursor.close()
-        conn.close()
-        flash("Target deleted successfully.", "success")
-    except Exception as e:
-        flash(f"Error deleting target: {str(e)}", "danger")
-    return redirect(url_for('ret_chair_dashboard'))
 
 @app.route('/ret_chair/save_rule', methods=['POST'])
 @role_required('RET_CHAIR')

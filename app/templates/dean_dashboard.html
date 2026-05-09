@@ -138,11 +138,12 @@
                                         </td>
                                         <td>
                                             <input type="number" 
-                                                   class="form-control form-control-sm text-primary shadow-sm fw-bold" 
+                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
                                                    name="ret[]" 
                                                    min="0" 
                                                    value="{{ existing_quotas.get(indicator.indicator_id, {}).get('RET / Extension', 0) }}"
-                                                   disabled>
+                                                   data-indicator="{{ indicator.indicator_id }}"
+                                                   onchange="updateTotals()">
                                         </td>
                                         <td>
                                             <input type="number" 

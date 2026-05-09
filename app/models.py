@@ -503,11 +503,12 @@ def save_chair_allocation(conn, cursor, term_id, indicator_id, assigned_quantity
 # ! -- RET CHAIR ADDITIONS --
 def get_ret_indicators(cursor, term_id):
     query = """
-        SELECT mi.indicator_id, mi.indicator_description, mi.efficiency_type, tc.category_name
-        FROM tbl_master_indicators mi
+        SELECT mi.indicator_id, mi.indicator_description, mi.efficiency_type, tc.category_name, cq.total_target_value as dean_quota
+        FROM tbl_cascaded_quotas cq
+        JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-        WHERE mi.term_id = %s
-          AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
+        WHERE cq.term_id = %s
+          AND cq.assigned_to_role = 'RET / Extension'
         ORDER BY tc.category_name, mi.indicator_id
     """
     cursor.execute(query, (term_id,))

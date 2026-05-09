@@ -6,10 +6,10 @@ This document tracks the enhancements implemented for the **RET Chair Dashboard*
 - **Target Isolation**: The dashboard now acts as a strict barrier. It automatically filters the database to **only** show targets categorized as `'A. Research'` or `'B. Extension Services / Training / Advisory'`.
 - **No Instructional Targets**: Program-level instructional targets are completely hidden from the RET Chair's workflow.
 
-## 2. Phase 1: Core Target Registration
-- **Dynamic Category Selection**: The registration form now includes a dropdown allowing the RET Chair to explicitly categorize a new target as either **Research** or **Extension / Training**. 
-- **Auto-Routing**: The backend natively accepts this dynamic category assignment, instantly mapping it to the correct pillar in the database.
-- **Active Deletion**: Targets can be instantly removed from the list with a synced backend database deletion.
+## 2. Phase 1: Strict Top-Down Delegation
+- **Dean-Controlled Cascading**: The RET Chair's ability to create custom targets has been completely removed to ensure institutional alignment. The RET Chair now **exclusively** receives targets cascaded directly from the Dean's Dashboard.
+- **Enabled RET Quotas**: The Dean's dashboard has been updated to unlock the "RET / Extension" column. The Dean can now input specific quotas for research/extension master indicators, which are instantly piped to the RET Chair.
+- **Read-Only Dashboard**: Phase 1 of the RET Chair dashboard has been redesigned into a read-only interface. It securely displays only the specific targets (and their quotas) that the Dean has explicitly allocated to the RET unit.
 
 ## 3. Phase 2: Menu Configuration & Mapping
 - **Smart Database Integration**: The backend logic securely adapts the existing `tbl_cascaded_quotas` table to store the configuration mapping, bypassing any need for complex SQL Server permission updates.
