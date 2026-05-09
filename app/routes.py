@@ -722,7 +722,123 @@ def assign_chair_target():
 
 @app.route('/ret_chair')
 @role_required('RET_CHAIR')
-def ret_chair_dashboard(): return render_template('ret_chair_dashboard.html')
+def ret_chair_dashboard():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        terms = get_all_terms(cursor)
+        active_term = next((t for t in terms if t['is_active'] == 1), None)
+        
+        ret_indicators = []
+        ret_rules = []
+        
+        # Get ranks for dropdown (e.g. from employee profiles)
+        cursor.execute("SELECT DISTINCT academic_rank FROM tbl_employee_profiles WHERE academic_rank IS NOT NULL AND academic_rank != '' ORDER BY academic_rank")
+        academic_ranks = [row[0] for row in cursor.fetchall()]
+        
+        if active_term:
+            term_id = active_term['term_id']
+            ret_indicators = get_ret_indicators(cursor, term_id)
+            ret_rules = get_ret_rules(cursor, term_id)
+            
+        return render_template('ret_chair_dashboard.html', 
+                               active_term=active_term,
+                               ret_indicators=ret_indicators,
+                               ret_rules=ret_rules,
+                               academic_ranks=academic_ranks)
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/ret_chair/add_target', methods=['POST'])
+@role_required('RET_CHAIR')
+def ret_chair_add_target():
+    term_id = request.form.get('term_id')
+    description = request.form.get('description')
+    
+    if not term_id or not description:
+        flash("Term ID and description are required.", "danger")
+        return redirect(url_for('ret_chair_dashboard'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Since RET registers research targets directly derived from Dean's mandates
+        category_name = request.form.get('category_name', 'A. Research')
+        efficiency_type = 'Quantity-Based'
+        
+        add_master_indicator(conn, cursor, category_name, description, efficiency_type, term_id)
+        
+        cursor.close()
+        conn.close()
+        flash("Target successfully registered.", "success")
+    except Exception as e:
+        flash(f"Error adding target: {str(e)}", "danger")
+        
+    return redirect(url_for('ret_chair_dashboard'))
+
+@app.route('/ret_chair/delete_target', methods=['POST'])
+@role_required('RET_CHAIR')
+def ret_chair_delete_target():
+    indicator_id = request.form.get('indicator_id')
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        delete_master_indicator(conn, cursor, indicator_id)
+        cursor.close()
+        conn.close()
+        flash("Target deleted successfully.", "success")
+    except Exception as e:
+        flash(f"Error deleting target: {str(e)}", "danger")
+    return redirect(url_for('ret_chair_dashboard'))
+
+@app.route('/ret_chair/save_rule', methods=['POST'])
+@role_required('RET_CHAIR')
+def ret_chair_save_rule():
+    term_id = request.form.get('term_id')
+    academic_rank = request.form.get('academic_rank')
+    required_selections = request.form.get('required_selections')
+    indicator_ids = request.form.getlist('indicator_ids[]')
+    
+    if not term_id or not academic_rank or not required_selections:
+        flash("Please fill all required fields.", "warning")
+        return redirect(url_for('ret_chair_dashboard'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        success, msg = save_ret_rule(conn, cursor, int(term_id), academic_rank, int(required_selections), [int(i) for i in indicator_ids])
+        cursor.close()
+        conn.close()
+        
+        if success:
+            flash(msg, "success")
+        else:
+            flash(msg, "danger")
+    except Exception as e:
+        flash(f"Error saving rule: {str(e)}", "danger")
+        
+    return redirect(url_for('ret_chair_dashboard'))
+
+@app.route('/ret_chair/delete_rule', methods=['POST'])
+@role_required('RET_CHAIR')
+def ret_chair_delete_rule():
+    rule_id = request.form.get('rule_id')
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        success = delete_ret_rule(conn, cursor, rule_id)
+        cursor.close()
+        conn.close()
+        if success:
+            flash("Rule deleted successfully.", "success")
+        else:
+            flash("Failed to delete rule.", "danger")
+    except Exception as e:
+        flash(f"Error deleting rule: {str(e)}", "danger")
+    return redirect(url_for('ret_chair_dashboard'))
 
 @app.route('/designated')
 @role_required('DESIGNATED')

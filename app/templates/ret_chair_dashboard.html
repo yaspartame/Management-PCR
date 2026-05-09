@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block flash_messages %}{% endblock %}
+
 {% block content %}
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
@@ -14,7 +16,7 @@
         <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
             <div class="card-body text-center py-4">
                 <h6 class="text-muted text-uppercase fw-bold">Registered Targets</h6>
-                <h2 class="display-6 fw-bold text-info">5</h2>
+                <h2 class="display-6 fw-bold text-info">{{ ret_indicators|length if ret_indicators else 0 }}</h2>
                 <span class="small text-muted">Active DPCR research targets</span>
             </div>
         </div>
@@ -23,7 +25,7 @@
         <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
             <div class="card-body text-center py-4">
                 <h6 class="text-muted text-uppercase fw-bold">Configured Ranks</h6>
-                <h2 class="display-6 fw-bold text-primary">4</h2>
+                <h2 class="display-6 fw-bold text-primary">{{ ret_rules|length if ret_rules else 0 }}</h2>
                 <span class="small text-muted">Active rank-based rules set</span>
             </div>
         </div>
@@ -32,7 +34,7 @@
         <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
             <div class="card-body text-center py-4">
                 <h6 class="text-muted text-uppercase fw-bold">Pending Approvals</h6>
-                <h2 class="display-6 fw-bold text-warning">8</h2>
+                <h2 class="display-6 fw-bold text-warning">1</h2>
                 <span class="small text-muted">Faculty selections awaiting review</span>
             </div>
         </div>
@@ -40,6 +42,28 @@
 </div>
 
 <div class="row">
+    <!-- Flash Messages -->
+    <div class="col-md-12">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    {% if not active_term %}
+    <div class="col-md-12 mb-4">
+        <div class="alert alert-warning shadow-sm border-0">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <strong>No Active Term:</strong> Please wait for the System Administrator to open a new academic term.
+        </div>
+    </div>
+    {% else %}
     <div class="col-md-12 mb-4">
         <div class="card shadow-sm border-0" style="border-top: 4px solid #0dcaf0 !important;">
             <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
@@ -52,28 +76,38 @@
                     from the Dean's cascaded DPCR. These will populate the checkbox options in Phase 2.
                 </div>
 
-                <form action="#" method="POST" class="mb-4">
+                <form action="{{ url_for('ret_chair_add_target') }}" method="POST" class="mb-4">
+                    <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                     <div class="input-group shadow-sm">
-                        <input type="text" class="form-control"
-                            placeholder="Type a new research target from the DPCR..." aria-label="Research Target">
-                        <button class="btn btn-info text-dark fw-bold px-4" type="button"><i
+                        <select class="form-select bg-light text-secondary border-end-0" name="category_name" required style="max-width: 250px;">
+                            <option value="A. Research" selected>A. Research</option>
+                            <option value="B. Extension Services / Training / Advisory">B. Extension / Training</option>
+                        </select>
+                        <input type="text" class="form-control" name="description" required
+                            placeholder="Type a new research or extension target..." aria-label="Research Target">
+                        <button class="btn btn-info text-dark fw-bold px-4" type="submit"><i
                                 class="bi bi-plus-circle me-1"></i> Add Target</button>
                     </div>
                 </form>
 
                 <h6 class="fw-bold text-muted small mb-2">Registered Research Targets for this Term:</h6>
                 <ul class="list-group shadow-sm">
+                    {% for ind in ret_indicators %}
                     <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        Number of research papers published in accredited journals.
-                        <button class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></button>
+                        <span><span class="badge bg-light text-dark border me-2">{{ ind.category_name }}</span> {{
+                            ind.indicator_description }}</span>
+                        <form method="POST" action="{{ url_for('ret_chair_delete_target') }}" class="m-0"
+                            onsubmit="return confirm('Delete this target?');">
+                            <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger border-0"><i
+                                    class="bi bi-trash"></i></button>
+                        </form>
                     </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        Number of ongoing externally funded research projects.
-                        <button class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></button>
-                    </li>
+                    {% else %}
                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 text-muted">
-                        <em>No other targets registered yet.</em>
+                        <em>No targets registered yet.</em>
                     </li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>
@@ -88,21 +122,22 @@
             <div class="card-body">
                 <p class="text-muted small mb-4">Map the registered research targets to specific academic ranks to
                     generate the faculty selection menus.</p>
-                <form action="#" method="POST">
+                <form action="{{ url_for('ret_chair_save_rule') }}" method="POST">
+                    <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">1. Select Academic Rank</label>
-                            <select class="form-select shadow-sm">
-                                <option selected disabled>-- Choose Rank --</option>
-                                <option value="Instructor I">Instructor I</option>
-                                <option value="Assistant Professor I">Assistant Professor I</option>
-                                <option value="Associate Professor III">Associate Professor III</option>
+                            <select class="form-select shadow-sm" id="academic_rank" name="academic_rank" required>
+                                <option selected disabled value="">-- Choose Rank --</option>
+                                {% for rank in academic_ranks %}
+                                <option value="{{ rank }}">{{ rank }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">2. Required Target Selections</label>
-                            <input type="number" class="form-control shadow-sm" value="1" min="1" max="10"
-                                placeholder="How many must they pick?">
+                            <input type="number" class="form-control shadow-sm" id="required_selections" name="required_selections" value="1"
+                                min="1" max="10" required placeholder="How many must they pick?">
                             <div class="form-text">Example: "Instructors must select exactly 1 from the list below."
                             </div>
                         </div>
@@ -112,24 +147,25 @@
                         <label class="form-label fw-bold">3. Map Allowed Master Indicators</label>
                         <div class="card shadow-sm border-0">
                             <ul class="list-group list-group-flush">
+                                {% for ind in ret_indicators %}
                                 <li class="list-group-item py-3">
-                                    <input class="form-check-input me-2" type="checkbox" id="ind1" checked>
-                                    <label class="form-check-label" for="ind1">
-                                        Number of research papers published in accredited journals.
+                                    <input class="form-check-input me-2 indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
+                                        name="indicator_ids[]" value="{{ ind.indicator_id }}">
+                                    <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
+                                        <span class="badge bg-light text-dark border me-1">{{ ind.category_name }}</span> {{ ind.indicator_description }}
                                     </label>
                                 </li>
-                                <li class="list-group-item py-3">
-                                    <input class="form-check-input me-2" type="checkbox" id="ind2" checked>
-                                    <label class="form-check-label" for="ind2">
-                                        Number of ongoing externally funded research projects.
-                                    </label>
+                                {% else %}
+                                <li class="list-group-item py-3 text-muted">
+                                    No registered indicators to map. Please add targets in Phase 1 first.
                                 </li>
+                                {% endfor %}
                             </ul>
                         </div>
                     </div>
 
                     <div class="text-end border-top pt-3">
-                        <button type="button" class="btn btn-primary fw-bold px-4 shadow-sm"><i class="bi bi-save"></i>
+                        <button type="submit" id="save_rule_btn" class="btn btn-primary fw-bold px-4 shadow-sm"><i class="bi bi-save"></i>
                             Save Menu Rules</button>
                     </div>
                 </form>
@@ -155,16 +191,35 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% for rule in ret_rules %}
                             <tr>
-                                <td class="fw-bold text-primary">Instructor I</td>
-                                <td class="text-center fw-bold">1</td>
-                                <td class="text-center"><span class="badge bg-secondary">2 Options</span></td>
+                                <td class="fw-bold text-primary">{{ rule.academic_rank }}</td>
+                                <td class="text-center fw-bold">{{ rule.required_selections }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary"
+                                        title="{% for i in rule.indicators %}{{ i.desc }}{% if not loop.last %}&#10;{% endif %}{% endfor %}">
+                                        {{ rule.indicators|length }} Options
+                                    </span>
+                                </td>
                                 <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i>
-                                        Edit</button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary px-3" 
+                                            onclick='editRule("{{ rule.academic_rank }}", {{ rule.required_selections }}, [{% for i in rule.indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}])'>
+                                            <i class="bi bi-pencil me-1"></i>Edit
+                                        </button>
+                                        <form method="POST" action="{{ url_for('ret_chair_delete_rule') }}" class="m-0"
+                                            onsubmit="return confirm('Delete this rule?');">
+                                            <input type="hidden" name="rule_id" value="{{ rule.rule_id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3"><i class="bi bi-trash me-1"></i>Delete</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No menu rules configured yet.</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -172,7 +227,7 @@
         </div>
     </div>
 
-    <div class="col-md-12">
+    <div class="col-md-12 mb-4">
         <div class="card shadow-sm border-0" style="border-top: 4px solid #FFC107 !important;">
             <div class="card-header bg-white pt-4 pb-2 border-0">
                 <h5 class="fw-bold text-dark mb-0">Phase 4: Research Commitment Verification</h5>
@@ -214,5 +269,56 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const rankSelect = document.getElementById('academic_rank');
+        const requiredInput = document.getElementById('required_selections');
+        const checkboxes = document.querySelectorAll('.indicator-checkbox');
+        
+        function toggleCheckboxes() {
+            const rankVal = rankSelect.value;
+            const reqVal = requiredInput.value;
+            const disabled = !(rankVal && reqVal && parseInt(reqVal) > 0);
+            
+            checkboxes.forEach(cb => {
+                cb.disabled = disabled;
+                if(disabled) cb.checked = false;
+            });
+        }
+
+        if(rankSelect && requiredInput) {
+            rankSelect.addEventListener('change', toggleCheckboxes);
+            requiredInput.addEventListener('input', toggleCheckboxes);
+            toggleCheckboxes(); // run on load
+        }
+    });
+
+    function editRule(rank, requiredCount, selectedIndicatorIds) {
+        // Scroll up to Phase 2
+        document.getElementById('academic_rank').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Populate inputs
+        document.getElementById('academic_rank').value = rank;
+        document.getElementById('required_selections').value = requiredCount;
+        
+        // Trigger the toggle to enable checkboxes
+        const event = new Event('change');
+        document.getElementById('academic_rank').dispatchEvent(event);
+        
+        // Uncheck all first
+        const checkboxes = document.querySelectorAll('.indicator-checkbox');
+        checkboxes.forEach(cb => cb.checked = false);
+        
+        // Check the previously selected ones
+        selectedIndicatorIds.forEach(id => {
+            const cb = document.getElementById('ind_' + id);
+            if(cb) {
+                cb.checked = true;
+            }
+        });
+    }
+</script>
 {% endblock %}
