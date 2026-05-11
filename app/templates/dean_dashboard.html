@@ -1,23 +1,46 @@
 {% extends 'base.html' %}
 
+{% block role_display %}College Dean{% endblock %}
+
+{% block sidebar_items %}
+<div class="nav-label">Dashboard</div>
+<button class="nav-item active" data-section="nav-overview" onclick="showSection('nav-overview')">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span class="nav-text">Overview</span>
+</button>
+
+<div class="nav-label">Phases</div>
+<button class="nav-item" data-section="nav-phase1" onclick="showSection('nav-phase1')">
+    <i class="bi bi-diagram-3-fill"></i>
+    <span class="nav-text">Quota Cascading</span>
+</button>
+<button class="nav-item" data-section="nav-phase6" onclick="showSection('nav-phase6')">
+    <i class="bi bi-check-all"></i>
+    <span class="nav-text">Batch Approvals</span>
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">College Dean's Executive Portal</h2>
-        <p class="text-muted mb-0">
-            College of Information Technology | 
-            Rank: <span class="badge bg-secondary">Professor VI</span>
-            {% if active_term %}
-            | Active Term: <span class="badge bg-info">{{ active_term.academic_year }} ({{ active_term.semester }})</span>
-            {% endif %}
-        </p>
+<script>window.dashboardRole = 'dean';</script>
+
+<div id="nav-overview" class="dashboard-section active">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>College Dean's Executive Portal</h2>
+            <p>
+                College of Information Technology | 
+                Rank: <span class="badge bg-secondary">Professor VI</span>
+                {% if active_term %}
+                | Active Term: <span class="badge bg-info">{{ active_term.academic_year }} ({{ active_term.semester }})</span>
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <button class="btn btn-success fw-bold shadow-sm" onclick="alert('Export feature coming soon')">
+                <i class="bi bi-file-earmark-excel"></i> Export & Print DPCR
+            </button>
+        </div>
     </div>
-    <div class="col-md-4 text-md-end">
-        <button class="btn btn-success fw-bold mb-2 shadow-sm" onclick="alert('Export feature coming soon')">
-            <i class="bi bi-file-earmark-excel"></i> Export & Print DPCR
-        </button>
-    </div>
-</div>
 
 <div class="row mb-4">
     <div class="col-md-4">
@@ -51,14 +74,17 @@
     </div>
 </div>
 
-<div class="row">
-    <!-- Phase 1: Institutional Quota Cascading -->
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white pt-4 pb-2 border-0">
-                <h5 class="fw-bold text-dark">Phase 1: Institutional Quota Cascading</h5>
-            </div>
-            <div class="card-body">
+</div>
+
+<!-- Phase 1: Institutional Quota Cascading -->
+<div id="nav-phase1" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 1: Institutional Quota Cascading</h2>
+        <p>Set targets for different programs under the college.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
                 {% if active_term %}
                 <div class="alert alert-info shadow-sm border-0 mb-3 small py-2 rounded">
                     <strong><i class="bi bi-calendar-check me-1"></i>Active Term Target:</strong> 
@@ -179,25 +205,28 @@
                 </div>
                 {% endif %}
             </div>
+    </div>
+</div>
+
+<!-- Phase 6: Final Digital Batch Approvals -->
+<div id="nav-phase6" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Phase 6: Final Digital Batch Approvals</h2>
+            <p>Apply your digital signature to verified IPCRs before generating the official Standardized CSC documents.</p>
+        </div>
+        <div>
+            <button class="btn btn-success btn-sm" onclick="approveSelected()">
+                <i class="bi bi-pen"></i> Approve All Selected
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="revertSelected()">
+                <i class="bi bi-arrow-return-left"></i> Revert to Manager
+            </button>
         </div>
     </div>
-
-    <!-- Phase 6: Final Digital Batch Approvals -->
-    <div class="col-md-12">
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
-            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0">Phase 6: Final Digital Batch Approvals</h5>
-                <button class="btn btn-success btn-sm" onclick="approveSelected()">
-                    <i class="bi bi-pen"></i> Approve All Selected
-                </button>
-                <button class="btn btn-warning btn-sm" onclick="revertSelected()">
-                    <i class="bi bi-arrow-return-left"></i> Revert to Manager
-                </button>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">
-                    Apply your digital signature to verified IPCRs before generating the official Standardized CSC documents.
-                </p>
+    
+    <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
+        <div class="card-body">
                 
                 {% if pending_approvals %}
                 <form id="approvalForm" action="{{ url_for('batch_approve') }}" method="POST">
@@ -251,7 +280,6 @@
                 {% endif %}
             </div>
         </div>
-    </div>
 </div>
 {% endblock %}
 

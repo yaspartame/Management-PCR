@@ -1,10 +1,36 @@
 {% extends 'base.html' %}
 
+{% block role_display %}Program Chair{% endblock %}
+
+{% block sidebar_items %}
+<div class="nav-label">Dashboard</div>
+<button class="nav-item active" data-section="nav-overview" onclick="showSection('nav-overview')">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span class="nav-text">Overview</span>
+</button>
+
+<div class="nav-label">Phases</div>
+<button class="nav-item" data-section="nav-phase1" onclick="showSection('nav-phase1')">
+    <i class="bi bi-diagram-3-fill"></i>
+    <span class="nav-text">Target Allocation</span>
+</button>
+<button class="nav-item" data-section="nav-phase2" onclick="showSection('nav-phase2')">
+    <i class="bi bi-handshake"></i>
+    <span class="nav-text">Commitments</span>
+</button>
+<button class="nav-item" data-section="nav-phase3" onclick="showSection('nav-phase3')">
+    <i class="bi bi-calculator"></i>
+    <span class="nav-text">Grading Engine</span>
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">Program Chair Dashboard</h2>
-        <p class="text-muted mb-0">
+<script>window.dashboardRole = 'prog_chair';</script>
+
+<div id="nav-overview" class="dashboard-section active">
+    <div class="page-header">
+        <h2>Program Chair Dashboard</h2>
+        <p>
             Department of Information Technology (BSIT) | 
             <span class="badge bg-secondary">Middle Manager</span>
             {% if specialization %}
@@ -12,7 +38,6 @@
             {% endif %}
         </p>
     </div>
-</div>
 
 <div class="row mb-4">
     <div class="col-md-4">
@@ -44,20 +69,24 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0">Phase 1: Standard Target Allocation</h5>
-                <div>
-                    <span class="badge bg-primary me-2"><i class="bi bi-funnel"></i> A. Instructions & Support Functions</span>
-                    <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i> Distribute the Dean's Quota</span>
-                </div>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small mb-3">Assign the baseline operational targets to all faculty members under
-                    your department.</p>
-                <div class="table-responsive">
+</div>
+
+<!-- Phase 1: Standard Target Allocation -->
+<div id="nav-phase1" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Phase 1: Standard Target Allocation</h2>
+            <p>Assign the baseline operational targets to all faculty members under your department.</p>
+        </div>
+        <div>
+            <span class="badge bg-primary me-2"><i class="bi bi-funnel"></i> A. Instructions & Support Functions</span>
+            <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i> Distribute the Dean's Quota</span>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
                     <table class="table table-hover align-middle shadow-sm">
                         <thead class="table-light">
                             <tr>
@@ -99,17 +128,20 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
+</div>
 
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #FFC107 !important;">
-            <div class="card-header bg-white pt-4 pb-2 border-0">
-                <h5 class="fw-bold text-dark mb-0">Phase 2: IPCR Commitment Verification (Digital Handshake)</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Review your faculty's proposed targets (Standard Workload + their chosen
-                    Research selections) and lock them for the semester.</p>
-                <div class="table-responsive">
+<!-- Phase 2: IPCR Commitment Verification -->
+<div id="nav-phase2" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 2: Commitment Verification (Digital Handshake)</h2>
+        <p>Review your faculty's proposed targets (Standard Workload + their chosen Research selections) and lock them for the semester.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #FFC107 !important;">
+        <div class="card-body">
+            <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
@@ -140,17 +172,20 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
+</div>
 
-    <div class="col-md-12">
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
-            <div class="card-header bg-white pt-4 pb-2 border-0">
-                <h5 class="fw-bold text-dark mb-0">Phase 3: End-of-Semester Evaluation (Grading Engine)</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Review the uploaded evidence and input the qualitative Efficiency (E) and
-                    Timeliness (T) ratings (Scale 1 to 5).</p>
-                <div class="table-responsive">
+<!-- Phase 3: Grading Engine -->
+<div id="nav-phase3" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 3: End-of-Semester Evaluation (Grading Engine)</h2>
+        <p>Review the uploaded evidence and input the qualitative Efficiency (E) and Timeliness (T) ratings (Scale 1 to 5).</p>
+    </div>
+    
+    <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
+        <div class="card-body">
+            <div class="table-responsive">
                     <table class="table table-hover align-middle shadow-sm border">
                         <thead class="table-dark">
                             <tr>
@@ -182,6 +217,7 @@
                 </div>
             </div>
         </div>
-    </div>
+            </div>
+        </div>
 </div>
 {% endblock %}

@@ -2,18 +2,48 @@
 
 {% block flash_messages %}{% endblock %}
 
+{% block role_display %}System Administrator{% endblock %}
+
+{% block sidebar_items %}
+<div class="nav-label">Dashboard</div>
+<button class="nav-item active" data-section="nav-overview" onclick="showSection('nav-overview')">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span class="nav-text">Overview</span>
+</button>
+
+<div class="nav-label">Management</div>
+<button class="nav-item" data-section="nav-roster" onclick="showSection('nav-roster')">
+    <i class="bi bi-people-fill"></i>
+    <span class="nav-text">HR Roster</span>
+</button>
+<button class="nav-item" data-section="nav-term" onclick="showSection('nav-term')">
+    <i class="bi bi-calendar3"></i>
+    <span class="nav-text">Term Configuration</span>
+</button>
+<button class="nav-item" data-section="nav-indicators" onclick="showSection('nav-indicators')">
+    <i class="bi bi-bullseye"></i>
+    <span class="nav-text">Master Indicators</span>
+</button>
+
+<div class="nav-label">System</div>
+<button class="nav-item" data-section="nav-security" onclick="showSection('nav-security')">
+    <i class="bi bi-shield-lock-fill text-danger"></i>
+    <span class="nav-text text-danger">System Security</span>
+</button>
+<a href="{{ url_for('admin_backup') }}" class="nav-item">
+    <i class="bi bi-hdd-fill"></i>
+    <span class="nav-text">Backup Database</span>
+</a>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">System Administrator & HR Portal</h2>
-        <p class="text-muted mb-0">Engine Room: System governance and database integrity.</p>
+<script>window.dashboardRole = 'admin';</script>
+
+<div id="nav-overview" class="dashboard-section active">
+    <div class="page-header">
+        <h2>System Administrator & HR Portal</h2>
+        <p>Engine Room: System governance and database integrity.</p>
     </div>
-    <div class="col-md-4 text-md-end">
-        <a href="{{ url_for('admin_backup') }}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-hdd-fill"></i> Backup Database
-        </a>
-    </div>
-</div>
 
 <div class="row mb-4">
     <div class="col-md-6">
@@ -36,48 +66,28 @@
         </div>
     </div>
 </div>
+</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <!-- Flash messages for CSV imports and saving -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-        <!-- Tabs Header -->
-        <ul class="nav nav-pills mb-4" id="admin-pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pills-roster-tab" data-bs-toggle="pill" data-bs-target="#nav-roster"
-                    type="button" role="tab" aria-selected="true">HR Roster</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-term-tab" data-bs-toggle="pill" data-bs-target="#nav-term"
-                    type="button" role="tab" aria-selected="false">Term Configuration</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-indicators-tab" data-bs-toggle="pill"
-                    data-bs-target="#nav-indicators" type="button" role="tab" aria-selected="false">Master
-                    Indicators</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-security-tab" data-bs-toggle="pill" data-bs-target="#nav-security"
-                    type="button" role="tab" aria-selected="false"><i class="bi bi-shield-lock-fill me-1"></i>System
-                    Security</button>
-            </li>
-        </ul>
+<!-- Flash messages for CSV imports and saving -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
 
-        <div class="tab-content" id="pills-tabContent">
-            <!-- HR ROSTER TAB -->
-            <div class="tab-pane fade show active" id="nav-roster" role="tabpanel">
-                <div class="card shadow-sm border-0 mb-4">
-                    <div
-                        class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+<!-- HR ROSTER SECTION -->
+<div id="nav-roster" class="dashboard-section">
+    <div class="page-header">
+        <h2>HR Roster Management</h2>
+        <p>Manage faculty profiles, assignments, and statuses.</p>
+    </div>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
                         <h5 class="fw-bold text-dark mb-0">HR Roster Management</h5>
                         <div>
                             <button class="btn btn-outline-success btn-sm me-2" data-bs-toggle="modal"
@@ -164,8 +174,12 @@
                 </div>
             </div>
 
-            <!-- TERM CONFIGURATION TAB -->
-            <div class="tab-pane fade" id="nav-term" role="tabpanel">
+            <!-- TERM CONFIGURATION SECTION -->
+            <div id="nav-term" class="dashboard-section">
+                <div class="page-header">
+                    <h2>Term Configuration</h2>
+                    <p>Open new academic terms and view term history.</p>
+                </div>
                 <div class="row">
                     <div class="col-md-5">
                         <div class="card shadow-sm border-0 mb-4">
@@ -242,8 +256,12 @@
                 </div>
             </div>
 
-            <!-- MASTER INDICATORS TAB -->
-            <div class="tab-pane fade" id="nav-indicators" role="tabpanel">
+            <!-- MASTER INDICATORS SECTION -->
+            <div id="nav-indicators" class="dashboard-section">
+                <div class="page-header">
+                    <h2>Master Indicators</h2>
+                    <p>Manage the global bank of performance targets for the active term.</p>
+                </div>
                 <div class="row">
                     <!-- LEFT: Add Form -->
                     <div class="col-md-4">
@@ -379,8 +397,12 @@
                 </div>
             </div>
 
-            <!-- SYSTEM SECURITY TAB -->
-            <div class="tab-pane fade" id="nav-security" role="tabpanel">
+            <!-- SYSTEM SECURITY SECTION -->
+            <div id="nav-security" class="dashboard-section">
+                <div class="page-header">
+                    <h2 class="text-danger"><i class="bi bi-shield-lock-fill me-2"></i>System Security</h2>
+                    <p>Emergency access controls and activity audit logs.</p>
+                </div>
 
                 <!-- Section 1: Emergency Access Controls -->
                 <div class="card shadow-sm border-0 mb-4">
@@ -516,12 +538,7 @@
                         </div>
                     </div>
                 </div>
-
             </div>
-
-        </div>
-    </div>
-</div>
 
 <!-- Edit Indicator Modal -->
 <div class="modal fade" id="editIndicatorModal" tabindex="-1" aria-hidden="true">

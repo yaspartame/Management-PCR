@@ -1,16 +1,43 @@
 {% extends 'base.html' %}
 
+{% block role_display %}Designated Faculty{% endblock %}
+
+{% block sidebar_items %}
+<div class="nav-label">Dashboard</div>
+<button class="nav-item active" data-section="nav-overview" onclick="showSection('nav-overview')">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span class="nav-text">Overview</span>
+</button>
+
+<div class="nav-label">Phases</div>
+<button class="nav-item" data-section="nav-phase1" onclick="showSection('nav-phase1')">
+    <i class="bi bi-handshake"></i>
+    <span class="nav-text">IPCR Commitments</span>
+</button>
+<button class="nav-item" data-section="nav-phase2" onclick="showSection('nav-phase2')">
+    <i class="bi bi-folder-check"></i>
+    <span class="nav-text">Evidence Upload</span>
+</button>
+<button class="nav-item" data-section="nav-phase3" onclick="showSection('nav-phase3')">
+    <i class="bi bi-briefcase-fill" style="color: #6610f2;"></i>
+    <span class="nav-text" style="color: #6610f2;">Designation Targets</span>
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">Designated Faculty Dashboard</h2>
-        <p class="text-muted mb-0">BSIT Department | Rank: <span class="badge bg-secondary">Assistant Professor II</span> | Designation: <span class="badge" style="background-color: #6610f2;">OJT Coordinator</span></p>
+<script>window.dashboardRole = 'designated';</script>
+
+<div id="nav-overview" class="dashboard-section active">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Designated Faculty Dashboard</h2>
+            <p>BSIT Department | Rank: <span class="badge bg-secondary">Assistant Professor II</span> | Designation: <span class="badge" style="background-color: #6610f2;">OJT Coordinator</span></p>
+        </div>
+        <div class="text-end">
+            <button class="btn btn-primary fw-bold shadow-sm" disabled><i class="bi bi-file-earmark-pdf"></i> Generate Official IPCR PDF</button>
+            <div class="form-text small mt-1">Available once semester is graded.</div>
+        </div>
     </div>
-    <div class="col-md-4 text-md-end">
-        <button class="btn btn-primary fw-bold shadow-sm" disabled><i class="bi bi-file-earmark-pdf"></i> Generate Official IPCR PDF</button>
-        <div class="form-text small mt-1">Available once semester is graded.</div>
-    </div>
-</div>
 
 <div class="row mb-4">
     <div class="col-md-4">
@@ -42,15 +69,20 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0">Phase 1: Your IPCR Commitments</h5>
-                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> Contract Locked</span>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Your baseline targets assigned by the Program Chair and the research targets you selected from the RET menu.</p>
+</div>
+
+<!-- Phase 1: IPCR Commitments -->
+<div id="nav-phase1" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Phase 1: Your IPCR Commitments</h2>
+            <p>Your baseline targets assigned by the Program Chair and the research targets you selected from the RET menu.</p>
+        </div>
+        <span class="badge bg-success fs-6"><i class="bi bi-check-circle-fill me-1"></i> Contract Locked</span>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
                 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle shadow-sm">
@@ -78,14 +110,17 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #17a2b8 !important;">
-            <div class="card-header bg-white pt-4 pb-2 border-0">
-                <h5 class="fw-bold text-dark mb-0">Phase 2: Standard Evidence Gathering</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Upload verifiable PDF documents (certificates, attendance, syllabi) to prove your instructional and research accomplishments.</p>
+<!-- Phase 2: Evidence Gathering -->
+<div id="nav-phase2" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 2: Standard Evidence Gathering</h2>
+        <p>Upload verifiable PDF documents (certificates, attendance, syllabi) to prove your instructional and research accomplishments.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #17a2b8 !important;">
+        <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle border">
                         <thead class="table-light">
@@ -118,14 +153,20 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #6610f2 !important;">
-            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-briefcase-fill me-2" style="color: #6610f2;"></i>Phase 3: Administrative Designation Targets</h5>
-                <span class="badge" style="background-color: #6610f2;">OJT Coordinator</span>
-            </div>
-            <div class="card-body">
+<!-- Phase 3: Designation Targets -->
+<div id="nav-phase3" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-briefcase-fill me-2" style="color: #6610f2;"></i>Phase 3: Administrative Designation Targets</h2>
+            <p>Select the specific targets that apply to your administrative designation.</p>
+        </div>
+        <span class="badge fs-6" style="background-color: #6610f2;">OJT Coordinator</span>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #6610f2 !important;">
+        <div class="card-body">
                 <div class="alert alert-info py-2 small border-0 shadow-sm mb-4">
                     <i class="bi bi-info-circle-fill me-1"></i> Below is the complete list of active DPCR targets cascaded by the Dean for this semester. Please select the specific targets that apply to your administrative designation.
                 </div>
@@ -171,6 +212,5 @@
                 </form>
             </div>
         </div>
-    </div>
 </div>
 {% endblock %}

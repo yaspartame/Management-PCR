@@ -1,18 +1,39 @@
 {% extends 'base.html' %}
 
+{% block role_display %}Faculty{% endblock %}
+
+{% block sidebar_items %}
+<div class="nav-label">Dashboard</div>
+<button class="nav-item active" data-section="nav-overview" onclick="showSection('nav-overview')">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span class="nav-text">Overview</span>
+</button>
+
+<div class="nav-label">Phases</div>
+<button class="nav-item" data-section="nav-phase1" onclick="showSection('nav-phase1')">
+    <i class="bi bi-handshake"></i>
+    <span class="nav-text">IPCR Commitments</span>
+</button>
+<button class="nav-item" data-section="nav-phase2" onclick="showSection('nav-phase2')">
+    <i class="bi bi-folder-check"></i>
+    <span class="nav-text">Evidence Upload</span>
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">Faculty Dashboard</h2>
-        <p class="text-muted mb-0">Department of Information Technology (BSIT) | Rank: <span
-                class="badge bg-secondary">Instructor I</span></p>
+<script>window.dashboardRole = 'faculty';</script>
+
+<div id="nav-overview" class="dashboard-section active">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Faculty Dashboard</h2>
+            <p>Department of Information Technology (BSIT) | Rank: <span class="badge bg-secondary">Instructor I</span></p>
+        </div>
+        <div class="text-end">
+            <button class="btn btn-primary fw-bold shadow-sm" disabled><i class="bi bi-file-earmark-pdf"></i> Generate Official IPCR PDF</button>
+            <div class="form-text small mt-1">Available once semester is graded.</div>
+        </div>
     </div>
-    <div class="col-md-4 text-md-end">
-        <button class="btn btn-primary fw-bold shadow-sm" disabled><i class="bi bi-file-earmark-pdf"></i> Generate
-            Official IPCR PDF</button>
-        <div class="form-text small mt-1">Available once semester is graded.</div>
-    </div>
-</div>
 
 <div class="row mb-4">
     <div class="col-md-4">
@@ -44,12 +65,16 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0">Phase 1: Your IPCR Commitments (Digital Handshake)</h5>
-            </div>
+</div>
+
+<!-- Phase 1: IPCR Commitments -->
+<div id="nav-phase1" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 1: Your IPCR Commitments (Digital Handshake)</h2>
+        <p>Review assigned standard targets and select your required research targets.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 border-end">
@@ -107,14 +132,16 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #17a2b8 !important;">
-            <div class="card-header bg-white pt-4 pb-2 border-0">
-                <h5 class="fw-bold text-dark mb-0">Phase 2: Evidence Gathering</h5>
-                <p class="text-muted small mt-1 mb-0">Upload verifiable PDF documents (certificates, attendance,
-                    syllabi) to prove your accomplishments for this semester.</p>
-            </div>
+<!-- Phase 2: Evidence Gathering -->
+<div id="nav-phase2" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 2: Evidence Gathering</h2>
+        <p>Upload verifiable PDF documents (certificates, attendance, syllabi) to prove your accomplishments for this semester.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #17a2b8 !important;">
             <div class="card-body">
                 <div class="alert alert-warning py-2 small border-0 shadow-sm mb-4">
                     <i class="bi bi-lock-fill me-1"></i> You can begin uploading evidence once your Program Chair locks
@@ -169,6 +196,5 @@
                 </div>
             </div>
         </div>
-    </div>
 </div>
 {% endblock %}

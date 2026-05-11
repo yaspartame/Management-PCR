@@ -2,14 +2,42 @@
 
 {% block flash_messages %}{% endblock %}
 
+{% block role_display %}RET Chair{% endblock %}
+
+{% block sidebar_items %}
+<div class="nav-label">Dashboard</div>
+<button class="nav-item active" data-section="nav-overview" onclick="showSection('nav-overview')">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span class="nav-text">Overview</span>
+</button>
+
+<div class="nav-label">Phases</div>
+<button class="nav-item" data-section="nav-phase1" onclick="showSection('nav-phase1')">
+    <i class="bi bi-journal-arrow-down"></i>
+    <span class="nav-text">Cascaded Targets</span>
+</button>
+<button class="nav-item" data-section="nav-phase2" onclick="showSection('nav-phase2')">
+    <i class="bi bi-list-check"></i>
+    <span class="nav-text">Menu Config</span>
+</button>
+<button class="nav-item" data-section="nav-phase3" onclick="showSection('nav-phase3')">
+    <i class="bi bi-ui-checks"></i>
+    <span class="nav-text">Active Rules</span>
+</button>
+<button class="nav-item" data-section="nav-phase4" onclick="showSection('nav-phase4')">
+    <i class="bi bi-handshake"></i>
+    <span class="nav-text">Commitments</span>
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="fw-bold" style="color: #0B3C86;">RET Chair Dashboard</h2>
-        <p class="text-muted mb-0">Research, Extension & Training Sector | <span class="badge bg-secondary">Middle
-                Manager</span></p>
+<script>window.dashboardRole = 'ret_chair';</script>
+
+<div id="nav-overview" class="dashboard-section active">
+    <div class="page-header">
+        <h2>RET Chair Dashboard</h2>
+        <p>Research, Extension & Training Sector | <span class="badge bg-secondary">Middle Manager</span></p>
     </div>
-</div>
 
 <div class="row mb-4">
     <div class="col-md-4">
@@ -41,35 +69,38 @@
     </div>
 </div>
 
-<div class="row">
-    <!-- Flash Messages -->
-    <div class="col-md-12">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-    </div>
+</div>
 
-    {% if not active_term %}
-    <div class="col-md-12 mb-4">
-        <div class="alert alert-warning shadow-sm border-0">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-            <strong>No Active Term:</strong> Please wait for the System Administrator to open a new academic term.
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+{% if not active_term %}
+<div class="alert alert-warning shadow-sm border-0 mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    <strong>No Active Term:</strong> Please wait for the System Administrator to open a new academic term.
+</div>
+{% else %}
+
+<!-- Phase 1: Cascaded Targets -->
+<div id="nav-phase1" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Phase 1: Targets Cascaded from Dean</h2>
+            <p>Official research and extension targets allocated to the RET unit.</p>
         </div>
+        <span class="badge bg-info text-dark"><i class="bi bi-journal-arrow-down me-1"></i> Cascaded Targets</span>
     </div>
-    {% else %}
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0 border-top border-info border-4">
-            <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0">Phase 1: Targets Cascaded from Dean</h5>
-                <span class="badge bg-info text-dark"><i class="bi bi-journal-arrow-down me-1"></i> Cascaded Targets</span>
-            </div>
+    
+    <div class="card shadow-sm border-0 mb-4">
             <div class="card-body bg-light rounded m-3 p-4 border">
                 <div class="alert alert-info py-2 small border-0 shadow-sm mb-4">
                     <i class="bi bi-info-circle-fill me-1"></i> These are the official research and extension targets allocated to the RET unit by the Dean. You will map these to specific academic ranks in Phase 2.
@@ -96,8 +127,14 @@
         </div>
     </div>
 
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0 border-top border-primary border-4">
+<!-- Phase 2: Menu Configuration -->
+<div id="nav-phase2" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 2: Research Menu Configuration</h2>
+        <p>Map the cascaded targets to specific academic ranks to create dynamic faculty menus.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold text-dark mb-0">Phase 2: Research Menu Configuration</h5>
                 <span class="badge bg-primary"><i class="bi bi-gear-fill me-1"></i> Setup Rules</span>
@@ -155,11 +192,16 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0 border-top border-success border-4">
-            <div class="card-header bg-white pt-4 pb-2 border-0">
-                <h5 class="fw-bold text-dark mb-0">Phase 3: Active Research Rules</h5>
+<!-- Phase 3: Active Rules -->
+<div id="nav-phase3" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 3: Active Research Rules</h2>
+        <p>Current logic mappings dictating what faculty see on their dashboards.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4">
             </div>
             <div class="card-body">
                 <p class="text-muted small">Current logic mappings dictating what faculty see on their dashboards.</p>
@@ -209,11 +251,16 @@
             </div>
         </div>
     </div>
+</div>
 
-    <div class="col-md-12 mb-4">
-        <div class="card shadow-sm border-0" style="border-top: 4px solid #FFC107 !important;">
-            <div class="card-header bg-white pt-4 pb-2 border-0">
-                <h5 class="fw-bold text-dark mb-0">Phase 4: Research Commitment Verification</h5>
+<!-- Phase 4: Commitment Verification -->
+<div id="nav-phase4" class="dashboard-section">
+    <div class="page-header">
+        <h2>Phase 4: Research Commitment Verification</h2>
+        <p>Review and approve the specific research targets selected by faculty members for this semester.</p>
+    </div>
+    
+    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #FFC107 !important;">
             </div>
             <div class="card-body">
                 <p class="text-muted small">Review and approve the specific research targets selected by faculty members
@@ -252,8 +299,8 @@
             </div>
         </div>
     </div>
-    {% endif %}
 </div>
+{% endif %}
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -280,8 +327,15 @@
     });
 
     function editRule(rank, requiredCount, selectedIndicatorIds) {
-        // Scroll up to Phase 2
-        document.getElementById('academic_rank').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Automatically switch to Phase 2 (Menu Config) section
+        if (typeof showSection === 'function') {
+            showSection('nav-phase2');
+        }
+
+        // Scroll up to the form
+        setTimeout(() => {
+            document.getElementById('academic_rank').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
         
         // Populate inputs
         document.getElementById('academic_rank').value = rank;
