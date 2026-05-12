@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 
-{% block role_display %}Faculty{% endblock %}
+{% block flash_messages %}{% endblock %}
+
+{% block role_display %}Faculty Member{% endblock %}
 
 {% block sidebar_items %}
 <div class="nav-label">Dashboard</div>
@@ -8,15 +10,10 @@
     <i class="bi bi-grid-1x2-fill"></i>
     <span class="nav-text">Overview</span>
 </button>
-
-<div class="nav-label">Phases</div>
-<button class="nav-item" data-section="nav-phase1" onclick="showSection('nav-phase1')">
-    <i class="bi bi-handshake"></i>
-    <span class="nav-text">IPCR Commitments</span>
-</button>
-<button class="nav-item" data-section="nav-phase2" onclick="showSection('nav-phase2')">
-    <i class="bi bi-folder-check"></i>
-    <span class="nav-text">Evidence Upload</span>
+<div class="nav-label">Performance</div>
+<button class="nav-item" data-section="nav-ipcr" onclick="showSection('nav-ipcr')">
+    <i class="bi bi-file-earmark-text-fill"></i>
+    <span class="nav-text">My IPCR</span>
 </button>
 {% endblock %}
 
@@ -24,177 +21,257 @@
 <script>window.dashboardRole = 'faculty';</script>
 
 <div id="nav-overview" class="dashboard-section active">
+    <div class="page-header">
+        <h2>Faculty Dashboard</h2>
+        <p>Welcome back! Manage your Individual Performance Commitment and Review (IPCR) targets.</p>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-primary border-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                <div class="card-body py-4">
+                    <h6 class="text-primary fw-bold text-uppercase mb-1"><i class="bi bi-person-badge me-2"></i>My Profile</h6>
+                    <p class="mb-1 text-muted small"><strong>Rank:</strong> <span class="text-dark">{{ academic_rank or 'Not Assigned' }}</span></p>
+                    <p class="mb-0 text-muted small"><strong>Specialization:</strong> <span class="text-dark">{{ specialization or 'None' }}</span></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+                <div class="card-body py-4 d-flex flex-column justify-content-center">
+                    <h6 class="text-success fw-bold text-uppercase mb-1"><i class="bi bi-calendar-check me-2"></i>Current Term</h6>
+                    {% if active_term %}
+                    <h3 class="text-dark mb-1">{{ active_term.academic_year }}</h3>
+                    <p class="text-muted small mb-0">{{ active_term.semester }}</p>
+                    {% else %}
+                    <h4 class="text-muted">No Active Term</h4>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 10px;">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div id="nav-ipcr" class="dashboard-section">
     <div class="page-header d-flex justify-content-between align-items-center">
         <div>
-            <h2>Faculty Dashboard</h2>
-            <p>Department of Information Technology (BSIT) | Rank: <span class="badge bg-secondary">Instructor I</span></p>
+            <h2>My IPCR Targets</h2>
+            <p>Review your assigned targets and select your RET components.</p>
         </div>
-        <div class="text-end">
-            <button class="btn btn-primary fw-bold shadow-sm" disabled><i class="bi bi-file-earmark-pdf"></i> Generate Official IPCR PDF</button>
-            <div class="form-text small mt-1">Available once semester is graded.</div>
-        </div>
+        {% if has_submitted %}
+        <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm"><i class="bi bi-hourglass-split me-2"></i>Pending Approval</span>
+        {% else %}
+        <span class="badge bg-secondary px-3 py-2 fs-6 shadow-sm"><i class="bi bi-pencil-square me-2"></i>Draft Mode</span>
+        {% endif %}
     </div>
 
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
-            <div class="card-body text-center py-4">
-                <h6 class="text-muted text-uppercase fw-bold">IPCR Contract Status</h6>
-                <h2 class="display-6 fw-bold text-warning"><i class="bi bi-pencil-square"></i> Draft</h2>
-                <span class="small text-muted">Awaiting your research selection</span>
-            </div>
-        </div>
+    {% if not active_term %}
+    <div class="alert alert-warning border-0 shadow-sm" style="border-radius: 10px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> There is no active term set by the administration. You cannot manage targets right now.
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
-            <div class="card-body text-center py-4">
-                <h6 class="text-muted text-uppercase fw-bold">Evidence Uploaded</h6>
-                <h2 class="display-6 fw-bold text-info">0 <span class="text-muted fs-4">/ 11</span></h2>
-                <span class="small text-muted">Targets with submitted proof</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100 border-start border-danger border-4">
-            <div class="card-body text-center py-4">
-                <h6 class="text-muted text-uppercase fw-bold">Term Deadline</h6>
-                <h2 class="display-6 fw-bold text-danger">45</h2>
-                <span class="small text-muted">Days remaining in the semester</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-</div>
-
-<!-- Phase 1: IPCR Commitments -->
-<div id="nav-phase1" class="dashboard-section">
-    <div class="page-header">
-        <h2>Phase 1: Your IPCR Commitments (Digital Handshake)</h2>
-        <p>Review assigned standard targets and select your required research targets.</p>
-    </div>
+    {% else %}
     
-    <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 border-end">
-                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-clipboard-check me-2"></i>Standard Targets
-                            (Assigned)</h6>
-                        <p class="text-muted small">These are the baseline instructional and core targets assigned to
-                            you by your Program Chair.</p>
-                        <ul class="list-group list-group-flush small">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Number of course syllabi prepared/updated.
-                                <span class="badge bg-secondary rounded-pill">Target: 2</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Percentage of students who passed the subject.
-                                <span class="badge bg-secondary rounded-pill">Target: 100%</span>
-                            </li>
-                            <li
-                                class="list-group-item d-flex justify-content-between align-items-center text-muted fst-italic">
-                                + 8 more standard targets...
-                            </li>
-                        </ul>
+    <form action="{{ url_for('faculty_submit_ipcr') }}" method="POST" id="ipcrForm">
+        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+        
+        <div class="row g-4">
+            <!-- Left Column: Core Assigned Targets -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-primary text-white border-0 py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i>Core Functions & Support</h5>
+                        <p class="small mb-0 opacity-75">Assigned by your Program Chair</p>
                     </div>
-
-                    <div class="col-md-6">
-                        <h6 class="fw-bold text-success mb-3"><i class="bi bi-journal-text me-2"></i>Research Targets
-                            (Required Selection)</h6>
-                        <div class="alert alert-success py-2 small border-0 shadow-sm">
-                            <strong>Action Required:</strong> Based on your rank (Instructor I), you must select exactly
-                            <strong>1</strong> research target from the menu below.
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Indicator</th>
+                                        <th class="text-center" width="120">Target Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set has_core = False %}
+                                    {% for target in assigned_targets %}
+                                        {# Assume RET categories are different. We will list all targets here but clearly show they are assigned #}
+                                        {% if 'Research' not in target.category_name and 'Extension' not in target.category_name and 'RET' not in target.category_name %}
+                                        {% set has_core = True %}
+                                        <tr>
+                                            <td class="ps-4 py-3">
+                                                <span class="badge bg-light text-dark border mb-1">{{ target.category_name }}</span>
+                                                <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
+                                            </td>
+                                            <td class="text-center fw-bold fs-5 text-primary">
+                                                {{ target.assigned_quantity }}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if not has_core %}
+                                    <tr>
+                                        <td colspan="2" class="text-center py-5 text-muted">
+                                            <i class="bi bi-inbox fs-1 d-block mb-2 text-light"></i>
+                                            No core targets have been assigned to you yet.
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
                         </div>
-                        <form action="#" method="POST">
-                            <div class="list-group mb-3 shadow-sm">
-                                <label class="list-group-item d-flex gap-2">
-                                    <input class="form-check-input flex-shrink-0" type="checkbox" value="" checked>
-                                    <span>
-                                        <small class="d-block text-dark">Number of research papers published in
-                                            accredited journals.</small>
-                                    </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: RET Selection Menu -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-success text-white border-0 py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-journal-bookmark-fill me-2"></i>RET / Extension Menu</h5>
+                        <p class="small mb-0 opacity-75">Select based on your academic rank ({{ academic_rank }})</p>
+                    </div>
+                    <div class="card-body bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-success border-opacity-25">
+                            <span class="fw-semibold text-dark">Required Selections:</span>
+                            <span class="badge bg-success fs-5 px-3 py-2 rounded-pill" id="selectionCount">
+                                0 / {{ ret_menu.required_selections }}
+                            </span>
+                        </div>
+
+                        {% if ret_menu.indicators|length > 0 %}
+                            <div class="ret-options-container" style="max-height: 400px; overflow-y: auto;">
+                                {% for ind in ret_menu.indicators %}
+                                {# Check if this indicator is already selected in assigned_targets #}
+                                {% set is_selected = False %}
+                                {% for t in assigned_targets %}
+                                    {% if t.indicator_id == ind.indicator_id %}
+                                        {% set is_selected = True %}
+                                    {% endif %}
+                                {% endfor %}
+
+                                <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
+                                       style="cursor: pointer; transition: all 0.2s ease;">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="form-check mt-1">
+                                            <input class="form-check-input ret-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
+                                                {% if is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 small text-secondary">{{ ind.indicator_description }}</p>
+                                        </div>
+                                    </div>
                                 </label>
-                                <label class="list-group-item d-flex gap-2">
-                                    <input class="form-check-input flex-shrink-0" type="checkbox" value="">
-                                    <span>
-                                        <small class="d-block text-dark">Number of research presentations in
-                                            international conferences.</small>
-                                    </span>
-                                </label>
+                                {% endfor %}
                             </div>
-                            <div class="text-end">
-                                <button type="button" class="btn btn-primary fw-bold shadow-sm"><i
-                                        class="bi bi-send-check"></i> Submit Proposed IPCR for Approval</button>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-slash-circle fs-1 text-muted opacity-50 mb-3 d-block"></i>
+                                <p class="text-muted">No RET indicators available for your rank.</p>
                             </div>
-                        </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Phase 2: Evidence Gathering -->
-<div id="nav-phase2" class="dashboard-section">
-    <div class="page-header">
-        <h2>Phase 2: Evidence Gathering</h2>
-        <p>Upload verifiable PDF documents (certificates, attendance, syllabi) to prove your accomplishments for this semester.</p>
-    </div>
-    
-    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #17a2b8 !important;">
-            <div class="card-body">
-                <div class="alert alert-warning py-2 small border-0 shadow-sm mb-4">
-                    <i class="bi bi-lock-fill me-1"></i> You can begin uploading evidence once your Program Chair locks
-                    your IPCR Commitments in Phase 1.
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle border">
-                        <thead class="table-light">
-                            <tr>
-                                <th width="35%">Target Description</th>
-                                <th class="text-center" width="15%">Actual (Q) Achieved</th>
-                                <th>Co-Authors / Sharers</th>
-                                <th>Evidence Status</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="small">Number of course syllabi prepared/updated.</td>
-                                <td><input type="number"
-                                        class="form-control form-control-sm text-center fw-bold shadow-sm"
-                                        placeholder="Qty"></td>
-                                <td>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-white"><i class="bi bi-person-plus"></i></span>
-                                        <input type="text" class="form-control" placeholder="Search faculty...">
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-danger"><i class="bi bi-x-circle"></i> Missing File</span>
-                                </td>
-                                <td class="text-end"><button class="btn btn-sm btn-outline-primary"><i
-                                            class="bi bi-upload"></i> Upload PDF</button></td>
-                            </tr>
-
-                            <tr>
-                                <td class="small">Number of research papers published in accredited journals.</td>
-                                <td><input type="number"
-                                        class="form-control form-control-sm text-center fw-bold shadow-sm" value="1"
-                                        disabled></td>
-                                <td><span class="badge bg-light text-dark border"><i class="bi bi-person-fill"></i>
-                                        Oks328 Dev</span></td>
-                                <td><span class="badge bg-success"><i class="bi bi-file-earmark-check"></i>
-                                        final_paper_v2.pdf</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i>
-                                        Remove</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div class="mt-4 text-end">
+            {% if not has_submitted %}
+            <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn" 
+                    {% if ret_menu.required_selections > 0 %}disabled{% endif %}>
+                <i class="bi bi-send-check-fill me-2"></i> Submit IPCR for Approval
+            </button>
+            <p class="small text-muted mt-2 mb-0" id="submitHelpText">
+                {% if ret_menu.required_selections > 0 %}
+                You must complete your RET selections before submitting.
+                {% endif %}
+            </p>
+            {% else %}
+            <div class="alert alert-info d-inline-block border-0 shadow-sm rounded-pill px-4">
+                <i class="bi bi-info-circle-fill me-2"></i> Your IPCR is currently locked pending approval.
             </div>
+            {% endif %}
         </div>
+    </form>
+    {% endif %}
 </div>
+
+<style>
+    .ret-card:hover {
+        border-color: #198754 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important;
+    }
+    .ret-card:has(input:checked) {
+        background-color: #f0fdf4 !important;
+        border-color: #198754 !important;
+    }
+    .form-check-input:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('.ret-checkbox');
+        const submitBtn = document.getElementById('submitBtn');
+        const countDisplay = document.getElementById('selectionCount');
+        const helpText = document.getElementById('submitHelpText');
+        const requiredCount = {{ ret_menu.required_selections }};
+        const hasSubmitted = {{ 'true' if has_submitted else 'false' }};
+        
+        function updateSelectionCount() {
+            if (hasSubmitted) return;
+            if (checkboxes.length === 0) {
+                if (submitBtn) submitBtn.disabled = false;
+                if (helpText) helpText.style.display = 'none';
+                return;
+            }
+            
+            let selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            countDisplay.innerText = `${selectedCount} / ${requiredCount}`;
+            
+            if (selectedCount === requiredCount) {
+                countDisplay.classList.remove('bg-warning');
+                countDisplay.classList.add('bg-success');
+                submitBtn.disabled = false;
+                helpText.style.display = 'none';
+                
+                // Disable unselected to prevent over-selection
+                checkboxes.forEach(cb => {
+                    if (!cb.checked) cb.disabled = true;
+                });
+            } else {
+                countDisplay.classList.remove('bg-success');
+                countDisplay.classList.add('bg-warning', 'text-dark');
+                submitBtn.disabled = true;
+                helpText.style.display = 'block';
+                
+                // Re-enable all if under the limit
+                checkboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+            }
+        }
+        
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateSelectionCount);
+        });
+        
+        // Initial check
+        updateSelectionCount();
+    });
+</script>
 {% endblock %}
