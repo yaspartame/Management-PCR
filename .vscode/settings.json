@@ -1,4 +1,4 @@
 {
-    "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "workbench.colorTheme": "AMOLED Black"
+  "python-envs.defaultPackageManager": "ms-python.python:conda",
+  "workbench.colorTheme": "Tomorrow Night Blue"
 }

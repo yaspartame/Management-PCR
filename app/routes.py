@@ -829,17 +829,24 @@ def ret_chair_dashboard():
 def ret_chair_save_rule():
     term_id = request.form.get('term_id')
     academic_rank = request.form.get('academic_rank')
-    required_selections = request.form.get('required_selections')
-    indicator_ids = request.form.getlist('indicator_ids[]')
     
-    if not term_id or not academic_rank or not required_selections:
+    research_selections = request.form.get('research_selections', 0)
+    extension_selections = request.form.get('extension_selections', 0)
+    
+    research_indicator_ids = request.form.getlist('research_indicator_ids[]')
+    extension_indicator_ids = request.form.getlist('extension_indicator_ids[]')
+    
+    if not term_id or not academic_rank:
         flash("Please fill all required fields.", "warning")
         return redirect(url_for('ret_chair_dashboard'))
         
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        success, msg = save_ret_rule(conn, cursor, int(term_id), academic_rank, int(required_selections), [int(i) for i in indicator_ids])
+        success, msg = save_ret_rule(conn, cursor, int(term_id), academic_rank, 
+                                     int(research_selections), int(extension_selections), 
+                                     [int(i) for i in research_indicator_ids], 
+                                     [int(i) for i in extension_indicator_ids])
         cursor.close()
         conn.close()
         
@@ -856,10 +863,11 @@ def ret_chair_save_rule():
 @role_required('RET_CHAIR')
 def ret_chair_delete_rule():
     rule_id = request.form.get('rule_id')
+    category_type = request.form.get('category_type')
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        success = delete_ret_rule(conn, cursor, rule_id)
+        success = delete_ret_rule(conn, cursor, rule_id, category_type)
         cursor.close()
         conn.close()
         if success:

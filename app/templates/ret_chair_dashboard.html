@@ -100,32 +100,66 @@
         <span class="badge bg-info text-dark"><i class="bi bi-journal-arrow-down me-1"></i> Cascaded Targets</span>
     </div>
     
+    <!-- Research Targets Card -->
     <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body bg-light rounded m-3 p-4 border">
-                <div class="alert alert-info py-2 small border-0 shadow-sm mb-4">
-                    <i class="bi bi-info-circle-fill me-1"></i> These are the official research and extension targets allocated to the RET unit by the Dean. You will map these to specific academic ranks in Phase 2.
-                </div>
-
-                <h6 class="fw-bold text-muted small mb-3">Allocated Targets for this Term:</h6>
-                <ul class="list-group shadow-sm">
-                    {% for ind in ret_indicators %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        <span>
-                            <span class="badge bg-light text-dark border me-2">{{ ind.category_name }}</span> 
-                            {{ ind.indicator_description }}
-                        </span>
-                        <span class="badge bg-primary rounded-pill px-3 py-2">Quota: {{ ind.dean_quota }}</span>
-                    </li>
-                    {% else %}
-                    <li class="list-group-item py-4 text-center text-muted">
-                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-                        No targets have been cascaded to the RET Chair by the Dean yet.
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <div class="card-header border-0 py-3" style="background: linear-gradient(90deg, #e8f4ff 0%, #f8fbff 100%); border-left: 4px solid #0d6efd !important;">
+            <h5 class="fw-bold text-primary mb-0"><i class="bi bi-star-fill me-2"></i>Research</h5>
+        </div>
+        <div class="card-body bg-light rounded-bottom m-0 p-4 border-top">
+            <ul class="list-group shadow-sm">
+                {% set ns_res = namespace(found=false) %}
+                {% for ind in ret_indicators %}
+                {% if ind.category_name == 'A. Research' %}
+                {% set ns_res.found = true %}
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span>
+                        <span class="badge bg-light text-dark border me-2">{{ ind.category_name | replace('A. ', '') }}</span> 
+                        {{ ind.indicator_description }}
+                    </span>
+                    <span class="badge bg-primary rounded-pill px-3 py-2">Quota: {{ ind.dean_quota }}</span>
+                </li>
+                {% endif %}
+                {% endfor %}
+                {% if not ns_res.found %}
+                <li class="list-group-item py-4 text-center text-muted">
+                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                    No Research targets cascaded yet.
+                </li>
+                {% endif %}
+            </ul>
         </div>
     </div>
+
+    <!-- Extension Targets Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header border-0 py-3" style="background: linear-gradient(90deg, #fff8e8 0%, #fffcf5 100%); border-left: 4px solid #fd7e14 !important;">
+            <h5 class="fw-bold text-warning mb-0"><i class="bi bi-tools me-2"></i>Extension Services / Training / Advisory</h5>
+        </div>
+        <div class="card-body bg-light rounded-bottom m-0 p-4 border-top">
+            <ul class="list-group shadow-sm">
+                {% set ns_ext = namespace(found=false) %}
+                {% for ind in ret_indicators %}
+                {% if ind.category_name == 'B. Extension Services / Training / Advisory' %}
+                {% set ns_ext.found = true %}
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span>
+                        <span class="badge bg-light text-dark border me-2">{{ ind.category_name | replace('B. ', '') }}</span> 
+                        {{ ind.indicator_description }}
+                    </span>
+                    <span class="badge bg-primary rounded-pill px-3 py-2">Quota: {{ ind.dean_quota }}</span>
+                </li>
+                {% endif %}
+                {% endfor %}
+                {% if not ns_ext.found %}
+                <li class="list-group-item py-4 text-center text-muted">
+                    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                    No Extension targets cascaded yet.
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
 
 <!-- Phase 2: Menu Configuration -->
 <div id="nav-phase2" class="dashboard-section">
@@ -136,51 +170,103 @@
     
     <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white pt-4 pb-2 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold text-dark mb-0">Phase 2: Research Menu Configuration</h5>
+                <h5 class="fw-bold text-dark mb-0">Phase 2: RET Menu Configuration</h5>
                 <span class="badge bg-primary"><i class="bi bi-gear-fill me-1"></i> Setup Rules</span>
             </div>
             <div class="card-body">
-                <p class="text-muted small mb-4">Map the registered research targets to specific academic ranks to
+                <p class="text-muted small mb-4">Map the registered research and extension targets to specific academic ranks to
                     generate the faculty selection menus.</p>
                 <form action="{{ url_for('ret_chair_save_rule') }}" method="POST">
                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+                    
                     <div class="row mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-bold">1. Select Academic Rank</label>
-                            <select class="form-select shadow-sm" id="academic_rank" name="academic_rank" required>
+                            <select class="form-select shadow-sm border-primary" id="academic_rank" name="academic_rank" required>
                                 <option selected disabled value="">-- Choose Rank --</option>
-                                {% for rank in academic_ranks %}
-                                <option value="{{ rank }}">{{ rank }}</option>
-                                {% endfor %}
+                                <option value="Instructor I">Instructor I</option>
+                                <option value="Instructor II">Instructor II</option>
+                                <option value="Instructor III">Instructor III</option>
+                                <option value="Assistant Professor I">Assistant Professor I</option>
+                                <option value="Assistant Professor II">Assistant Professor II</option>
+                                <option value="Assistant Professor III">Assistant Professor III</option>
+                                <option value="Assistant Professor IV">Assistant Professor IV</option>
+                                <option value="Associate Professor I">Associate Professor I</option>
+                                <option value="Associate Professor II">Associate Professor II</option>
+                                <option value="Associate Professor III">Associate Professor III</option>
+                                <option value="Associate Professor IV">Associate Professor IV</option>
+                                <option value="Associate Professor V">Associate Professor V</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">2. Required Target Selections</label>
-                            <input type="number" class="form-control shadow-sm" id="required_selections" name="required_selections" value="1"
-                                min="1" max="10" required placeholder="How many must they pick?">
-                            <div class="form-text">Example: "Instructors must select exactly 1 from the list below."
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-primary"><i class="bi bi-star-fill me-1"></i>Research Required</label>
+                            <input type="number" class="form-control shadow-sm" id="research_selections" name="research_selections" value="0"
+                                min="0" max="10" required placeholder="Count">
+                            <div class="form-text small">Number of research targets to pick.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-warning"><i class="bi bi-tools me-1"></i>Extension Required</label>
+                            <input type="number" class="form-control shadow-sm" id="extension_selections" name="extension_selections" value="0"
+                                min="0" max="10" required placeholder="Count">
+                            <div class="form-text small">Number of extension targets to pick.</div>
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold">3. Map Allowed Master Indicators</label>
-                        <div class="card shadow-sm border-0">
-                            <ul class="list-group list-group-flush">
-                                {% for ind in ret_indicators %}
-                                <li class="list-group-item py-3">
-                                    <input class="form-check-input me-2 indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
-                                        name="indicator_ids[]" value="{{ ind.indicator_id }}">
-                                    <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
-                                        <span class="badge bg-light text-dark border me-1">{{ ind.category_name }}</span> {{ ind.indicator_description }}
-                                    </label>
-                                </li>
-                                {% else %}
-                                <li class="list-group-item py-3 text-muted">
-                                    No registered indicators to map. Please add targets in Phase 1 first.
-                                </li>
-                                {% endfor %}
-                            </ul>
+                        <label class="form-label fw-bold">4. Map Allowed Master Indicators</label>
+                        <div class="row">
+                            <!-- Research Indicators -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card shadow-sm border-0 h-100" style="border-top: 3px solid #0d6efd !important;">
+                                    <div class="card-header bg-light py-2">
+                                        <h6 class="fw-bold text-primary mb-0 small">Research Options</h6>
+                                    </div>
+                                    <ul class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+                                        {% set ns_r = namespace(found=false) %}
+                                        {% for ind in ret_indicators %}
+                                        {% if ind.category_name == 'A. Research' %}
+                                        {% set ns_r.found = true %}
+                                        <li class="list-group-item py-2 small">
+                                            <input class="form-check-input me-2 indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
+                                                name="research_indicator_ids[]" value="{{ ind.indicator_id }}">
+                                            <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
+                                                {{ ind.indicator_description }}
+                                            </label>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        {% if not ns_r.found %}
+                                        <li class="list-group-item py-2 text-muted small">No Research indicators available.</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                            <!-- Extension Indicators -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card shadow-sm border-0 h-100" style="border-top: 3px solid #fd7e14 !important;">
+                                    <div class="card-header bg-light py-2">
+                                        <h6 class="fw-bold text-warning mb-0 small">Extension Options</h6>
+                                    </div>
+                                    <ul class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+                                        {% set ns_e = namespace(found=false) %}
+                                        {% for ind in ret_indicators %}
+                                        {% if ind.category_name == 'B. Extension Services / Training / Advisory' %}
+                                        {% set ns_e.found = true %}
+                                        <li class="list-group-item py-2 small">
+                                            <input class="form-check-input me-2 indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
+                                                name="extension_indicator_ids[]" value="{{ ind.indicator_id }}">
+                                            <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
+                                                {{ ind.indicator_description }}
+                                            </label>
+                                        </li>
+                                        {% endif %}
+                                        {% endfor %}
+                                        {% if not ns_e.found %}
+                                        <li class="list-group-item py-2 text-muted small">No Extension indicators available.</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -191,7 +277,6 @@
                 </form>
             </div>
         </div>
-    </div>
 </div>
 
 <!-- Phase 3: Active Rules -->
@@ -201,8 +286,7 @@
         <p>Current logic mappings dictating what faculty see on their dashboards.</p>
     </div>
     
-    <div class="card shadow-sm border-0 mb-4">
-            </div>
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
                 <p class="text-muted small">Current logic mappings dictating what faculty see on their dashboards.</p>
                 <div class="table-responsive">
@@ -210,30 +294,39 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Academic Rank</th>
-                                <th class="text-center">Required Target Count</th>
-                                <th class="text-center">Mapped Options Available</th>
+                                <th class="text-center text-primary">Research Required</th>
+                                <th class="text-center">Research Options</th>
+                                <th class="text-center text-warning">Extension Required</th>
+                                <th class="text-center">Extension Options</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for rule in ret_rules %}
                             <tr>
-                                <td class="fw-bold text-primary">{{ rule.academic_rank }}</td>
-                                <td class="text-center fw-bold">{{ rule.required_selections }}</td>
+                                <td class="fw-bold text-dark">{{ rule.academic_rank }}</td>
+                                <td class="text-center fw-bold text-primary">{{ rule.research_required }}</td>
                                 <td class="text-center">
-                                    <span class="badge bg-secondary"
-                                        title="{% for i in rule.indicators %}{{ i.desc }}{% if not loop.last %}&#10;{% endif %}{% endfor %}">
-                                        {{ rule.indicators|length }} Options
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary"
+                                        title="{% for i in rule.research_indicators %}{{ i.desc }}{% if not loop.last %}&#10;{% endif %}{% endfor %}">
+                                        {{ rule.research_indicators|length }} Options
+                                    </span>
+                                </td>
+                                <td class="text-center fw-bold text-warning">{{ rule.extension_required }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning"
+                                        title="{% for i in rule.extension_indicators %}{{ i.desc }}{% if not loop.last %}&#10;{% endif %}{% endfor %}">
+                                        {{ rule.extension_indicators|length }} Options
                                     </span>
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-2">
                                         <button type="button" class="btn btn-sm btn-outline-primary px-3" 
-                                            onclick='editRule("{{ rule.academic_rank }}", {{ rule.required_selections }}, [{% for i in rule.indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}])'>
+                                            onclick='editRule("{{ rule.academic_rank }}", {{ rule.research_required }}, {{ rule.extension_required }}, [{% for i in rule.research_indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}], [{% for i in rule.extension_indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}])'>
                                             <i class="bi bi-pencil me-1"></i>Edit
                                         </button>
                                         <form method="POST" action="{{ url_for('ret_chair_delete_rule') }}" class="m-0"
-                                            onsubmit="return confirm('Delete this rule?');">
+                                            onsubmit="return confirm('Delete all RET rules for this rank?');">
                                             <input type="hidden" name="rule_id" value="{{ rule.rule_id }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger px-3"><i class="bi bi-trash me-1"></i>Delete</button>
                                         </form>
@@ -242,7 +335,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted">No menu rules configured yet.</td>
+                                <td colspan="6" class="text-center text-muted">No menu rules configured yet.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -261,7 +354,6 @@
     </div>
     
     <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #FFC107 !important;">
-            </div>
             <div class="card-body">
                 <p class="text-muted small">Review and approve the specific research targets selected by faculty members
                     for this semester.</p>
@@ -305,13 +397,11 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const rankSelect = document.getElementById('academic_rank');
-        const requiredInput = document.getElementById('required_selections');
         const checkboxes = document.querySelectorAll('.indicator-checkbox');
         
         function toggleCheckboxes() {
             const rankVal = rankSelect.value;
-            const reqVal = requiredInput.value;
-            const disabled = !(rankVal && reqVal && parseInt(reqVal) > 0);
+            const disabled = !rankVal;
             
             checkboxes.forEach(cb => {
                 cb.disabled = disabled;
@@ -319,14 +409,13 @@
             });
         }
 
-        if(rankSelect && requiredInput) {
+        if(rankSelect) {
             rankSelect.addEventListener('change', toggleCheckboxes);
-            requiredInput.addEventListener('input', toggleCheckboxes);
             toggleCheckboxes(); // run on load
         }
     });
 
-    function editRule(rank, requiredCount, selectedIndicatorIds) {
+    function editRule(rank, researchCount, extensionCount, researchIds, extensionIds) {
         // Automatically switch to Phase 2 (Menu Config) section
         if (typeof showSection === 'function') {
             showSection('nav-phase2');
@@ -339,7 +428,8 @@
         
         // Populate inputs
         document.getElementById('academic_rank').value = rank;
-        document.getElementById('required_selections').value = requiredCount;
+        document.getElementById('research_selections').value = researchCount;
+        document.getElementById('extension_selections').value = extensionCount;
         
         // Trigger the toggle to enable checkboxes
         const event = new Event('change');
@@ -350,7 +440,13 @@
         checkboxes.forEach(cb => cb.checked = false);
         
         // Check the previously selected ones
-        selectedIndicatorIds.forEach(id => {
+        researchIds.forEach(id => {
+            const cb = document.getElementById('ind_' + id);
+            if(cb) {
+                cb.checked = true;
+            }
+        });
+        extensionIds.forEach(id => {
             const cb = document.getElementById('ind_' + id);
             if(cb) {
                 cb.checked = true;

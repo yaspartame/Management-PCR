@@ -90,7 +90,7 @@
             <div class="col-lg-7">
                 <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
                     <div class="card-header bg-primary text-white border-0 py-3">
-                        <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i>Core Functions & Support</h5>
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i>Strategic Priorities</h5>
                         <p class="small mb-0 opacity-75">Assigned by your Program Chair</p>
                     </div>
                     <div class="card-body p-0">
@@ -137,35 +137,34 @@
 
             <!-- Right Column: RET Selection Menu -->
             <div class="col-lg-5">
-                <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-header bg-success text-white border-0 py-3">
-                        <h5 class="mb-0 fw-bold"><i class="bi bi-journal-bookmark-fill me-2"></i>RET / Extension Menu</h5>
+                <!-- Research Card -->
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-primary text-white border-0 py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-star-fill me-2"></i>Research Menu</h5>
                         <p class="small mb-0 opacity-75">Select based on your academic rank ({{ academic_rank }})</p>
                     </div>
                     <div class="card-body bg-light">
-                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-success border-opacity-25">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-primary border-opacity-25">
                             <span class="fw-semibold text-dark">Required Selections:</span>
-                            <span class="badge bg-success fs-5 px-3 py-2 rounded-pill" id="selectionCount">
-                                0 / {{ ret_menu.required_selections }}
+                            <span class="badge bg-primary fs-5 px-3 py-2 rounded-pill" id="researchCountDisplay">
+                                0 / {{ ret_menu.research_required }}
                             </span>
                         </div>
 
-                        {% if ret_menu.indicators|length > 0 %}
-                            <div class="ret-options-container" style="max-height: 400px; overflow-y: auto;">
-                                {% for ind in ret_menu.indicators %}
-                                {# Check if this indicator is already selected in assigned_targets #}
+                        {% if ret_menu.research_indicators|length > 0 %}
+                            <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
+                                {% for ind in ret_menu.research_indicators %}
                                 {% set is_selected = False %}
                                 {% for t in assigned_targets %}
                                     {% if t.indicator_id == ind.indicator_id %}
                                         {% set is_selected = True %}
                                     {% endif %}
                                 {% endfor %}
-
                                 <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
                                        style="cursor: pointer; transition: all 0.2s ease;">
                                     <div class="d-flex align-items-start gap-3">
                                         <div class="form-check mt-1">
-                                            <input class="form-check-input ret-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
+                                            <input class="form-check-input research-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
                                                 {% if is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
                                         </div>
                                         <div>
@@ -176,9 +175,55 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            <div class="text-center py-5">
-                                <i class="bi bi-slash-circle fs-1 text-muted opacity-50 mb-3 d-block"></i>
-                                <p class="text-muted">No RET indicators available for your rank.</p>
+                            <div class="text-center py-4">
+                                <i class="bi bi-slash-circle fs-2 text-muted opacity-50 mb-2 d-block"></i>
+                                <p class="text-muted small">No Research indicators available.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Extension Card -->
+                <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header border-0 py-3" style="background-color: #fd7e14;">
+                        <h5 class="mb-0 fw-bold text-white"><i class="bi bi-tools me-2"></i>Extension Menu</h5>
+                        <p class="small mb-0 text-white opacity-75">Select based on your academic rank ({{ academic_rank }})</p>
+                    </div>
+                    <div class="card-body bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-warning border-opacity-25">
+                            <span class="fw-semibold text-dark">Required Selections:</span>
+                            <span class="badge bg-warning text-dark fs-5 px-3 py-2 rounded-pill" id="extensionCountDisplay">
+                                0 / {{ ret_menu.extension_required }}
+                            </span>
+                        </div>
+
+                        {% if ret_menu.extension_indicators|length > 0 %}
+                            <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
+                                {% for ind in ret_menu.extension_indicators %}
+                                {% set is_selected = False %}
+                                {% for t in assigned_targets %}
+                                    {% if t.indicator_id == ind.indicator_id %}
+                                        {% set is_selected = True %}
+                                    {% endif %}
+                                {% endfor %}
+                                <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
+                                       style="cursor: pointer; transition: all 0.2s ease;">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="form-check mt-1">
+                                            <input class="form-check-input extension-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
+                                                {% if is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 small text-secondary">{{ ind.indicator_description }}</p>
+                                        </div>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-slash-circle fs-2 text-muted opacity-50 mb-2 d-block"></i>
+                                <p class="text-muted small">No Extension indicators available.</p>
                             </div>
                         {% endif %}
                     </div>
@@ -189,12 +234,12 @@
         <div class="mt-4 text-end">
             {% if not has_submitted %}
             <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn" 
-                    {% if ret_menu.required_selections > 0 %}disabled{% endif %}>
+                    {% if ret_menu.research_required > 0 or ret_menu.extension_required > 0 %}disabled{% endif %}>
                 <i class="bi bi-send-check-fill me-2"></i> Submit IPCR for Approval
             </button>
             <p class="small text-muted mt-2 mb-0" id="submitHelpText">
-                {% if ret_menu.required_selections > 0 %}
-                You must complete your RET selections before submitting.
+                {% if ret_menu.research_required > 0 or ret_menu.extension_required > 0 %}
+                You must complete your Research and Extension selections before submitting.
                 {% endif %}
             </p>
             {% else %}
@@ -225,50 +270,65 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const checkboxes = document.querySelectorAll('.ret-checkbox');
+        const researchCheckboxes = document.querySelectorAll('.research-checkbox');
+        const extensionCheckboxes = document.querySelectorAll('.extension-checkbox');
         const submitBtn = document.getElementById('submitBtn');
-        const countDisplay = document.getElementById('selectionCount');
+        const rCountDisplay = document.getElementById('researchCountDisplay');
+        const eCountDisplay = document.getElementById('extensionCountDisplay');
         const helpText = document.getElementById('submitHelpText');
-        const requiredCount = {{ ret_menu.required_selections }};
+        const rRequiredCount = {{ ret_menu.research_required }};
+        const eRequiredCount = {{ ret_menu.extension_required }};
         const hasSubmitted = {{ 'true' if has_submitted else 'false' }};
         
         function updateSelectionCount() {
             if (hasSubmitted) return;
-            if (checkboxes.length === 0) {
-                if (submitBtn) submitBtn.disabled = false;
-                if (helpText) helpText.style.display = 'none';
-                return;
+            
+            let rSelected = Array.from(researchCheckboxes).filter(cb => cb.checked).length;
+            let eSelected = Array.from(extensionCheckboxes).filter(cb => cb.checked).length;
+            
+            if (rCountDisplay) rCountDisplay.innerText = `${rSelected} / ${rRequiredCount}`;
+            if (eCountDisplay) eCountDisplay.innerText = `${eSelected} / ${eRequiredCount}`;
+            
+            let rValid = rSelected === rRequiredCount;
+            let eValid = eSelected === eRequiredCount;
+            
+            // Handle Research Count Display
+            if (rCountDisplay) {
+                if (rValid) {
+                    rCountDisplay.classList.remove('bg-warning', 'text-dark');
+                    rCountDisplay.classList.add('bg-primary', 'text-white');
+                    researchCheckboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
+                } else {
+                    rCountDisplay.classList.remove('bg-primary', 'text-white');
+                    rCountDisplay.classList.add('bg-warning', 'text-dark');
+                    researchCheckboxes.forEach(cb => cb.disabled = false);
+                }
             }
             
-            let selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-            countDisplay.innerText = `${selectedCount} / ${requiredCount}`;
+            // Handle Extension Count Display
+            if (eCountDisplay) {
+                if (eValid) {
+                    eCountDisplay.classList.remove('bg-warning', 'text-dark');
+                    eCountDisplay.classList.add('bg-success', 'text-white');
+                    extensionCheckboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
+                } else {
+                    eCountDisplay.classList.remove('bg-success', 'text-white');
+                    eCountDisplay.classList.add('bg-warning', 'text-dark');
+                    extensionCheckboxes.forEach(cb => cb.disabled = false);
+                }
+            }
             
-            if (selectedCount === requiredCount) {
-                countDisplay.classList.remove('bg-warning');
-                countDisplay.classList.add('bg-success');
-                submitBtn.disabled = false;
-                helpText.style.display = 'none';
-                
-                // Disable unselected to prevent over-selection
-                checkboxes.forEach(cb => {
-                    if (!cb.checked) cb.disabled = true;
-                });
+            if (rValid && eValid) {
+                if (submitBtn) submitBtn.disabled = false;
+                if (helpText) helpText.style.display = 'none';
             } else {
-                countDisplay.classList.remove('bg-success');
-                countDisplay.classList.add('bg-warning', 'text-dark');
-                submitBtn.disabled = true;
-                helpText.style.display = 'block';
-                
-                // Re-enable all if under the limit
-                checkboxes.forEach(cb => {
-                    cb.disabled = false;
-                });
+                if (submitBtn) submitBtn.disabled = true;
+                if (helpText) helpText.style.display = 'block';
             }
         }
         
-        checkboxes.forEach(cb => {
-            cb.addEventListener('change', updateSelectionCount);
-        });
+        researchCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
+        extensionCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
         
         // Initial check
         updateSelectionCount();

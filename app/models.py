@@ -515,13 +515,23 @@ def get_ret_indicators(cursor, term_id):
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
-def save_ret_rule(conn, cursor, term_id, academic_rank, required_selections, indicator_ids):
+def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, extension_selections, research_indicator_ids, extension_indicator_ids):
     try:
-        cursor.execute("DELETE FROM tbl_cascaded_quotas WHERE term_id = %s AND assigned_to_role = %s", (term_id, academic_rank))
+        cursor.execute("""
+            DELETE cq FROM tbl_cascaded_quotas cq
+            JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+            JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+            WHERE cq.term_id = %s AND cq.assigned_to_role = %s 
+              AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
+        """, (term_id, academic_rank))
         
-        for ind_id in indicator_ids:
+        for ind_id in research_indicator_ids:
             cursor.execute("INSERT INTO tbl_cascaded_quotas (term_id, indicator_id, total_target_value, assigned_to_role) VALUES (%s, %s, %s, %s)", 
-                           (term_id, ind_id, required_selections, academic_rank))
+                           (term_id, ind_id, research_selections, academic_rank))
+                           
+        for ind_id in extension_indicator_ids:
+            cursor.execute("INSERT INTO tbl_cascaded_quotas (term_id, indicator_id, total_target_value, assigned_to_role) VALUES (%s, %s, %s, %s)", 
+                           (term_id, ind_id, extension_selections, academic_rank))
             
         conn.commit()
         return True, "Menu configuration saved successfully."
@@ -531,33 +541,62 @@ def save_ret_rule(conn, cursor, term_id, academic_rank, required_selections, ind
 
 def get_ret_rules(cursor, term_id):
     cursor.execute("""
-        SELECT cq.assigned_to_role, cq.total_target_value, mi.indicator_id, mi.indicator_description
+        SELECT cq.assigned_to_role, cq.total_target_value, mi.indicator_id, mi.indicator_description, tc.category_name
         FROM tbl_cascaded_quotas cq
         JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+        JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
         WHERE cq.term_id = %s AND cq.assigned_to_role IN (
             SELECT DISTINCT academic_rank FROM tbl_employee_profiles WHERE academic_rank IS NOT NULL AND academic_rank != ''
-        )
+        ) AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
     """, (term_id,))
     
     rows = cursor.fetchall()
     rules_dict = {}
     
     for r in rows:
-        rank, required, ind_id, desc = r
+        rank, required, ind_id, desc, category = r
         if rank not in rules_dict:
             rules_dict[rank] = {
                 'rule_id': rank, 
                 'academic_rank': rank,
-                'required_selections': required,
-                'indicators': []
+                'research_required': 0,
+                'extension_required': 0,
+                'research_indicators': [],
+                'extension_indicators': []
             }
-        rules_dict[rank]['indicators'].append({'id': ind_id, 'desc': desc})
+            
+        if category == 'A. Research':
+            rules_dict[rank]['research_required'] = required
+            rules_dict[rank]['research_indicators'].append({'id': ind_id, 'desc': desc})
+        elif category == 'B. Extension Services / Training / Advisory':
+            rules_dict[rank]['extension_required'] = required
+            rules_dict[rank]['extension_indicators'].append({'id': ind_id, 'desc': desc})
         
     return list(rules_dict.values())
 
-def delete_ret_rule(conn, cursor, rule_id):
+def delete_ret_rule(conn, cursor, rule_id, category_type=None):
     try:
-        cursor.execute("DELETE FROM tbl_cascaded_quotas WHERE assigned_to_role = %s", (rule_id,))
+        if category_type == 'research':
+            cursor.execute("""
+                DELETE cq FROM tbl_cascaded_quotas cq
+                JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+                JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                WHERE cq.assigned_to_role = %s AND tc.category_name = 'A. Research'
+            """, (rule_id,))
+        elif category_type == 'extension':
+            cursor.execute("""
+                DELETE cq FROM tbl_cascaded_quotas cq
+                JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+                JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                WHERE cq.assigned_to_role = %s AND tc.category_name = 'B. Extension Services / Training / Advisory'
+            """, (rule_id,))
+        else:
+            cursor.execute("""
+                DELETE cq FROM tbl_cascaded_quotas cq
+                JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+                JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                WHERE cq.assigned_to_role = %s AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
+            """, (rule_id,))
         conn.commit()
         return True
     except Exception as e:
@@ -581,22 +620,36 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
 
 def get_faculty_ret_menu(cursor, academic_rank, term_id):
     query = """
-        SELECT cq.total_target_value as required_selections, mi.indicator_id, mi.indicator_description
+        SELECT cq.total_target_value as required_selections, mi.indicator_id, mi.indicator_description, tc.category_name
         FROM tbl_cascaded_quotas cq
         JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+        JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
         WHERE cq.term_id = %s AND cq.assigned_to_role = %s
+          AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
     """
     cursor.execute(query, (term_id, academic_rank))
     columns = [col[0] for col in cursor.description]
     results = [dict(zip(columns, row)) for row in cursor.fetchall()]
     
-    if not results:
-        return {'required_selections': 0, 'indicators': []}
-        
-    return {
-        'required_selections': int(results[0]['required_selections']),
-        'indicators': results
+    ret_menu = {
+        'research_required': 0,
+        'extension_required': 0,
+        'research_indicators': [],
+        'extension_indicators': []
     }
+    
+    if not results:
+        return ret_menu
+        
+    for r in results:
+        if r['category_name'] == 'A. Research':
+            ret_menu['research_required'] = int(r['required_selections'])
+            ret_menu['research_indicators'].append(r)
+        elif r['category_name'] == 'B. Extension Services / Training / Advisory':
+            ret_menu['extension_required'] = int(r['required_selections'])
+            ret_menu['extension_indicators'].append(r)
+            
+    return ret_menu
 
 def save_faculty_ret_selections(conn, cursor, emp_id, term_id, selected_indicator_ids):
     try:
