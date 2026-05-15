@@ -30,7 +30,7 @@
     <i class="bi bi-shield-lock-fill text-danger"></i>
     <span class="nav-text text-danger">System Security</span>
 </button>
-<a href="{{ url_for('admin_backup') }}" class="nav-item">
+<a href="{{ url_for('admin.admin_backup') }}" class="nav-item">
     <i class="bi bi-hdd-fill"></i>
     <span class="nav-text">Backup Database</span>
 </a>
@@ -147,7 +147,7 @@
                                         <td>
                                             <button class="btn btn-outline-primary btn-sm me-1"
                                                 onclick='editFaculty({{ p | tojson | safe }})'>Edit</button>
-                                            <form method="POST" action="{{ url_for('toggle_status') }}"
+                                            <form method="POST" action="{{ url_for('admin.toggle_status') }}"
                                                 class="d-inline">
                                                 <input type="hidden" name="employee_id_number"
                                                     value="{{ p.employee_id_number }}">
@@ -187,7 +187,7 @@
                                 <h5 class="fw-bold text-dark mb-0">Open New Term</h5>
                             </div>
                             <div class="card-body">
-                                <form action="{{ url_for('admin_open_term') }}" method="POST">
+                                <form action="{{ url_for('admin.admin_open_term') }}" method="POST">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Academic Year</label>
                                         <input type="text" class="form-control" name="academic_year"
@@ -276,7 +276,7 @@
                                     Active Term: <strong>{{ active_term.academic_year }} &mdash; {{ active_term.semester
                                         }}</strong>
                                 </div>
-                                <form action="{{ url_for('admin_add_indicator') }}" method="POST">
+                                <form action="{{ url_for('admin.admin_add_indicator') }}" method="POST">
                                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold">Category (OPCR Group)</label>
@@ -334,7 +334,7 @@
                                     <p class="text-muted small mb-0">Grouped by OPCR functional category</p>
                                 </div>
                                 {% if active_term and not indicators %}
-                                <form action="{{ url_for('admin_import_indicators') }}" method="POST">
+                                <form action="{{ url_for('admin.admin_import_indicators') }}" method="POST">
                                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                                     <button type="submit" class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-cloud-download me-1"></i> Import from Previous Term
@@ -366,7 +366,7 @@
                                                     data-ind-desc="{{ ind.indicator_description | e }}"
                                                     data-ind-type="{{ ind.efficiency_type | e }}"
                                                     onclick="fillEditModal(this)">Edit</button>
-                                                <form method="POST" action="{{ url_for('admin_delete_indicator') }}" class="d-inline"
+                                                <form method="POST" action="{{ url_for('admin.admin_delete_indicator') }}" class="d-inline"
                                                     onsubmit="return confirm('Delete this indicator? This cannot be undone.')">
                                                     <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
                                                     <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -394,7 +394,7 @@
                                                     data-ind-desc="{{ ind.indicator_description | e }}"
                                                     data-ind-type="{{ ind.efficiency_type | e }}"
                                                     onclick="fillEditModal(this)">Edit</button>
-                                                <form method="POST" action="{{ url_for('admin_delete_indicator') }}" class="d-inline"
+                                                <form method="POST" action="{{ url_for('admin.admin_delete_indicator') }}" class="d-inline"
                                                     onsubmit="return confirm('Delete this indicator? This cannot be undone.')">
                                                     <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
                                                     <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
@@ -569,7 +569,7 @@
                                             {% endif %}
                                         </td>
                                         <td class="d-flex gap-1">
-                                            <form method="POST" action="{{ url_for('admin_reset_password') }}"
+                                            <form method="POST" action="{{ url_for('admin.admin_reset_password') }}"
                                                 class="d-inline"
                                                 onsubmit="return confirm('Issue a temporary password for this account? The admin must relay the new password to the user directly.')">
                                                 <input type="hidden" name="emp_id" value="{{ u[0] }}">
@@ -577,7 +577,7 @@
                                                     <i class="bi bi-key-fill me-1"></i>Issue Temp Password
                                                 </button>
                                             </form>
-                                            <form method="POST" action="{{ url_for('admin_lock_account') }}"
+                                            <form method="POST" action="{{ url_for('admin.admin_lock_account') }}"
                                                 class="d-inline"
                                                 onsubmit="return confirm('Force lock this account? The user will be unable to log in.')">
                                                 <input type="hidden" name="emp_id" value="{{ u[0] }}">
@@ -655,7 +655,7 @@
 <div class="modal fade" id="editIndicatorModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
-            <form action="{{ url_for('admin_edit_indicator') }}" method="POST">
+            <form action="{{ url_for('admin.admin_edit_indicator') }}" method="POST">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold">Edit Master Indicator</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -705,7 +705,7 @@
 <div class="modal fade" id="facultyModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
-            <form action="{{ url_for('save_faculty') }}" method="POST">
+            <form action="{{ url_for('admin.save_faculty') }}" method="POST">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold" id="modalTitle">Add New Faculty</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -817,7 +817,7 @@
 <div class="modal fade" id="csvUploadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
-            <form action="{{ url_for('import_csv') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('admin.import_csv') }}" method="POST" enctype="multipart/form-data">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold">Upload HR Roster (CSV)</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

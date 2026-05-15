@@ -176,7 +176,7 @@
             <div class="card-body">
                 <p class="text-muted small mb-4">Map the registered research and extension targets to specific academic ranks to
                     generate the faculty selection menus.</p>
-                <form action="{{ url_for('ret_chair_save_rule') }}" method="POST">
+                <form action="{{ url_for('ret_chair.ret_chair_save_rule') }}" method="POST">
                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                     
                     <div class="row mb-4">
@@ -325,7 +325,7 @@
                                             onclick='editRule("{{ rule.academic_rank }}", {{ rule.research_required }}, {{ rule.extension_required }}, [{% for i in rule.research_indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}], [{% for i in rule.extension_indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}])'>
                                             <i class="bi bi-pencil me-1"></i>Edit
                                         </button>
-                                        <form method="POST" action="{{ url_for('ret_chair_delete_rule') }}" class="m-0"
+                                        <form method="POST" action="{{ url_for('ret_chair.ret_chair_delete_rule') }}" class="m-0"
                                             onsubmit="return confirm('Delete all RET rules for this rank?');">
                                             <input type="hidden" name="rule_id" value="{{ rule.rule_id }}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger px-3"><i class="bi bi-trash me-1"></i>Delete</button>

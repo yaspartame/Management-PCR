@@ -126,7 +126,7 @@
                             </td>
                             <td class="text-center text-success fw-bold">{{ ind.total_distributed }} / {{ ind.dept_quota }}</td>
                             <td>
-                                <form id="form_{{ ind.indicator_id }}" action="{{ url_for('assign_chair_target') }}" method="POST" class="m-0">
+                                <form id="form_{{ ind.indicator_id }}" action="{{ url_for('prog_chair.assign_chair_target') }}" method="POST" class="m-0">
                                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                                     <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
                                     <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-save"></i> Save</button>
@@ -179,7 +179,7 @@
                             </td>
                             <td class="text-center text-success fw-bold">{{ ind.total_distributed }} / {{ ind.dept_quota }}</td>
                             <td>
-                                <form id="form_{{ ind.indicator_id }}" action="{{ url_for('assign_chair_target') }}" method="POST" class="m-0">
+                                <form id="form_{{ ind.indicator_id }}" action="{{ url_for('prog_chair.assign_chair_target') }}" method="POST" class="m-0">
                                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                                     <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
                                     <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-save"></i> Save</button>

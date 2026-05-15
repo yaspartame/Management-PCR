@@ -10,7 +10,7 @@
     </div>
 </div>
 
-<form action="{{ url_for('register') }}" method="POST">
+<form action="{{ url_for('auth.register') }}" method="POST">
     <div class="mb-3">
         <label for="employee_id_number" class="form-label text-muted small fw-bold">Employee ID Number</label>
         <input type="text" name="employee_id_number" id="employee_id_number" class="form-control" placeholder="Official ID (e.g. 2024-1045)" required autofocus>
@@ -30,6 +30,6 @@
 </form>
 
 <div class="text-center">
-    <p class="mb-0 small text-muted">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+    <p class="mb-0 small text-muted">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
 </div>
-{% endblock %}
+{% endblock %}

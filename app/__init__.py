@@ -1,10 +1,14 @@
 from flask import Flask
+import os
+from dotenv import load_dotenv
 
-# Initialize the Flask application
+load_dotenv()
+
 app = Flask(__name__)
 
 # Set a secret key for secure sessions (login cookies)
-app.secret_key = 'accrual_version_13_secret_key'
+app.secret_key = os.getenv('SECRET_KEY', 'accrual_version_13_secret_key')
 
-# Import the routes so the app knows what URLs exist
-from app import routes
+# Register route blueprints
+from app.routes import register_blueprints
+register_blueprints(app)

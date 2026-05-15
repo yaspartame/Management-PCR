@@ -93,7 +93,7 @@
                 </div>
                 
                 {% if master_indicators %}
-                <form action="{{ url_for('cascade_quotas') }}" method="POST" id="cascadeForm" onsubmit="return validateQuotas()">
+                <form action="{{ url_for('dean.cascade_quotas') }}" method="POST" id="cascadeForm" onsubmit="return validateQuotas()">
                     <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                     
                     <div class="table-responsive">
@@ -229,7 +229,7 @@
         <div class="card-body">
                 
                 {% if pending_approvals %}
-                <form id="approvalForm" action="{{ url_for('batch_approve') }}" method="POST">
+                <form id="approvalForm" action="{{ url_for('dean.batch_approve') }}" method="POST">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>

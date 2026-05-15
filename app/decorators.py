@@ -4,7 +4,7 @@ def role_required(required_role):
     def decorator(func):
         def wrapper(*args, **kwargs):
             if 'user_id' not in session:
-                return redirect(url_for('login'))
+                return redirect(url_for('auth.login'))
             if session.get('role') != required_role:
                 return "Unauthorised", 403
             return func(*args, **kwargs)
