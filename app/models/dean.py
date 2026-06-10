@@ -18,7 +18,8 @@ def get_overall_completion(cursor, term_id):
             COUNT(*) as total_targets,
             SUM(CASE WHEN ts.status = 'Approved' THEN 1 ELSE 0 END) as completed_targets
         FROM tbl_committed_targets ts
-        WHERE ts.term_id = %s
+        JOIN tbl_master_indicators mi ON ts.indicator_id = mi.indicator_id
+        WHERE mi.term_id = %s
     """
     cursor.execute(query, (term_id,))
     result = cursor.fetchone()

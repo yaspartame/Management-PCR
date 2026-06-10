@@ -30,9 +30,10 @@ def get_assigned_quantity(cursor, term_id, indicator_id, faculty_ids):
         return 0
     format_strings = ','.join(['%s'] * len(faculty_ids))
     query = f"""
-        SELECT assigned_quantity
-        FROM tbl_committed_targets
-        WHERE term_id = %s AND indicator_id = %s AND emp_id IN ({format_strings})
+        SELECT ct.assigned_quantity
+        FROM tbl_committed_targets ct
+        JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
+        WHERE mi.term_id = %s AND ct.indicator_id = %s AND ct.emp_id IN ({format_strings})
         LIMIT 1
     """
     cursor.execute(query, [term_id, indicator_id] + faculty_ids)
@@ -47,7 +48,12 @@ def save_chair_allocation(conn, cursor, term_id, indicator_id, assigned_quantity
 
         for emp_id in faculty_ids:
             # Check if exists
-            check_query = "SELECT target_id FROM tbl_committed_targets WHERE emp_id = %s AND term_id = %s AND indicator_id = %s"
+            check_query = """
+                SELECT ct.target_id 
+                FROM tbl_committed_targets ct
+                JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
+                WHERE ct.emp_id = %s AND mi.term_id = %s AND ct.indicator_id = %s
+            """
             cursor.execute(check_query, (emp_id, term_id, indicator_id))
             existing = cursor.fetchall()
 
@@ -56,10 +62,10 @@ def save_chair_allocation(conn, cursor, term_id, indicator_id, assigned_quantity
                 cursor.execute(update_query, (assigned_quantity, existing[0][0]))
             else:
                 insert_query = """
-                    INSERT INTO tbl_committed_targets (emp_id, term_id, indicator_id, assigned_quantity, status)
-                    VALUES (%s, %s, %s, %s, 'Draft')
+                    INSERT INTO tbl_committed_targets (emp_id, indicator_id, assigned_quantity, status)
+                    VALUES (%s, %s, %s, 'Draft')
                 """
-                cursor.execute(insert_query, (emp_id, term_id, indicator_id, assigned_quantity))
+                cursor.execute(insert_query, (emp_id, indicator_id, assigned_quantity))
 
         conn.commit()
         return True, "Targets distributed successfully to all faculty in your specialization."

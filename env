@@ -1,0 +1,9 @@
+# Database Configuration
+DB_HOST=144.21.57.156
+DB_PORT=6767
+DB_NAME=ipcr_db
+DB_USER=app_user
+DB_PASSWORD=cN5FTZkDnJ+RdtnANZ1xCqD/EDspz7WqHEasXc0QHFZ9xtG2XopJdsL9S83QSvvAOmRzkUpHU3K27bsGY8csNA==
+
+# Flask Secret Key
+SECRET_KEY=dipcr_version_13_secret_key

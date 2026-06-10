@@ -5,7 +5,7 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
         FROM tbl_committed_targets ct
         JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
         LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-        WHERE ct.emp_id = %s AND ct.term_id = %s
+        WHERE ct.emp_id = %s AND mi.term_id = %s
     """
     cursor.execute(query, (emp_id, term_id))
     columns = [col[0] for col in cursor.description]
@@ -63,16 +63,16 @@ def save_faculty_ret_selections(conn, cursor, emp_id, term_id, selected_indicato
             format_strings = ','.join(['%s'] * len(ret_indicator_ids))
             delete_query = f"""
                 DELETE FROM tbl_committed_targets 
-                WHERE emp_id = %s AND term_id = %s AND indicator_id IN ({format_strings})
+                WHERE emp_id = %s AND indicator_id IN ({format_strings})
             """
-            cursor.execute(delete_query, [emp_id, term_id] + ret_indicator_ids)
+            cursor.execute(delete_query, [emp_id] + ret_indicator_ids)
 
         # Insert new RET selections
         for ind_id in selected_indicator_ids:
             cursor.execute("""
-                INSERT INTO tbl_committed_targets (emp_id, term_id, indicator_id, assigned_quantity, status)
-                VALUES (%s, %s, %s, 1, 'Draft')
-            """, (emp_id, term_id, ind_id))
+                INSERT INTO tbl_committed_targets (emp_id, indicator_id, assigned_quantity, status)
+                VALUES (%s, %s, 1, 'Draft')
+            """, (emp_id, ind_id))
 
         conn.commit()
         return True, "RET selections saved."
@@ -84,9 +84,10 @@ def save_faculty_ret_selections(conn, cursor, emp_id, term_id, selected_indicato
 def submit_faculty_ipcr(conn, cursor, emp_id, term_id):
     try:
         cursor.execute("""
-            UPDATE tbl_committed_targets 
-            SET status = 'Pending Approval'
-            WHERE emp_id = %s AND term_id = %s AND status IN ('Draft', 'Pending Approval')
+            UPDATE tbl_committed_targets ct
+            JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
+            SET ct.status = 'Pending Approval'
+            WHERE ct.emp_id = %s AND mi.term_id = %s AND ct.status IN ('Draft', 'Pending Approval')
         """, (emp_id, term_id))
         conn.commit()
         return True, "IPCR successfully submitted for approval."

@@ -37,7 +37,7 @@ def admin_backup():
 
         output = io.StringIO()
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        output.write(f"-- Accrual IPCR System Database Backup\n")
+        output.write(f"-- D-IPCR IPCR System Database Backup\n")
         output.write(f"-- Generated: {timestamp}\n")
         output.write(f"-- Database: ipcr_db\n\n")
         output.write("SET FOREIGN_KEY_CHECKS=0;\n\n")
