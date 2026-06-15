@@ -10,3 +10,4 @@ from .dean import *
 from .prog_chair import *
 from .ret_chair import *
 from .faculty import *
+from .designated import *

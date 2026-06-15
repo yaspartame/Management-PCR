@@ -79,7 +79,7 @@ def authenticate():
         return redirect(url_for('prog_chair.prog_chair_dashboard'))
     elif role == "RET_CHAIR":
         return redirect(url_for('ret_chair.ret_chair_dashboard'))
-    elif role == "DESIGNATED":
+    elif role == "DESIGNATED_FACULTY":
         return redirect(url_for('designated.designated_dashboard'))
     else:
         flash(f"No system role assigned to this account (Role: {role}).", "danger")
