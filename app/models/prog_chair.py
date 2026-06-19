@@ -30,10 +30,10 @@ def get_assigned_quantity(cursor, term_id, indicator_id, faculty_ids):
         return 0
     format_strings = ','.join(['%s'] * len(faculty_ids))
     query = f"""
-        SELECT ct.assigned_quantity
-        FROM tbl_committed_targets ct
-        JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
-        WHERE mi.term_id = %s AND ct.indicator_id = %s AND ct.emp_id IN ({format_strings})
+        SELECT da.assigned_quantity
+        FROM tbl_draft_allocation da
+        JOIN tbl_master_indicators mi ON da.indicator_id = mi.indicator_id
+        WHERE mi.term_id = %s AND da.indicator_id = %s AND da.emp_id IN ({format_strings})
         LIMIT 1
     """
     cursor.execute(query, [term_id, indicator_id] + faculty_ids)
@@ -47,28 +47,27 @@ def save_chair_allocation(conn, cursor, term_id, indicator_id, assigned_quantity
             return False, "No active faculty found for this specialization."
 
         for emp_id in faculty_ids:
-            # Check if exists
+            # Check if an allocation record already exists in the draft staging table
             check_query = """
-                SELECT ct.target_id 
-                FROM tbl_committed_targets ct
-                JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
-                WHERE ct.emp_id = %s AND mi.term_id = %s AND ct.indicator_id = %s
+                SELECT allocation_id 
+                FROM tbl_draft_allocation
+                WHERE emp_id = %s AND indicator_id = %s
             """
-            cursor.execute(check_query, (emp_id, term_id, indicator_id))
+            cursor.execute(check_query, (emp_id, indicator_id))
             existing = cursor.fetchall()
 
             if existing:
-                update_query = "UPDATE tbl_committed_targets SET assigned_quantity = %s WHERE target_id = %s"
+                update_query = "UPDATE tbl_draft_allocation SET assigned_quantity = %s WHERE allocation_id = %s"
                 cursor.execute(update_query, (assigned_quantity, existing[0][0]))
             else:
                 insert_query = """
-                    INSERT INTO tbl_committed_targets (emp_id, indicator_id, assigned_quantity, status)
-                    VALUES (%s, %s, %s, 'Draft')
+                    INSERT INTO tbl_draft_allocation (emp_id, indicator_id, assigned_quantity)
+                    VALUES (%s, %s, %s)
                 """
                 cursor.execute(insert_query, (emp_id, indicator_id, assigned_quantity))
 
         conn.commit()
-        return True, "Targets distributed successfully to all faculty in your specialization."
+        return True, "Targets distributed successfully to all faculty draft worklists."
     except Exception as e:
         conn.rollback()
         return False, str(e)

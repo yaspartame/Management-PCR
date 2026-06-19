@@ -15,50 +15,59 @@ def get_ret_indicators(cursor, term_id):
 
 def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, extension_selections, research_indicator_ids, extension_indicator_ids):
     try:
-        cursor.execute("""
-            DELETE cq FROM tbl_cascaded_quotas cq
-            JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
-            JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-            WHERE cq.term_id = %s AND cq.assigned_to_role = %s 
-              AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
-        """, (term_id, academic_rank))
+        # 1. Clean up existing rules for this academic rank to avoid conflicts
+        cursor.execute("SELECT rule_id FROM tbl_ret_rules WHERE academic_rank = %s", (academic_rank,))
+        rule_ids = [row[0] for row in cursor.fetchall()]
+        if rule_ids:
+            format_strings = ','.join(['%s'] * len(rule_ids))
+            cursor.execute(f"DELETE FROM tbl_ret_rule_indicators WHERE rule_id IN ({format_strings})", tuple(rule_ids))
+            cursor.execute(f"DELETE FROM tbl_ret_rules WHERE rule_id IN ({format_strings})", tuple(rule_ids))
 
-        for ind_id in research_indicator_ids:
-            cursor.execute("INSERT INTO tbl_cascaded_quotas (term_id, indicator_id, total_target_value, assigned_to_role) VALUES (%s, %s, %s, %s)",
-                           (term_id, ind_id, research_selections, academic_rank))
+        # 2. Save Research rule (if indicators are selected)
+        if research_indicator_ids and int(research_selections) > 0:
+            cursor.execute("INSERT INTO tbl_ret_rules (academic_rank, required_selections) VALUES (%s, %s)", 
+                           (academic_rank, int(research_selections)))
+            res_rule_id = cursor.lastrowid
+            for ind_id in set(research_indicator_ids):
+                cursor.execute("INSERT INTO tbl_ret_rule_indicators (rule_id, indicator_id) VALUES (%s, %s)", 
+                               (res_rule_id, ind_id))
 
-        for ind_id in extension_indicator_ids:
-            cursor.execute("INSERT INTO tbl_cascaded_quotas (term_id, indicator_id, total_target_value, assigned_to_role) VALUES (%s, %s, %s, %s)",
-                           (term_id, ind_id, extension_selections, academic_rank))
+        # 3. Save Extension rule (if indicators are selected)
+        if extension_indicator_ids and int(extension_selections) > 0:
+            cursor.execute("INSERT INTO tbl_ret_rules (academic_rank, required_selections) VALUES (%s, %s)", 
+                           (academic_rank, int(extension_selections)))
+            ext_rule_id = cursor.lastrowid
+            for ind_id in set(extension_indicator_ids):
+                cursor.execute("INSERT INTO tbl_ret_rule_indicators (rule_id, indicator_id) VALUES (%s, %s)", 
+                               (ext_rule_id, ind_id))
 
         conn.commit()
-        return True, "Menu configuration saved successfully."
+        return True, "Menu configuration saved successfully to structural rules templates."
     except Exception as e:
         conn.rollback()
         return False, str(e)
 
 
 def get_ret_rules(cursor, term_id):
-    cursor.execute("""
-        SELECT cq.assigned_to_role, cq.total_target_value, mi.indicator_id, mi.indicator_description, tc.category_name
-        FROM tbl_cascaded_quotas cq
-        JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+    query = """
+        SELECT r.rule_id, r.academic_rank, r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name
+        FROM tbl_ret_rules r
+        JOIN tbl_ret_rule_indicators rri ON r.rule_id = rri.rule_id
+        JOIN tbl_master_indicators mi ON rri.indicator_id = mi.indicator_id
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-        WHERE cq.term_id = %s AND cq.assigned_to_role IN (
-            SELECT DISTINCT academic_rank FROM tbl_employee_profiles WHERE academic_rank IS NOT NULL AND academic_rank != ''
-        ) AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
-    """, (term_id,))
-
+        WHERE mi.term_id = %s
+    """
+    cursor.execute(query, (term_id,))
     rows = cursor.fetchall()
     rules_dict = {}
 
     for r in rows:
-        rank, required, ind_id, desc, category = r
+        rule_id, rank, required, ind_id, desc, category = r
         if rank not in rules_dict:
             rules_dict[rank] = {
-                'rule_id': rank,
+                'rule_id': rank,  # Use rank string as rule_id for frontend delete forms
                 'academic_rank': rank,
-                'research_required': 0,
+                'research_required': 0, 
                 'extension_required': 0,
                 'research_indicators': [],
                 'extension_indicators': []
@@ -76,27 +85,14 @@ def get_ret_rules(cursor, term_id):
 
 def delete_ret_rule(conn, cursor, rule_id, category_type=None):
     try:
-        if category_type == 'research':
-            cursor.execute("""
-                DELETE cq FROM tbl_cascaded_quotas cq
-                JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
-                JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-                WHERE cq.assigned_to_role = %s AND tc.category_name = 'A. Research'
-            """, (rule_id,))
-        elif category_type == 'extension':
-            cursor.execute("""
-                DELETE cq FROM tbl_cascaded_quotas cq
-                JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
-                JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-                WHERE cq.assigned_to_role = %s AND tc.category_name = 'B. Extension Services / Training / Advisory'
-            """, (rule_id,))
-        else:
-            cursor.execute("""
-                DELETE cq FROM tbl_cascaded_quotas cq
-                JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
-                JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-                WHERE cq.assigned_to_role = %s AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
-            """, (rule_id,))
+        # Note: rule_id is passed as the academic_rank string from the frontend delete form
+        academic_rank = rule_id
+        cursor.execute("SELECT rule_id FROM tbl_ret_rules WHERE academic_rank = %s", (academic_rank,))
+        rule_ids = [row[0] for row in cursor.fetchall()]
+        if rule_ids:
+            format_strings = ','.join(['%s'] * len(rule_ids))
+            cursor.execute(f"DELETE FROM tbl_ret_rule_indicators WHERE rule_id IN ({format_strings})", tuple(rule_ids))
+            cursor.execute(f"DELETE FROM tbl_ret_rules WHERE rule_id IN ({format_strings})", tuple(rule_ids))
         conn.commit()
         return True
     except Exception as e:

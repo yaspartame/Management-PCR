@@ -31,10 +31,14 @@ def faculty_dashboard():
         if academic_rank:
             ret_menu = get_faculty_ret_menu(cursor, academic_rank, term_id)
 
-        for t in assigned_targets:
-            if t['status'] == 'Pending Approval':
-                has_submitted = True
-                break
+        # Check if the faculty member has submitted by querying tbl_draft_targets
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM tbl_draft_targets dt
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review'
+        """, (emp_id, term_id))
+        has_submitted = cursor.fetchone()[0] > 0
 
     cursor.close()
     conn.close()
@@ -63,10 +67,11 @@ def faculty_submit_ipcr():
     cursor = conn.cursor()
 
     try:
-        if selected_indicators:
-            save_faculty_ret_selections(conn, cursor, emp_id, int(term_id), [int(x) for x in selected_indicators])
+        # Construct research targets payload (proposed_quantity=1 per selection)
+        selected_ret_targets = [{'indicator_id': int(x), 'proposed_quantity': 1} for x in selected_indicators]
 
-        success, msg = submit_faculty_ipcr(conn, cursor, emp_id, int(term_id))
+        # Call submit pipeline (handles writing both chair allocations and RET selections to tbl_draft_targets)
+        success, msg = submit_faculty_ipcr(conn, cursor, emp_id, selected_ret_targets)
 
         if success:
             flash(msg, "success")

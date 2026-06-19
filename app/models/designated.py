@@ -1,25 +1,72 @@
-def get_designated_cascaded_quotas(cursor, term_id):
-    """Fetches targets assigned by the Dean/Admin (YOUR ORIGINAL CODE)"""
+def get_designated_selectable_indicators(cursor, term_id):
+    """
+    Retrieves the standard baseline list of available Instruction and Support functions.
+    Ensures that custom individual modifications from other profiles remain isolated.
+    """
     query = """
-        SELECT cq.*, mi.indicator_description, tc.category_name
-        FROM tbl_cascaded_quotas cq
-        JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
+        SELECT mi.indicator_id, mi.indicator_description, tc.category_name
+        FROM tbl_master_indicators mi
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-        WHERE cq.term_id = %s
-          AND tc.category_name IN ('Support Functions', 'A. Instructions')
-        ORDER BY mi.indicator_id
+        WHERE mi.term_id = %s 
+          AND mi.is_custom = 0
+          AND tc.category_name IN ('A. Instructions', 'Support Functions')
+        ORDER BY tc.category_name, mi.indicator_id
     """
     cursor.execute(query, (term_id,))
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
-def insert_custom_target(cursor, emp_id, term_id, description, quantity, category):
-    """Inserts a user-defined target from the pop-up modal"""
-    query = """
-        INSERT INTO tbl_individual_targets 
-        (emp_id, term_id, description, target_qty, category, status) 
-        VALUES (%s, %s, %s, %s, %s, 'Pending')
+def submit_designated_ipcr(conn, cursor, emp_id, term_id, selected_targets, custom_targets):
     """
-    cursor.execute(query, (emp_id, term_id, description, quantity, category))
-    return cursor.rowcount > 0
+    Transactionally processes standard baseline selections and inserts custom ad-hoc targets 
+    upstream before compiling all submissions securely inside tbl_draft_targets.
+    
+    selected_targets: [{'indicator_id': int, 'proposed_quantity': int}]
+    custom_targets: [{'description': str, 'proposed_quantity': int}]
+    """
+    try:
+        # 1. Clear any prior unverified submissions for this profile to prevent key errors
+        cursor.execute("DELETE FROM tbl_draft_targets WHERE emp_id = %s", (emp_id,))
+
+        # 2. Process Standard Baseline Selected Targets
+        for target in selected_targets:
+            cursor.execute("""
+                INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
+                VALUES (%s, %s, %s, 'Pending Review')
+            """, (emp_id, target['indicator_id'], target['proposed_quantity']))
+
+        # 3. Process Custom Ad-Hoc Target Items
+        for custom in custom_targets:
+            text_clean = custom['description'].strip()
+            qty = custom['proposed_quantity']
+            if not text_clean:
+                continue
+
+            # Step A: Identify or provision the specific 'Custom Target Items' category block
+            cursor.execute("SELECT category_id FROM tbl_target_categories WHERE category_name = 'Custom Target Items'")
+            cat_row = cursor.fetchone()
+            if cat_row:
+                category_id = cat_row[0]
+            else:
+                cursor.execute("INSERT INTO tbl_target_categories (category_name) VALUES ('Custom Target Items')")
+                category_id = cursor.lastrowid
+
+            # Step B: Upstream runtime injection into master indicators (Explicitly flagged as is_custom = 1)
+            cursor.execute("""
+                INSERT INTO tbl_master_indicators (category_id, indicator_description, efficiency_type, term_id, is_custom)
+                VALUES (%s, %s, 'Output-Based', %s, 1)
+            """, (category_id, text_clean, term_id))
+            new_indicator_id = cursor.lastrowid
+
+            # Step C: Downstream projection into the unified draft staging table via the generated relational ID
+            cursor.execute("""
+                INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
+                VALUES (%s, %s, %s, 'Pending Review')
+            """, (emp_id, new_indicator_id, qty))
+
+        conn.commit()
+        return True, "Designated IPCR successfully compiled and submitted to Draft Targets for verification review."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
