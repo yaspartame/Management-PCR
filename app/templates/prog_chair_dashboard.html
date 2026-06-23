@@ -14,9 +14,12 @@
     <i class="bi bi-diagram-3-fill"></i>
     <span class="nav-text">Target Allocation</span>
 </button>
-<button class="nav-item" data-section="nav-phase2" onclick="showSection('nav-phase2')">
+<button class="nav-item" data-section="nav-phase2" onclick="showSection('nav-phase2')" id="nav-commitments-btn">
     <i class="bi bi-handshake"></i>
     <span class="nav-text">Commitments</span>
+    {% if pending_drafts_count > 0 %}
+    <span class="badge bg-danger ms-auto rounded-pill" id="pendingBadge">{{ pending_drafts_count }}</span>
+    {% endif %}
 </button>
 <button class="nav-item" data-section="nav-phase3" onclick="showSection('nav-phase3')">
     <i class="bi bi-calculator"></i>
@@ -27,11 +30,14 @@
 {% block content %}
 <script>window.dashboardRole = 'prog_chair';</script>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- OVERVIEW                                    -->
+<!-- ═══════════════════════════════════════════ -->
 <div id="nav-overview" class="dashboard-section active">
     <div class="page-header">
         <h2>Program Chair Dashboard</h2>
         <p>
-            Department of Information Technology (BSIT) | 
+            Department of Information Technology (BSIT) |
             <span class="badge bg-secondary">Middle Manager</span>
             {% if specialization %}
             <span class="badge bg-primary ms-1">{{ specialization }}</span>
@@ -39,48 +45,52 @@
         </p>
     </div>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
-            <div class="card-body text-center py-4">
-                <h6 class="text-muted text-uppercase fw-bold">Active Faculty</h6>
-                <h2 class="display-6 fw-bold text-info">{{ faculty_count }}</h2>
-                <span class="small text-muted">Under {{ specialization }}</span>
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 border-start border-info border-4">
+                <div class="card-body text-center py-4">
+                    <h6 class="text-muted text-uppercase fw-bold">Active Faculty</h6>
+                    <h2 class="display-6 fw-bold text-info">{{ faculty_count }}</h2>
+                    <span class="small text-muted">Under {{ specialization }}</span>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
-            <div class="card-body text-center py-4">
-                <h6 class="text-muted text-uppercase fw-bold">Target Allocation</h6>
-                <h2 class="display-6 fw-bold text-primary">100%</h2>
-                <span class="small text-muted">All quotas distributed</span>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 border-start border-primary border-4">
+                <div class="card-body text-center py-4">
+                    <h6 class="text-muted text-uppercase fw-bold">Target Allocation</h6>
+                    <h2 class="display-6 fw-bold text-primary">100%</h2>
+                    <span class="small text-muted">All quotas distributed</span>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
-            <div class="card-body text-center py-4">
-                <h6 class="text-muted text-uppercase fw-bold">Pending Drafts</h6>
-                <h2 class="display-6 fw-bold text-warning">4</h2>
-                <span class="small text-muted">Awaiting Handshake</span>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 border-start border-warning border-4">
+                <div class="card-body text-center py-4">
+                    <h6 class="text-muted text-uppercase fw-bold">Pending Drafts</h6>
+                    <h2 class="display-6 fw-bold text-warning">{{ pending_drafts_count }}</h2>
+                    <span class="small text-muted">Awaiting Your Review</span>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 h-100 border-start border-success border-4">
-            <div class="card-body text-center py-4">
-                <h6 class="text-muted text-uppercase fw-bold">Pending Evidence</h6>
-                <h2 class="display-6 fw-bold text-success">12</h2>
-                <span class="small text-muted">Ready for Evaluation</span>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 border-start border-success border-4">
+                <div class="card-body text-center py-4">
+                    <h6 class="text-muted text-uppercase fw-bold">Approved IPCRs</h6>
+                    <h2 class="display-6 fw-bold text-success">
+                        {% set approved_count = pending_drafts | selectattr('review_status', 'equalto', 'Approved') | list | length %}
+                        {{ approved_count }}
+                    </h2>
+                    <span class="small text-muted">This Term</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-</div>
-
-<!-- Phase 1: Standard Target Allocation -->
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 1: Target Allocation                  -->
+<!-- ═══════════════════════════════════════════ -->
 <div id="nav-phase1" class="dashboard-section">
     <div class="page-header d-flex justify-content-between align-items-center">
         <div>
@@ -88,204 +98,605 @@
             <p>Assign the baseline operational targets to all faculty members under your department.</p>
         </div>
         <div>
-            <span class="badge bg-primary me-2"><i class="bi bi-funnel"></i> Instructions & Support Functions</span>
+            <span class="badge bg-primary me-2"><i class="bi bi-funnel"></i> Instructions &amp; Support Functions</span>
             <span class="badge bg-info text-dark"><i class="bi bi-info-circle me-1"></i> Distribute the Dean's Quota</span>
         </div>
     </div>
-    
-    <!-- Instructions Card -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header border-0 py-3" style="background: linear-gradient(90deg, #e8f4ff 0%, #f8fbff 100%); border-left: 4px solid #0d6efd !important;">
-            <h5 class="fw-bold text-primary mb-0"><i class="bi bi-star-fill me-2"></i>Instructions</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle shadow-sm mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="40%" class="ps-4">Master Indicator</th>
-                            <th>Dept Quota (From Dean)</th>
-                            <th>Assigned Per Faculty</th>
-                            <th>Total Distributed</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set ns_inst = namespace(found=false) %}
-                        {% for ind in indicators %}
-                        {% if ind.category_name == 'A. Instructions' %}
-                        {% set ns_inst.found = true %}
-                        <tr>
-                            <td class="fw-bold ps-4">
-                                {{ ind.indicator_description }}
-                            </td>
-                            <td class="text-center fw-bold text-primary">{{ ind.dept_quota }}</td>
-                            <td>
-                                <input type="number" name="assigned_quantity" form="form_{{ ind.indicator_id }}" class="form-control form-control-sm shadow-sm text-center"
-                                    value="{{ ind.assigned_per_faculty }}" min="0">
-                            </td>
-                            <td class="text-center text-success fw-bold">{{ ind.total_distributed }} / {{ ind.dept_quota }}</td>
-                            <td>
-                                <form id="form_{{ ind.indicator_id }}" action="{{ url_for('prog_chair.assign_chair_target') }}" method="POST" class="m-0">
-                                    <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
-                                    <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-save"></i> Save</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                        {% if not ns_inst.found %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No Instruction targets assigned to your specialization for this term.</td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
-    <!-- Support Functions Card -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header border-0 py-3" style="background: linear-gradient(90deg, #fff8e8 0%, #fffcf5 100%); border-left: 4px solid #fd7e14 !important;">
-            <h5 class="fw-bold text-warning mb-0"><i class="bi bi-tools me-2"></i>Support Functions</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle shadow-sm mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="40%" class="ps-4">Master Indicator</th>
-                            <th>Dept Quota (From Dean)</th>
-                            <th>Assigned Per Faculty</th>
-                            <th>Total Distributed</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set ns_supp = namespace(found=false) %}
-                        {% for ind in indicators %}
-                        {% if ind.category_name == 'Support Functions' %}
-                        {% set ns_supp.found = true %}
-                        <tr>
-                            <td class="fw-bold ps-4">
-                                {{ ind.indicator_description }}
-                            </td>
-                            <td class="text-center fw-bold text-primary">{{ ind.dept_quota }}</td>
-                            <td>
-                                <input type="number" name="assigned_quantity" form="form_{{ ind.indicator_id }}" class="form-control form-control-sm shadow-sm text-center"
-                                    value="{{ ind.assigned_per_faculty }}" min="0">
-                            </td>
-                            <td class="text-center text-success fw-bold">{{ ind.total_distributed }} / {{ ind.dept_quota }}</td>
-                            <td>
-                                <form id="form_{{ ind.indicator_id }}" action="{{ url_for('prog_chair.assign_chair_target') }}" method="POST" class="m-0">
-                                    <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
-                                    <input type="hidden" name="indicator_id" value="{{ ind.indicator_id }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-save"></i> Save</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                        {% if not ns_supp.found %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No Support Function targets assigned to your specialization for this term.</td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+    {% if active_term %}
+    <form action="{{ url_for('prog_chair.assign_chair_target') }}" method="POST" class="m-0">
+        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
 
-<!-- Phase 2: IPCR Commitment Verification -->
-<div id="nav-phase2" class="dashboard-section">
-    <div class="page-header">
-        <h2>Phase 2: Commitment Verification (Digital Handshake)</h2>
-        <p>Review your faculty's proposed targets (Standard Workload + their chosen Research selections) and lock them for the semester.</p>
-    </div>
-    
-    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #FFC107 !important;">
-        <div class="card-body">
-            <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+        <!-- Instructions Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header border-0 py-3" style="background: linear-gradient(90deg, #e8f4ff 0%, #f8fbff 100%); border-left: 4px solid #0d6efd !important;">
+                <h5 class="fw-bold text-primary mb-0"><i class="bi bi-star-fill me-2"></i>Instructions</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle shadow-sm mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Faculty Name</th>
-                                <th>Rank</th>
-                                <th>Proposed Targets</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th width="50%" class="ps-4">Master Indicator</th>
+                                <th class="text-center">Dept Quota (From Dean)</th>
+                                <th class="text-center" width="200">Assigned Per Faculty</th>
+                                <th class="text-center">Total Distributed</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% set ns_inst = namespace(found=false) %}
+                            {% for ind in indicators %}
+                            {% if ind.category_name == 'A. Instructions' %}
+                            {% set ns_inst.found = true %}
                             <tr>
-                                <td class="fw-bold">Chester Developer</td>
-                                <td>Instructor I</td>
-                                <td><span class="badge bg-secondary">10 Standard</span> + <span
-                                        class="badge bg-info text-dark">1 Research</span></td>
-                                <td><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i>
-                                        Awaiting Review</span></td>
+                                <td class="fw-bold ps-4">{{ ind.indicator_description }}</td>
+                                <td class="text-center fw-bold text-primary">{{ ind.dept_quota }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-dark me-1"><i class="bi bi-eye"></i> View
-                                        IPCR</button>
-                                    <button class="btn btn-sm btn-success"><i class="bi bi-lock-fill"></i> Lock
-                                        Commitment</button>
+                                    <input type="hidden" name="indicator_ids" value="{{ ind.indicator_id }}">
+                                    <input type="number" name="assigned_quantities"
+                                        class="form-control form-control-sm shadow-sm text-center"
+                                        value="{{ ind.assigned_per_faculty }}" min="0">
                                 </td>
+                                <td class="text-center text-success fw-bold">{{ ind.total_distributed }} / {{ ind.dept_quota }}</td>
                             </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% if not ns_inst.found %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No Instruction targets assigned to your specialization for this term.</td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+        <!-- Support Functions Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header border-0 py-3" style="background: linear-gradient(90deg, #fff8e8 0%, #fffcf5 100%); border-left: 4px solid #fd7e14 !important;">
+                <h5 class="fw-bold text-warning mb-0"><i class="bi bi-tools me-2"></i>Support Functions</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle shadow-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="50%" class="ps-4">Master Indicator</th>
+                                <th class="text-center">Dept Quota (From Dean)</th>
+                                <th class="text-center" width="200">Assigned Per Faculty</th>
+                                <th class="text-center">Total Distributed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set ns_supp = namespace(found=false) %}
+                            {% for ind in indicators %}
+                            {% if ind.category_name == 'Support Functions' %}
+                            {% set ns_supp.found = true %}
+                            <tr>
+                                <td class="fw-bold ps-4">{{ ind.indicator_description }}</td>
+                                <td class="text-center fw-bold text-primary">{{ ind.dept_quota }}</td>
+                                <td>
+                                    <input type="hidden" name="indicator_ids" value="{{ ind.indicator_id }}">
+                                    <input type="number" name="assigned_quantities"
+                                        class="form-control form-control-sm shadow-sm text-center"
+                                        value="{{ ind.assigned_per_faculty }}" min="0">
+                                </td>
+                                <td class="text-center text-success fw-bold">{{ ind.total_distributed }} / {{ ind.dept_quota }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% if not ns_supp.found %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No Support Function targets assigned to your specialization for this term.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Single Save Button at the bottom -->
+        <div class="d-flex justify-content-end mb-4 px-2">
+            <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill">
+                <i class="bi bi-save me-2"></i>Save Targets
+            </button>
+        </div>
+    </form>
+    {% else %}
+    <div class="alert alert-warning border-0 shadow-sm" style="border-radius: 10px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> There is no active term set. You cannot manage targets right now.
+    </div>
+    {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 2: Commitment Verification            -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="nav-phase2" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Phase 2: Commitment Verification</h2>
+            <p>Review Draft IPCRs submitted by your faculty members. You may adjust quantities and add remarks before approving or returning.</p>
+        </div>
+        <span class="badge bg-primary fs-6 px-3 py-2">
+            <i class="bi bi-funnel me-1"></i>{{ specialization }}
+        </span>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #FFC107 !important;">
+        <div class="card-body p-0">
+            {% if pending_drafts %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="commitmentsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Faculty Name</th>
+                            <th>Rank</th>
+                            <th class="text-center">Proposed Targets</th>
+                            <th class="text-center">Review Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for draft in pending_drafts %}
+                        <tr id="row-{{ draft.emp_id }}">
+                            <td class="ps-4 fw-bold">{{ draft.faculty_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ draft.academic_rank }}</span></td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ draft.target_count }} Target{{ 's' if draft.target_count != 1 }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if draft.review_status == 'Locked' %}
+                                    <span class="badge bg-dark px-3 py-2"><i class="bi bi-lock-fill me-1"></i>Locked</span>
+                                {% elif draft.review_status == 'Approved' %}
+                                    <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>
+                                {% elif draft.review_status == 'Rejected' %}
+                                    <span class="badge bg-danger px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>Returned to Faculty</span>
+                                {% elif draft.review_status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Pending Review</span>
+                                {% else %}
+                                    <span class="badge bg-secondary px-3 py-2"><i class="bi bi-dash-circle me-1"></i>Not Started</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary open-review-modal"
+                                        data-emp-id="{{ draft.emp_id }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#reviewIpcrModal"
+                                        {% if draft.review_status in ('Approved', 'Locked') %}title="View IPCR"{% endif %}>
+                                    <i class="bi bi-eye-fill me-1"></i>
+                                    {% if draft.review_status in ('Approved', 'Locked') %}View{% else %}Review{% endif %}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                <h5 class="fw-semibold">No Draft IPCRs Submitted</h5>
+                <p class="small">Faculty members under <strong>{{ specialization }}</strong> have not submitted their Draft IPCRs yet.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Phase 3: Grading Engine -->
+<!-- ═══════════════════════════════════════════ -->
+<!-- PHASE 3: Grading Engine                     -->
+<!-- ═══════════════════════════════════════════ -->
 <div id="nav-phase3" class="dashboard-section">
     <div class="page-header">
         <h2>Phase 3: End-of-Semester Evaluation (Grading Engine)</h2>
         <p>Review the uploaded evidence and input the qualitative Efficiency (E) and Timeliness (T) ratings (Scale 1 to 5).</p>
     </div>
-    
+
     <div class="card shadow-sm border-0" style="border-top: 4px solid #2DD46B !important;">
         <div class="card-body">
             <div class="table-responsive">
-                    <table class="table table-hover align-middle shadow-sm border">
-                        <thead class="table-dark">
+                <table class="table table-hover align-middle shadow-sm border">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Faculty</th>
+                            <th width="30%">Target Description</th>
+                            <th>Evidence File</th>
+                            <th class="text-center">Actual (Q)</th>
+                            <th class="text-center" width="10%">Score (E)</th>
+                            <th class="text-center" width="10%">Score (T)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Grading engine will be available after commitments are approved.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- IPCR REVIEW MODAL                           -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal fade" id="reviewIpcrModal" tabindex="-1" aria-labelledby="reviewIpcrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+
+            <!-- Modal Header -->
+            <div class="modal-header border-0 py-3" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                <div>
+                    <h5 class="modal-title text-white fw-bold mb-0" id="reviewIpcrModalLabel">
+                        <i class="bi bi-file-earmark-person-fill me-2"></i>
+                        <span id="modalFacultyName">Loading...</span>
+                    </h5>
+                    <small class="text-white opacity-75" id="modalFacultyRank"></small>
+                </div>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <span id="modalStatusBadge" class="badge fs-6 px-3 py-2"></span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <!-- Loading spinner -->
+            <div id="modalLoader" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-3 small">Fetching IPCR data...</p>
+            </div>
+
+            <!-- Modal Body (Table and Save All Changes) -->
+            <div class="modal-body p-0" id="modalBody" style="display:none;">
+                <!-- Section 1: Target Items -->
+                <div class="px-4 pt-4 pb-2">
+                    <h6 class="fw-bold text-secondary text-uppercase mb-3">
+                        <i class="bi bi-list-check me-2"></i>Proposed Targets
+                        <small class="text-muted fw-normal ms-2 text-capitalize">(You may adjust quantities and add remarks per item)</small>
+                    </h6>
+                </div>
+
+                <div class="table-responsive px-4 pb-3">
+                    <table class="table table-bordered table-hover align-middle mb-0" id="reviewItemsTable">
+                        <thead class="table-light">
                             <tr>
-                                <th>Faculty</th>
-                                <th width="30%">Target Description</th>
-                                <th>Evidence File</th>
-                                <th class="text-center">Actual (Q)</th>
-                                <th class="text-center" width="10%">Score (E)</th>
-                                <th class="text-center" width="10%">Score (T)</th>
-                                <th>Action</th>
+                                <th width="32%">Indicator</th>
+                                <th width="17%">Category</th>
+                                <th class="text-center" width="10%">Original Qty</th>
+                                <th class="text-center" width="11%">Reviewed Qty</th>
+                                <th width="30%">Remarks on this change <span class="text-muted fw-normal">(optional)</span></th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td class="fw-bold small">Chester Dev</td>
-                                <td class="small">Number of course syllabi prepared/updated.</td>
-                                <td><a href="#" class="btn btn-sm btn-outline-danger"><i
-                                            class="bi bi-file-earmark-pdf-fill"></i> View PDF</a></td>
-                                <td class="text-center fw-bold text-primary">2</td>
-                                <td><input type="number" class="form-control form-control-sm text-center fw-bold"
-                                        min="1" max="5" placeholder="-"></td>
-                                <td><input type="number" class="form-control form-control-sm text-center fw-bold"
-                                        min="1" max="5" placeholder="-"></td>
-                                <td><button class="btn btn-sm btn-primary"><i class="bi bi-calculator"></i> Submit to
-                                        Math Engine</button></td>
-                            </tr>
+                        <tbody id="reviewItemsBody">
+                            <!-- Populated via JS -->
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Single Save All button between sections -->
+                <div class="px-4 pb-3 d-flex justify-content-end">
+                    <button type="button" class="btn btn-primary" id="btnSaveAll">
+                        <i class="bi bi-save me-2"></i>Save All Changes
+                    </button>
+                </div>
             </div>
-        </div>
+
+            <!-- Modal Footer (Remarks & Decisions - Fixed at bottom) -->
+            <div class="modal-footer border-top bg-light px-4 py-3 d-block" id="modalFooter" style="display:none;">
+                <h6 class="fw-bold text-secondary text-uppercase mb-2">
+                    <i class="bi bi-stamp me-2"></i>Decision
+                </h6>
+
+                <input type="hidden" id="modalReviewId">
+                <input type="hidden" id="modalEmpId">
+
+                <div class="mb-3">
+                    <label for="overallRemarks" class="form-label fw-semibold mb-1">
+                        Remarks / Reason <span class="text-danger">*</span>
+                        <small class="text-muted fw-normal ms-1">(Required — faculty will see this message)</small>
+                    </label>
+                    <textarea class="form-control form-control-sm" id="overallRemarks" rows="2"
+                        placeholder="e.g. 'Research target adjusted from 2 to 1 per department guidelines.' or 'Please revise your Extension selections.'"></textarea>
+                    <div class="invalid-feedback">Please provide remarks before making a decision.</div>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btnReject" onclick="submitDecision('reject')">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reject / Return to Faculty
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnApprove" onclick="submitDecision('approve')">
+                        <i class="bi bi-check-circle-fill me-1"></i>Approve IPCR
+                    </button>
+                </div>
             </div>
+
         </div>
+    </div>
 </div>
+
+<!-- Hidden form for decide_ipcr POST -->
+<form id="decisionForm" action="{{ url_for('prog_chair.decide_ipcr') }}" method="POST" style="display:none;">
+    <input type="hidden" name="review_id" id="decisionReviewId">
+    <input type="hidden" name="action" id="decisionAction">
+    <input type="hidden" name="overall_remarks" id="decisionRemarks">
+</form>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SCRIPTS                                     -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Open modal and fetch review data ────────────────────────
+    document.querySelectorAll('.open-review-modal').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const empId = this.dataset.empId;
+            loadReviewModal(empId);
+        });
+    });
+
+    function loadReviewModal(empId) {
+        // Reset modal to loading state
+        document.getElementById('modalLoader').style.display = 'block';
+        document.getElementById('modalBody').style.display = 'none';
+        document.getElementById('modalFooter').style.display = 'none';
+        document.getElementById('modalFacultyName').textContent = 'Loading...';
+        document.getElementById('modalFacultyRank').textContent = '';
+        document.getElementById('overallRemarks').value = '';
+        document.getElementById('overallRemarks').classList.remove('is-invalid');
+        document.getElementById('reviewItemsBody').innerHTML = '';
+
+        fetch(`/prog_chair/review_ipcr/${empId}`)
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    alert('Error loading IPCR: ' + data.error);
+                    return;
+                }
+                populateModal(data);
+            })
+            .catch(function (err) {
+                alert('Network error: ' + err);
+            });
+    }
+
+    function populateModal(data) {
+        // Header
+        document.getElementById('modalFacultyName').textContent = data.faculty_name;
+        document.getElementById('modalFacultyRank').textContent = data.academic_rank;
+        document.getElementById('modalReviewId').value = data.review_id;
+        document.getElementById('modalEmpId').value = data.emp_id;
+        document.getElementById('overallRemarks').value = data.overall_remarks || '';
+
+        // Status badge
+        const badge = document.getElementById('modalStatusBadge');
+        const statusMap = {
+            'Locked':      ['bg-dark text-white', 'lock-fill',              'Locked & Committed'],
+            'Approved':    ['bg-success', 'check-circle-fill',      'Approved'],
+            'Rejected':    ['bg-danger',  'x-circle-fill',          'Returned to Faculty'],
+            'Pending':     ['bg-warning text-dark', 'hourglass-split', 'Pending Review'],
+            'Not Started': ['bg-secondary', 'dash-circle',          'Not Started'],
+        };
+        const s = statusMap[data.overall_status] || statusMap['Not Started'];
+        badge.className = `badge fs-6 px-3 py-2 ${s[0]}`;
+        badge.innerHTML = `<i class="bi bi-${s[1]} me-1"></i>${s[2]}`;
+
+        // Disable approve/reject buttons if already decided or locked
+        const decided = (data.overall_status === 'Approved' || data.overall_status === 'Rejected' || data.overall_status === 'Locked');
+        document.getElementById('btnApprove').disabled = decided;
+        document.getElementById('btnReject').disabled = decided;
+
+        // Build items table
+        const tbody = document.getElementById('reviewItemsBody');
+        tbody.innerHTML = '';
+
+        if (data.items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No targets found.</td></tr>';
+        } else {
+            data.items.forEach(function (item) {
+                const qtyChanged = item.reviewed_quantity !== item.original_quantity;
+                const tr = document.createElement('tr');
+                tr.id = `item-row-${item.item_id}`;
+                tr.innerHTML = `
+                    <td class="small fw-semibold">${item.indicator_description}</td>
+                    <td><span class="badge bg-light text-dark border small">${item.category_name}</span></td>
+                    <td class="text-center text-muted">${item.original_quantity}</td>
+                    <td class="text-center">
+                        <input type="number" class="form-control form-control-sm text-center fw-bold reviewed-qty-input"
+                               id="qty-${item.item_id}"
+                               value="${item.reviewed_quantity}"
+                               min="0"
+                               data-item-id="${item.item_id}"
+                               data-original="${item.original_quantity}"
+                               data-initial-val="${item.reviewed_quantity}"
+                               ${decided ? 'disabled' : ''}>
+                        ${qtyChanged ? `<small class="qty-edited-tag text-warning d-block mt-1"><i class="bi bi-pencil-fill"></i> Edited</small>` : '<small class="qty-edited-tag" style="display:none"></small>'}
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm item-remarks-input"
+                                  id="remarks-${item.item_id}"
+                                  rows="2"
+                                  placeholder="Optional note on this change..."
+                                  data-item-id="${item.item_id}"
+                                  data-initial-remarks="${(item.item_remarks || '').trim()}"
+                                  ${decided ? 'disabled' : ''}>${item.item_remarks || ''}</textarea>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+        }
+
+        // Disable Save All button if already decided
+        const saveAllBtn = document.getElementById('btnSaveAll');
+        if (saveAllBtn) saveAllBtn.disabled = decided;
+
+        // Show modal body and footer
+        document.getElementById('modalLoader').style.display = 'none';
+        document.getElementById('modalBody').style.display = 'block';
+        document.getElementById('modalFooter').style.display = 'block';
+    }
+
+    // Helper to save all edits on review items
+    function saveAllEdits() {
+        const inputs = document.querySelectorAll('.reviewed-qty-input:not([disabled])');
+        if (inputs.length === 0) return Promise.resolve({ success: true });
+
+        // Filter to only include inputs that have actually been modified
+        const modifiedInputs = Array.from(inputs).filter(function (inp) {
+            const val = parseInt(inp.value, 10);
+            const initialVal = parseInt(inp.dataset.initialVal, 10);
+            
+            const itemId = inp.dataset.itemId;
+            const remarksTextarea = document.getElementById(`remarks-${itemId}`);
+            const remarks = remarksTextarea ? remarksTextarea.value.trim() : '';
+            const initialRemarks = remarksTextarea ? (remarksTextarea.dataset.initialRemarks || '').trim() : '';
+            
+            return val !== initialVal || remarks !== initialRemarks;
+        });
+
+        // If no items were modified, return success immediately
+        if (modifiedInputs.length === 0) return Promise.resolve({ success: true });
+
+        // Validate modified inputs
+        let hasError = false;
+        modifiedInputs.forEach(function (inp) {
+            const val = parseInt(inp.value, 10);
+            if (isNaN(val) || val < 0) {
+                inp.classList.add('is-invalid');
+                hasError = true;
+            } else {
+                inp.classList.remove('is-invalid');
+            }
+        });
+        if (hasError) return Promise.resolve({ success: false, message: 'Invalid quantity values.' });
+
+        // Build array of save promises
+        const savePromises = modifiedInputs.map(function (inp) {
+            const itemId  = inp.dataset.itemId;
+            const qty     = parseInt(inp.value, 10);
+            const remarks = (document.getElementById(`remarks-${itemId}`) || {}).value || '';
+
+            return fetch('/prog_chair/edit_review_item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: parseInt(itemId), reviewed_quantity: qty, item_remarks: remarks.trim() }),
+            })
+            .then(function (r) { 
+                if (!r.ok) {
+                    return r.text().then(text => { throw new Error(text || `HTTP ${r.status}`); });
+                }
+                return r.json(); 
+            })
+            .then(function (res) {
+                if (res.success) {
+                    // Update initial attributes to current values upon successful save
+                    inp.dataset.initialVal = qty;
+                    const remarksTextarea = document.getElementById(`remarks-${itemId}`);
+                    if (remarksTextarea) {
+                        remarksTextarea.dataset.initialRemarks = remarks.trim();
+                    }
+
+                    const original = parseInt(inp.dataset.original || '0', 10);
+                    const tag = inp.parentElement.querySelector('.qty-edited-tag');
+                    if (tag) {
+                        if (qty !== original) {
+                            tag.style.display = '';
+                            tag.className = 'qty-edited-tag text-warning d-block mt-1';
+                            tag.innerHTML = '<i class="bi bi-pencil-fill"></i> Edited';
+                        } else {
+                            tag.style.display = 'none';
+                        }
+                    }
+                }
+                return res;
+            });
+        });
+
+        return Promise.all(savePromises)
+            .then(function (results) {
+                const failed = results.filter(r => !r.success);
+                if (failed.length > 0) {
+                    return {
+                        success: false,
+                        message: failed.map(r => r.message || 'Save failed.').join('\n')
+                    };
+                }
+                return { success: true };
+            })
+            .catch(function (err) {
+                return { success: false, message: err.message || err };
+            });
+    }
+
+    // ── Save All Changes (single button) ────────────────────────
+    document.getElementById('btnSaveAll').addEventListener('click', function () {
+        const btn = this;
+        const originalLabel = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        saveAllEdits().then(function (res) {
+            btn.disabled = false;
+            if (res.success) {
+                btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>All Changes Saved';
+                btn.classList.replace('btn-primary', 'btn-success');
+                setTimeout(function () {
+                    btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
+                    btn.classList.replace('btn-success', 'btn-primary');
+                }, 2000);
+            } else {
+                btn.innerHTML = originalLabel;
+                alert('Failed to save some changes:\n' + res.message);
+            }
+        });
+    });
+
+    // ── Submit approve/reject decision ───────────────────────────
+    window.submitDecision = function (action) {
+        const remarks = document.getElementById('overallRemarks').value.trim();
+        const textarea = document.getElementById('overallRemarks');
+
+        if (!remarks) {
+            textarea.classList.add('is-invalid');
+            textarea.focus();
+            return;
+        }
+        textarea.classList.remove('is-invalid');
+
+        const label = action === 'approve' ? 'approve' : 'reject and return to faculty';
+        if (!confirm(`Are you sure you want to ${label} this Draft IPCR?`)) return;
+
+        // Auto-save changes first
+        const btnApprove = document.getElementById('btnApprove');
+        const btnReject = document.getElementById('btnReject');
+        btnApprove.disabled = true;
+        btnReject.disabled = true;
+
+        saveAllEdits().then(function (res) {
+            if (!res.success) {
+                btnApprove.disabled = false;
+                btnReject.disabled = false;
+                alert('Could not process decision because target changes failed to save:\n' + res.message);
+                return;
+            }
+
+            document.getElementById('decisionReviewId').value = document.getElementById('modalReviewId').value;
+            document.getElementById('decisionAction').value = action;
+            document.getElementById('decisionRemarks').value = remarks;
+            document.getElementById('decisionForm').submit();
+        });
+    };
+});
+</script>
 {% endblock %}

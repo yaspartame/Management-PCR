@@ -1,3 +1,10 @@
+from datetime import datetime
+
+
+# ─────────────────────────────────────────────
+# Existing functions (unchanged)
+# ─────────────────────────────────────────────
+
 def get_chair_indicators(cursor, term_id, specialization):
     query = """
         SELECT mi.indicator_id, mi.indicator_description, mi.efficiency_type, tc.category_name, cq.total_target_value as dept_quota
@@ -41,33 +48,340 @@ def get_assigned_quantity(cursor, term_id, indicator_id, faculty_ids):
     return res[0][0] if res else 0
 
 
-def save_chair_allocation(conn, cursor, term_id, indicator_id, assigned_quantity, faculty_ids):
+def save_chair_allocations_batch(conn, cursor, term_id, allocations, faculty_ids):
     try:
         if not faculty_ids:
             return False, "No active faculty found for this specialization."
 
-        for emp_id in faculty_ids:
-            # Check if an allocation record already exists in the draft staging table
-            check_query = """
-                SELECT allocation_id 
-                FROM tbl_draft_allocation
-                WHERE emp_id = %s AND indicator_id = %s
-            """
-            cursor.execute(check_query, (emp_id, indicator_id))
-            existing = cursor.fetchall()
-
-            if existing:
-                update_query = "UPDATE tbl_draft_allocation SET assigned_quantity = %s WHERE allocation_id = %s"
-                cursor.execute(update_query, (assigned_quantity, existing[0][0]))
-            else:
-                insert_query = """
-                    INSERT INTO tbl_draft_allocation (emp_id, indicator_id, assigned_quantity)
-                    VALUES (%s, %s, %s)
+        for indicator_id, assigned_quantity in allocations:
+            for emp_id in faculty_ids:
+                # Check if an allocation record already exists in the draft staging table
+                check_query = """
+                    SELECT allocation_id 
+                    FROM tbl_draft_allocation
+                    WHERE emp_id = %s AND indicator_id = %s
                 """
-                cursor.execute(insert_query, (emp_id, indicator_id, assigned_quantity))
+                cursor.execute(check_query, (emp_id, indicator_id))
+                existing = cursor.fetchall()
+
+                if existing:
+                    update_query = "UPDATE tbl_draft_allocation SET assigned_quantity = %s WHERE allocation_id = %s"
+                    cursor.execute(update_query, (assigned_quantity, existing[0][0]))
+                else:
+                    insert_query = """
+                        INSERT INTO tbl_draft_allocation (emp_id, indicator_id, assigned_quantity)
+                        VALUES (%s, %s, %s)
+                    """
+                    cursor.execute(insert_query, (emp_id, indicator_id, assigned_quantity))
 
         conn.commit()
         return True, "Targets distributed successfully to all faculty draft worklists."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+
+
+# ─────────────────────────────────────────────
+# New functions — Commitments & IPCR Review
+# ─────────────────────────────────────────────
+
+def get_pending_drafts_count(cursor, specialization, term_id):
+    """
+    Returns the count of faculty members under `specialization` who have
+    submitted a draft IPCR (tbl_draft_targets) for the term that still
+    have an overall_status of 'Pending' (or no review record yet).
+    """
+    query = """
+        SELECT COUNT(DISTINCT dt.emp_id)
+        FROM tbl_draft_targets dt
+        JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+        JOIN tbl_employee_profiles ep ON dt.emp_id = ep.emp_id
+        LEFT JOIN tbl_ipcr_chair_review cr
+            ON cr.emp_id = dt.emp_id AND cr.term_id = %s
+        WHERE mi.term_id = %s
+          AND ep.specialization = %s
+          AND dt.review_status = 'Pending Review'
+          AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending')
+    """
+    cursor.execute(query, (term_id, term_id, specialization))
+    result = cursor.fetchone()
+    return result[0] if result else 0
+
+
+def get_pending_draft_ipcrs(cursor, specialization, term_id):
+    """
+    Returns all faculty members under `specialization` who have submitted
+    a Draft IPCR for the active term, along with their current review status.
+    Faculty with no review record yet are treated as 'Not Started'.
+    Approved or Locked IPCRs are excluded from this list.
+    """
+    query = """
+        SELECT
+            ep.emp_id,
+            CONCAT(ep.first_name, ' ', ep.last_name) AS faculty_name,
+            ep.academic_rank,
+            ep.specialization,
+            COUNT(dt.draft_id)                          AS target_count,
+            CASE 
+                WHEN (SELECT COUNT(*) FROM tbl_committed_targets ct 
+                      JOIN tbl_master_indicators mi2 ON ct.indicator_id = mi2.indicator_id 
+                      WHERE ct.emp_id = ep.emp_id AND mi2.term_id = %s) > 0 THEN 'Locked'
+                ELSE COALESCE(cr.overall_status, 'Not Started')
+            END AS review_status,
+            cr.review_id,
+            cr.overall_remarks,
+            cr.reviewed_at
+        FROM tbl_draft_targets dt
+        JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+        JOIN tbl_employee_profiles ep ON dt.emp_id = ep.emp_id
+        LEFT JOIN tbl_ipcr_chair_review cr
+            ON cr.emp_id = dt.emp_id AND cr.term_id = %s
+        WHERE mi.term_id = %s
+          AND ep.specialization = %s
+          AND dt.review_status = 'Pending Review'
+          AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending')
+        GROUP BY ep.emp_id, ep.first_name, ep.last_name,
+                 ep.academic_rank, ep.specialization,
+                 cr.review_id, cr.overall_status, cr.overall_remarks, cr.reviewed_at
+        ORDER BY ep.last_name, ep.first_name
+    """
+    cursor.execute(query, (term_id, term_id, term_id, specialization))
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def get_or_create_chair_review(conn, cursor, emp_id, term_id, chair_emp_id):
+    """
+    Fetches an existing review record for emp_id + term_id, or creates one
+    and pre-populates tbl_ipcr_chair_review_items by copying from tbl_draft_targets.
+    Returns the review_id.
+    """
+    # Check for existing review
+    cursor.execute(
+        "SELECT review_id FROM tbl_ipcr_chair_review WHERE emp_id = %s AND term_id = %s",
+        (emp_id, term_id)
+    )
+    existing = cursor.fetchone()
+    if existing:
+        review_id = existing[0]
+        # Sync: Insert any draft targets that are missing from review items
+        cursor.execute(
+            """
+            INSERT INTO tbl_ipcr_chair_review_items
+                (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity)
+            SELECT %s, dt.draft_id, dt.indicator_id, dt.proposed_quantity, dt.proposed_quantity
+            FROM tbl_draft_targets dt
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            LEFT JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = %s AND ri.draft_id = dt.draft_id
+            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review' AND ri.item_id IS NULL
+            """,
+            (review_id, review_id, emp_id, term_id)
+        )
+        conn.commit()
+        return review_id
+
+    # Create the review header
+    cursor.execute(
+        """
+        INSERT INTO tbl_ipcr_chair_review (emp_id, term_id, chair_emp_id, overall_status)
+        VALUES (%s, %s, %s, 'Pending')
+        """,
+        (emp_id, term_id, chair_emp_id)
+    )
+    review_id = cursor.lastrowid
+
+    # Pre-populate items from tbl_draft_targets
+    cursor.execute(
+        """
+        SELECT dt.draft_id, dt.indicator_id, dt.proposed_quantity
+        FROM tbl_draft_targets dt
+        JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+        WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review'
+        """,
+        (emp_id, term_id)
+    )
+    draft_rows = cursor.fetchall()
+
+    for draft_id, indicator_id, proposed_qty in draft_rows:
+        cursor.execute(
+            """
+            INSERT INTO tbl_ipcr_chair_review_items
+                (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (review_id, draft_id, indicator_id, proposed_qty, proposed_qty)
+        )
+
+    conn.commit()
+    return review_id
+
+
+def get_review_items(cursor, review_id):
+    """
+    Returns all items for a given review_id, joined with indicator descriptions
+    and category names.
+    """
+    query = """
+        SELECT
+            ri.item_id,
+            ri.draft_id,
+            ri.indicator_id,
+            ri.original_quantity,
+            ri.reviewed_quantity,
+            ri.item_remarks,
+            mi.indicator_description,
+            tc.category_name
+        FROM tbl_ipcr_chair_review_items ri
+        JOIN tbl_master_indicators mi ON ri.indicator_id = mi.indicator_id
+        JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        WHERE ri.review_id = %s
+        ORDER BY tc.category_name, mi.indicator_id
+    """
+    cursor.execute(query, (review_id,))
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def update_review_item(conn, cursor, item_id, reviewed_quantity, item_remarks):
+    """
+    Updates a single review item's reviewed quantity and optional remark.
+    The original tbl_draft_targets row is never modified.
+    """
+    try:
+        cursor.execute(
+            """
+            UPDATE tbl_ipcr_chair_review_items
+            SET reviewed_quantity = %s, item_remarks = %s
+            WHERE item_id = %s
+            """,
+            (reviewed_quantity, item_remarks if item_remarks else None, item_id)
+        )
+        conn.commit()
+        return True, "Change saved."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+
+
+def decide_chair_review(conn, cursor, review_id, action, overall_remarks):
+    """
+    Sets overall_status to 'Approved' or 'Rejected' on the review header.
+    If rejected, flips the related tbl_draft_targets rows back to 'Returned'
+    so the faculty member can see the returned status and re-submit.
+    """
+    try:
+        new_status = 'Approved' if action == 'approve' else 'Rejected'
+
+        cursor.execute(
+            """
+            UPDATE tbl_ipcr_chair_review
+            SET overall_status = %s,
+                overall_remarks = %s,
+                reviewed_at = %s
+            WHERE review_id = %s
+            """,
+            (new_status, overall_remarks, datetime.now(), review_id)
+        )
+
+        # Get the emp_id and term_id for this review
+        cursor.execute(
+            "SELECT emp_id, term_id FROM tbl_ipcr_chair_review WHERE review_id = %s",
+            (review_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            emp_id, term_id = row
+            if action == 'reject':
+                # Flip draft targets back to 'Returned' so faculty can re-submit
+                cursor.execute(
+                    """
+                    UPDATE tbl_draft_targets dt
+                    JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+                    SET dt.review_status = 'Returned'
+                    WHERE dt.emp_id = %s AND mi.term_id = %s
+                    """,
+                    (emp_id, term_id)
+                )
+            elif action == 'approve':
+                # Finalize proposed quantities in tbl_draft_targets to match reviewed quantities
+                cursor.execute(
+                    """
+                    UPDATE tbl_draft_targets dt
+                    JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+                    JOIN tbl_ipcr_chair_review cr ON dt.emp_id = cr.emp_id AND cr.term_id = mi.term_id
+                    JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = cr.review_id AND ri.indicator_id = dt.indicator_id
+                    SET dt.proposed_quantity = ri.reviewed_quantity
+                    WHERE dt.emp_id = %s AND mi.term_id = %s
+                    """,
+                    (emp_id, term_id)
+                )
+
+        conn.commit()
+        return True, f"IPCR successfully {new_status.lower()}."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+
+
+def lock_and_commit_ipcr(conn, cursor, emp_id, term_id):
+    try:
+        # Get the chair review status
+        cursor.execute(
+            "SELECT overall_status FROM tbl_ipcr_chair_review WHERE emp_id = %s AND term_id = %s",
+            (emp_id, term_id)
+        )
+        review_row = cursor.fetchone()
+        if not review_row or review_row[0] != 'Approved':
+            return False, "Your IPCR must be approved by the Program Chair before locking."
+
+        # Fetch all draft targets for this employee and term
+        cursor.execute(
+            """
+            SELECT dt.indicator_id, dt.proposed_quantity
+            FROM tbl_draft_targets dt
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            WHERE dt.emp_id = %s AND mi.term_id = %s
+            """,
+            (emp_id, term_id)
+        )
+        drafts = cursor.fetchall()
+
+        if not drafts:
+            return False, "No draft targets found to commit."
+
+        # Delete any existing committed targets for this employee and term
+        cursor.execute(
+            """
+            DELETE ct FROM tbl_committed_targets ct
+            JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
+            WHERE ct.emp_id = %s AND mi.term_id = %s
+            """,
+            (emp_id, term_id)
+        )
+
+        # Insert items from tbl_draft_targets into tbl_committed_targets
+        for indicator_id, qty in drafts:
+            cursor.execute(
+                """
+                INSERT INTO tbl_committed_targets (emp_id, indicator_id, assigned_quantity, status)
+                VALUES (%s, %s, %s, 'Approved')
+                """,
+                (emp_id, indicator_id, qty)
+            )
+
+        # Update review_status in tbl_draft_targets to 'Approved'
+        cursor.execute(
+            """
+            UPDATE tbl_draft_targets dt
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            SET dt.review_status = 'Approved'
+            WHERE dt.emp_id = %s AND mi.term_id = %s
+            """,
+            (emp_id, term_id)
+        )
+
+        conn.commit()
+        return True, "IPCR successfully locked and committed to evaluation targets."
     except Exception as e:
         conn.rollback()
         return False, str(e)

@@ -15,6 +15,12 @@
     <i class="bi bi-file-earmark-text-fill"></i>
     <span class="nav-text">My IPCR</span>
 </button>
+{% if is_locked %}
+<button class="nav-item" data-section="nav-evidence" onclick="showSection('nav-evidence')">
+    <i class="bi bi-cloud-upload-fill"></i>
+    <span class="nav-text">Evidence Gathering</span>
+</button>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -69,12 +75,84 @@
             <h2>My IPCR Targets</h2>
             <p>Review your assigned targets and select your RET components.</p>
         </div>
-        {% if has_submitted %}
-        <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm"><i class="bi bi-hourglass-split me-2"></i>Pending Approval</span>
+        {% if is_locked %}
+            <span class="badge bg-dark px-3 py-2 fs-6 shadow-sm">
+                <i class="bi bi-lock-fill me-2"></i>Approved &amp; Locked
+            </span>
+        {% elif chair_review and chair_review.overall_status == 'Approved' %}
+            <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">
+                <i class="bi bi-check-circle-fill me-2"></i>Approved by Program Chair
+            </span>
+        {% elif chair_review and chair_review.overall_status == 'Rejected' %}
+            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Returned by Program Chair
+            </span>
+        {% elif has_submitted %}
+            <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm">
+                <i class="bi bi-hourglass-split me-2"></i>Pending Chair Approval
+            </span>
         {% else %}
-        <span class="badge bg-secondary px-3 py-2 fs-6 shadow-sm"><i class="bi bi-pencil-square me-2"></i>Draft Mode</span>
+            <span class="badge bg-secondary px-3 py-2 fs-6 shadow-sm">
+                <i class="bi bi-pencil-square me-2"></i>Draft Mode
+            </span>
         {% endif %}
     </div>
+
+    {# ── Locked View-Only Warning Banner ── #}
+    {% if is_locked %}
+    <div class="alert border-0 shadow-sm mb-4" role="alert"
+         style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 5px solid #6c757d !important; border-radius: 10px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-lock-fill text-muted fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold text-dark mb-1">IPCR is Locked (View-Only Mode)</h6>
+                <p class="mb-0 text-muted small">You have locked your IPCR. All commitment targets are finalized and cannot be modified. You can view your accomplishments and upload evidence in the **Evidence Gathering** section.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Chair Rejection Alert ──────────────────────────────── #}
+    {% if chair_review and chair_review.overall_status == 'Rejected' %}
+    <div class="alert border-0 shadow-sm mb-4" role="alert"
+         style="background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border-left: 5px solid #dc3545 !important; border-radius: 10px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold text-danger mb-1">Your Draft IPCR was Returned by your Program Chair</h6>
+                <p class="mb-1 text-dark"><strong>Remarks:</strong> {{ chair_review.overall_remarks }}</p>
+                <small class="text-muted">Please review the remarks below, make the necessary corrections, and re-submit.</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Chair Approval Alert ───────────────────────────────── #}
+    {% if is_locked %}
+    <div class="alert border-0 shadow-sm mb-4" role="alert"
+         style="background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); border-left: 5px solid #212529 !important; border-radius: 10px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-lock-fill text-dark fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold text-dark mb-1">Your IPCR has been Approved and Locked</h6>
+                <p class="mb-0 text-muted small">Your targets have been committed to your final evaluation. Editing is disabled.</p>
+            </div>
+        </div>
+    </div>
+    {% elif chair_review and chair_review.overall_status == 'Approved' %}
+    <div class="alert border-0 shadow-sm mb-4" role="alert"
+         style="background: linear-gradient(135deg, #f0fff4 0%, #dcffe4 100%); border-left: 5px solid #198754 !important; border-radius: 10px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-check-circle-fill text-success fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold text-success mb-1">Your Draft IPCR has been Approved by your Program Chair</h6>
+                {% if chair_review.overall_remarks %}
+                <p class="mb-0 text-dark"><strong>Remarks:</strong> {{ chair_review.overall_remarks }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     {% if not active_term %}
     <div class="alert alert-warning border-0 shadow-sm" style="border-radius: 10px;">
@@ -91,7 +169,7 @@
                 <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
                     <div class="card-header bg-primary text-white border-0 py-3">
                         <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i>Strategic Priorities</h5>
-                        <p class="small mb-0 opacity-75">Assigned by your Program Chair</p>
+                        <p class="small mb-0 opacity-75">Assigned core workloads and selected Research/Extension targets</p>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -105,19 +183,23 @@
                                 <tbody>
                                     {% set has_core = False %}
                                     {% for target in assigned_targets %}
-                                        {# Assume RET categories are different. We will list all targets here but clearly show they are assigned #}
-                                        {% if 'Research' not in target.category_name and 'Extension' not in target.category_name and 'RET' not in target.category_name %}
+                                        {# Show all assigned and selected targets #}
                                         {% set has_core = True %}
                                         <tr>
                                             <td class="ps-4 py-3">
                                                 <span class="badge bg-light text-dark border mb-1">{{ target.category_name }}</span>
                                                 <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
+                                                {# Show chair item remark if IPCR was returned #}
+                                                {% if chair_review and chair_review.overall_status == 'Rejected' and target.chair_item_remarks %}
+                                                <div class="mt-1 p-2 rounded" style="background:#fff3cd; border-left: 3px solid #ffc107;">
+                                                    <small class="text-dark"><i class="bi bi-chat-square-text-fill text-warning me-1"></i><strong>Chair Note:</strong> {{ target.chair_item_remarks }}</small>
+                                                </div>
+                                                {% endif %}
                                             </td>
                                             <td class="text-center fw-bold fs-5 text-primary">
                                                 {{ target.assigned_quantity }}
                                             </td>
                                         </tr>
-                                        {% endif %}
                                     {% endfor %}
                                     
                                     {% if not has_core %}
@@ -154,10 +236,10 @@
                         {% if ret_menu.research_indicators|length > 0 %}
                             <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
                                 {% for ind in ret_menu.research_indicators %}
-                                {% set is_selected = False %}
+                                {% set ns = namespace(is_selected=false) %}
                                 {% for t in assigned_targets %}
                                     {% if t.indicator_id == ind.indicator_id %}
-                                        {% set is_selected = True %}
+                                        {% set ns.is_selected = true %}
                                     {% endif %}
                                 {% endfor %}
                                 <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
@@ -165,7 +247,7 @@
                                     <div class="d-flex align-items-start gap-3">
                                         <div class="form-check mt-1">
                                             <input class="form-check-input research-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
-                                                {% if is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
+                                                {% if ns.is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
                                         </div>
                                         <div>
                                             <p class="mb-0 small text-secondary">{{ ind.indicator_description }}</p>
@@ -200,10 +282,10 @@
                         {% if ret_menu.extension_indicators|length > 0 %}
                             <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
                                 {% for ind in ret_menu.extension_indicators %}
-                                {% set is_selected = False %}
+                                {% set ns = namespace(is_selected=false) %}
                                 {% for t in assigned_targets %}
                                     {% if t.indicator_id == ind.indicator_id %}
-                                        {% set is_selected = True %}
+                                        {% set ns.is_selected = true %}
                                     {% endif %}
                                 {% endfor %}
                                 <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
@@ -211,7 +293,7 @@
                                     <div class="d-flex align-items-start gap-3">
                                         <div class="form-check mt-1">
                                             <input class="form-check-input extension-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
-                                                {% if is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
+                                                {% if ns.is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
                                         </div>
                                         <div>
                                             <p class="mb-0 small text-secondary">{{ ind.indicator_description }}</p>
@@ -233,9 +315,13 @@
 
         <div class="mt-4 text-end">
             {% if not has_submitted %}
-            <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn" 
+            <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn"
                     {% if ret_menu.research_required > 0 or ret_menu.extension_required > 0 %}disabled{% endif %}>
-                <i class="bi bi-send-check-fill me-2"></i> Submit IPCR for Approval
+                {% if chair_review and chair_review.overall_status == 'Rejected' %}
+                <i class="bi bi-arrow-clockwise me-2"></i>Re-submit for Review
+                {% else %}
+                <i class="bi bi-send-check-fill me-2"></i>Submit IPCR for Approval
+                {% endif %}
             </button>
             <p class="small text-muted mt-2 mb-0" id="submitHelpText">
                 {% if ret_menu.research_required > 0 or ret_menu.extension_required > 0 %}
@@ -243,14 +329,126 @@
                 {% endif %}
             </p>
             {% else %}
-            <div class="alert alert-info d-inline-block border-0 shadow-sm rounded-pill px-4">
-                <i class="bi bi-info-circle-fill me-2"></i> Your IPCR is currently locked pending approval.
-            </div>
+                {% if is_locked %}
+                <div class="alert alert-dark d-inline-block border-0 shadow-sm rounded-pill px-4">
+                    <i class="bi bi-lock-fill me-2"></i> Your IPCR is locked and committed.
+                </div>
+                {% elif chair_review and chair_review.overall_status == 'Approved' %}
+                <div class="d-inline-flex flex-column align-items-end gap-2">
+                    <div class="alert alert-success border-0 shadow-sm rounded-pill px-4 py-2 m-0">
+                        <i class="bi bi-check-circle-fill me-2"></i> Your IPCR has been approved by your Program Chair!
+                    </div>
+                    <form action="{{ url_for('faculty.faculty_lock_ipcr') }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to lock your IPCR? Once locked, it is committed for final evaluation and cannot be edited.');">
+                        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+                        <button type="submit" class="btn btn-warning btn-lg px-5 shadow fw-bold rounded-pill">
+                            <i class="bi bi-lock-fill me-2"></i>Lock My IPCR
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="alert alert-info d-inline-block border-0 shadow-sm rounded-pill px-4">
+                    <i class="bi bi-info-circle-fill me-2"></i> Your IPCR is currently locked pending approval.
+                </div>
+                {% endif %}
             {% endif %}
         </div>
     </form>
     {% endif %}
 </div>
+
+{% if is_locked %}
+<div id="nav-evidence" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Evidence Gathering</h2>
+            <p>Upload your evidence and report accomplishment details for your locked commitment targets.</p>
+        </div>
+        <span class="badge bg-dark px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-lock-fill me-2"></i>Locked &amp; Committed
+        </span>
+    </div>
+
+    <div class="alert border-0 shadow-sm mb-4" role="alert"
+         style="background: linear-gradient(135deg, #eaf2ff 0%, #dbe9ff 100%); border-left: 5px solid #0d6efd !important; border-radius: 10px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-info-circle-fill text-primary fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold text-primary mb-1">Committed Evaluation Targets</h6>
+                <p class="mb-0 text-muted small">Please fill out the accomplishment boxes and upload necessary files for verification by your department dean and program chair.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Accomplishments Column -->
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-primary text-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-check-fill me-2"></i>My Evidence Submission Checklist</h5>
+                    <span class="badge bg-light text-primary fw-semibold">{{ assigned_targets|length }} Target{{ 's' if assigned_targets|length != 1 }} Locked</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4" width="40%">Target Indicator</th>
+                                    <th class="text-center" width="10%">Target Qty</th>
+                                    <th class="text-center" width="15%">Accomplished Qty</th>
+                                    <th class="ps-3" width="35%">Accomplishment / File Submission</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for target in assigned_targets %}
+                                <tr>
+                                    <td class="ps-4 py-4">
+                                        <span class="badge bg-light text-dark border mb-1">{{ target.category_name }}</span>
+                                        <p class="mb-0 small fw-semibold text-dark">{{ target.indicator_description }}</p>
+                                    </td>
+                                    <td class="text-center fw-bold fs-5 text-primary">
+                                        {{ target.assigned_quantity }}
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="number" class="form-control form-control-sm text-center mx-auto" style="max-width: 80px;" min="0" placeholder="0" name="accomplished_qty_{{ target.target_id }}">
+                                    </td>
+                                    <td class="pe-4 py-4">
+                                        {% if 'Research' in target.category_name or 'Extension' in target.category_name or 'RET' in target.category_name %}
+                                        <div class="upload-area p-3 bg-light rounded text-center border border-dashed border-secondary border-opacity-50 hover-shadow transition-all">
+                                            <i class="bi bi-cloud-arrow-up text-primary fs-3 d-block mb-1"></i>
+                                            <small class="text-muted d-block mb-2">Upload research artifact, certificate, or paper (.pdf, .zip, max 10MB)</small>
+                                            <input type="file" class="form-control form-control-sm text-center mx-auto" style="max-width: 320px;" name="evidence_file_{{ target.target_id }}">
+                                        </div>
+                                        {% else %}
+                                        <div class="mb-0">
+                                            <textarea class="form-control form-control-sm accomplishment-textarea" rows="2" 
+                                                      placeholder="Describe actual results achieved (e.g. 'Conducted 18 class lectures, prepared syllabus...')"></textarea>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end mb-4">
+                <button type="button" class="btn btn-success btn-lg px-5 shadow fw-bold rounded-pill" onclick="simulateSaveEvidence()">
+                    <i class="bi bi-cloud-upload-fill me-2"></i>Save &amp; Submit Evidence
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evidence Mock Toast/Modal script -->
+<script>
+function simulateSaveEvidence() {
+    alert("Draft evidence and accomplishments saved successfully!\n(Note: This is a front-end simulation for Phase 3 evidence gathering.)");
+}
+</script>
+{% endif %}
 
 <style>
     .ret-card:hover {
@@ -281,13 +479,13 @@
         const hasSubmitted = {{ 'true' if has_submitted else 'false' }};
         
         function updateSelectionCount() {
-            if (hasSubmitted) return;
-            
             let rSelected = Array.from(researchCheckboxes).filter(cb => cb.checked).length;
             let eSelected = Array.from(extensionCheckboxes).filter(cb => cb.checked).length;
             
             if (rCountDisplay) rCountDisplay.innerText = `${rSelected} / ${rRequiredCount}`;
             if (eCountDisplay) eCountDisplay.innerText = `${eSelected} / ${eRequiredCount}`;
+            
+            if (hasSubmitted) return;
             
             let rValid = rSelected === rRequiredCount;
             let eValid = eSelected === eRequiredCount;
