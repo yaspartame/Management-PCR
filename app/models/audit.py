@@ -5,11 +5,12 @@ def log_audit_action(conn, cursor, actor_id, action_type, details, ip_address):
 
 
 def get_recent_audit_logs(cursor, limit=50):
-    cursor.execute(
-        "SELECT log_timestamp, actor_id, action_type, action_details, ip_address FROM tbl_audit_logs ORDER BY log_timestamp DESC LIMIT %s",
-        (limit,)
-    )
-    return cursor.fetchall()
+    from app.models.connection import timed_query
+    query = """
+        SELECT log_timestamp, actor_id, action_type, action_details, ip_address 
+        FROM tbl_audit_logs ORDER BY log_timestamp DESC LIMIT %s
+    """
+    return timed_query(cursor, query, (limit,), label="get_recent_audit_logs")
 
 
 def emergency_reset_password(conn, cursor, emp_id, new_hashed_password):
@@ -29,11 +30,11 @@ def emergency_lock_account(conn, cursor, emp_id):
 
 
 def get_all_users_for_security(cursor):
+    from app.models.connection import timed_query
     query = """
         SELECT e.emp_id, e.first_name, e.last_name, s.system_role, s.account_status
         FROM tbl_employee_profiles e
         JOIN tbl_system_access s ON e.emp_id = s.emp_id
         ORDER BY e.last_name ASC
     """
-    cursor.execute(query)
-    return cursor.fetchall()
+    return timed_query(cursor, query, label="get_all_users_for_security")

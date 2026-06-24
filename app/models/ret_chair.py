@@ -1,4 +1,5 @@
 def get_ret_indicators(cursor, term_id):
+    from app.models.connection import timed_query
     query = """
         SELECT mi.indicator_id, mi.indicator_description, mi.efficiency_type, tc.category_name, cq.total_target_value as dean_quota
         FROM tbl_cascaded_quotas cq
@@ -8,9 +9,7 @@ def get_ret_indicators(cursor, term_id):
           AND cq.assigned_to_role = 'RET / Extension'
         ORDER BY tc.category_name, mi.indicator_id
     """
-    cursor.execute(query, (term_id,))
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, (term_id,), label="get_ret_indicators")
 
 
 def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, extension_selections, research_indicator_ids, extension_indicator_ids):
@@ -49,6 +48,7 @@ def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, ext
 
 
 def get_ret_rules(cursor, term_id):
+    from app.models.connection import timed_query
     query = """
         SELECT r.rule_id, r.academic_rank, r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name
         FROM tbl_ret_rules r
@@ -57,7 +57,7 @@ def get_ret_rules(cursor, term_id):
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
         WHERE mi.term_id = %s
     """
-    cursor.execute(query, (term_id,))
+    return timed_query(cursor, query, (term_id,), label="get_ret_rules")
     rows = cursor.fetchall()
     rules_dict = {}
 
