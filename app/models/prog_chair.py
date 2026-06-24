@@ -6,6 +6,7 @@ from datetime import datetime
 # ─────────────────────────────────────────────
 
 def get_chair_indicators(cursor, term_id, specialization):
+    from app.models.connection import timed_query
     query = """
         SELECT mi.indicator_id, mi.indicator_description, mi.efficiency_type, tc.category_name, cq.total_target_value as dept_quota
         FROM tbl_master_indicators mi
@@ -16,20 +17,44 @@ def get_chair_indicators(cursor, term_id, specialization):
           AND cq.assigned_to_role = %s
         ORDER BY tc.category_name, mi.indicator_id
     """
-    cursor.execute(query, (term_id, specialization))
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, (term_id, specialization), label="get_chair_indicators")
 
 
 def get_specialization_faculty(cursor, specialization):
+    from app.models.connection import timed_query
     query = """
         SELECT emp_id, first_name, last_name, academic_rank, leave_status
         FROM tbl_employee_profiles
         WHERE specialization = %s AND leave_status = 'Active' AND designation = 'Regular Faculty'
     """
-    cursor.execute(query, (specialization,))
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, (specialization,), label="get_specialization_faculty")
+
+
+def get_assigned_quantity_batch(cursor, term_id, indicator_ids, faculty_ids):
+    """
+    Get assigned quantities for MULTIPLE indicators in ONE query.
+    Returns dict: {indicator_id: assigned_quantity}
+    Replaces N+1 get_assigned_quantity() calls.
+    """
+    if not faculty_ids or not indicator_ids:
+        return {}
+    from app.models.connection import timed_query
+    fac_placeholders = ','.join(['%s'] * len(faculty_ids))
+    ind_placeholders = ','.join(['%s'] * len(indicator_ids))
+    query = f"""
+        SELECT da.indicator_id, da.assigned_quantity
+        FROM tbl_draft_allocation da
+        JOIN tbl_master_indicators mi ON da.indicator_id = mi.indicator_id
+        WHERE mi.term_id = %s 
+          AND da.indicator_id IN ({ind_placeholders})
+          AND da.emp_id IN ({fac_placeholders})
+        GROUP BY da.indicator_id, da.assigned_quantity
+    """
+    rows = timed_query(cursor, query, [term_id] + indicator_ids + faculty_ids, label="get_assigned_quantity_batch")
+    result = {}
+    for row in rows:
+        result[row['indicator_id']] = row['assigned_quantity']
+    return result
 
 
 def get_assigned_quantity(cursor, term_id, indicator_id, faculty_ids):

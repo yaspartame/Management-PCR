@@ -1,5 +1,6 @@
 def get_master_indicators(cursor, term_id):
     """Returns master indicators as dicts with category_name — used by Admin and Dean dashboards."""
+    from app.models.connection import timed_query
     query = """
         SELECT mi.*, tc.category_name 
         FROM tbl_master_indicators mi
@@ -7,9 +8,7 @@ def get_master_indicators(cursor, term_id):
         WHERE mi.term_id = %s AND mi.is_custom = 0
         ORDER BY tc.category_name, mi.indicator_id
     """
-    cursor.execute(query, (term_id,))
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, (term_id,), label="get_master_indicators")
 
 
 def add_master_indicator(conn, cursor, category_name, description, efficiency_type, term_id):

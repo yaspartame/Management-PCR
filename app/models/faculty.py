@@ -1,41 +1,14 @@
 def get_faculty_assigned_targets(cursor, emp_id, term_id):
-    # Check if locked (committed targets exist)
-    cursor.execute("""
-        SELECT COUNT(*) FROM tbl_committed_targets ct
-        JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
-        WHERE ct.emp_id = %s AND mi.term_id = %s
-    """, (emp_id, term_id))
-    is_locked = cursor.fetchone()[0] > 0
-
-    if is_locked:
-        # Load from tbl_committed_targets
-        query = """
-            SELECT ct.target_id, ct.indicator_id,
-                   ct.assigned_quantity,
-                   ct.status,
-                   mi.indicator_description, tc.category_name,
-                   NULL as chair_item_remarks,
-                   NULL as chair_reviewed_quantity
-            FROM tbl_committed_targets ct
-            JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
-            LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-            WHERE ct.emp_id = %s AND mi.term_id = %s
-            ORDER BY tc.category_name, mi.indicator_id
-        """
-        cursor.execute(query, (emp_id, term_id))
-        columns = [col[0] for col in cursor.description]
-        return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
+    from app.models.connection import timed_query
     # Check if this user has already submitted their targets to the review registry
-    cursor.execute("""
-        SELECT COUNT(*) FROM tbl_draft_targets dt
+    count_result = timed_query(cursor, """
+        SELECT COUNT(*) as cnt FROM tbl_draft_targets dt
         JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
         WHERE dt.emp_id = %s AND mi.term_id = %s
-    """, (emp_id, term_id))
-    has_submitted = cursor.fetchone()[0] > 0
+    """, (emp_id, term_id), label="get_faculty_assigned_targets_check")
+    has_submitted = count_result[0]['cnt'] > 0 if count_result else False
 
     if has_submitted:
-        # Load from tbl_draft_targets, also surface any per-item chair remarks
         query = """
             SELECT dt.draft_id as target_id, dt.indicator_id,
                    COALESCE(
@@ -57,7 +30,6 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
             ORDER BY tc.category_name, mi.indicator_id
         """
     else:
-        # Load pre-assigned targets from Program Chair's tbl_draft_allocation for their specialization
         query = """
             SELECT MIN(da.allocation_id) as target_id, da.indicator_id, MAX(da.assigned_quantity) as assigned_quantity, 'Draft' as status,
                    mi.indicator_description, tc.category_name,
@@ -71,9 +43,7 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
             GROUP BY da.indicator_id, mi.indicator_description, tc.category_name
             ORDER BY tc.category_name, da.indicator_id
         """
-    cursor.execute(query, (emp_id, term_id))
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, (emp_id, term_id), label="get_faculty_assigned_targets_load")
 
 
 def get_faculty_chair_review_status(cursor, emp_id, term_id):
@@ -99,6 +69,7 @@ def get_faculty_chair_review_status(cursor, emp_id, term_id):
 
 
 def get_faculty_ret_menu(cursor, academic_rank, term_id):
+    from app.models.connection import timed_query
     query = """
         SELECT r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name, rri.target_quantity
         FROM tbl_ret_rules r
@@ -107,9 +78,7 @@ def get_faculty_ret_menu(cursor, academic_rank, term_id):
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
         WHERE r.academic_rank = %s AND mi.term_id = %s
     """
-    cursor.execute(query, (academic_rank, term_id))
-    columns = [col[0] for col in cursor.description]
-    results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    results = timed_query(cursor, query, (academic_rank, term_id), label="get_faculty_ret_menu")
 
     ret_menu = {
         'research_required': 0,

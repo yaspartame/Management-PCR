@@ -10,13 +10,13 @@ faculty_bp = Blueprint('faculty', __name__, url_prefix='/faculty')
 def faculty_dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
+    from app.models.connection import timed_query
 
     emp_id = session.get('user_id')
 
-    cursor.execute("SELECT academic_rank, specialization FROM tbl_employee_profiles WHERE emp_id = %s", (emp_id,))
-    emp_profile = cursor.fetchone()
-    academic_rank = emp_profile[0] if emp_profile else ''
-    specialization = emp_profile[1] if emp_profile else ''
+    emp_result = timed_query(cursor, "SELECT academic_rank, specialization FROM tbl_employee_profiles WHERE emp_id = %s", (emp_id,), label="faculty_profile")
+    academic_rank = emp_result[0]['academic_rank'] if emp_result else ''
+    specialization = emp_result[0]['specialization'] if emp_result else ''
 
     terms = get_all_terms(cursor)
     active_term = next((t for t in terms if t['is_active'] == 1), None)
@@ -33,14 +33,20 @@ def faculty_dashboard():
         if academic_rank:
             ret_menu = get_faculty_ret_menu(cursor, academic_rank, term_id)
 
+<<<<<<< HEAD
         # Check if the faculty member has submitted (has rows in tbl_draft_targets with 'Pending Review')
         cursor.execute("""
             SELECT COUNT(*)
+=======
+        # Check if the faculty member has submitted
+        sub_result = timed_query(cursor, """
+            SELECT COUNT(*) as cnt
+>>>>>>> origin/dean_commitments
             FROM tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
             WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review'
-        """, (emp_id, term_id))
-        has_submitted = cursor.fetchone()[0] > 0
+        """, (emp_id, term_id), label="faculty_submit_check")
+        has_submitted = sub_result[0]['cnt'] > 0 if sub_result else False
 
         # Fetch the Program Chair's review decision (if any)
         chair_review = get_faculty_chair_review_status(cursor, emp_id, term_id)

@@ -15,9 +15,10 @@ def register_user(conn, cursor, employee_id_number, email, password_hash):
 
 
 def get_all_profiles(cursor):
-    cursor.execute("SELECT * FROM tbl_employee_profiles ORDER BY last_name ASC, first_name ASC")
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    from app.models.connection import timed_query
+    return timed_query(cursor,
+        "SELECT * FROM tbl_employee_profiles ORDER BY last_name ASC, first_name ASC",
+        label="get_all_profiles")
 
 
 def save_single_profile(conn, cursor, data):

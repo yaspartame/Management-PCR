@@ -46,8 +46,16 @@ def prog_chair_dashboard():
             faculty_count = len(faculty_list)
             faculty_ids = [f['emp_id'] for f in faculty_list]
 
+            # Batch: get ALL assigned quantities in ONE query (replaces N+1 loop)
+            indicator_ids = [ind['indicator_id'] for ind in indicators]
+            assigned_quantities = get_assigned_quantity_batch(cursor, active_term['term_id'], indicator_ids, faculty_ids)
+
             for ind in indicators:
+<<<<<<< HEAD
                 assigned_qty = get_assigned_quantity(cursor, term_id, ind['indicator_id'], faculty_ids)
+=======
+                assigned_qty = assigned_quantities.get(ind['indicator_id'], 0)
+>>>>>>> origin/dean_commitments
                 ind['assigned_per_faculty'] = assigned_qty
                 ind['total_distributed'] = assigned_qty * faculty_count
 

@@ -10,6 +10,7 @@ ret_chair_bp = Blueprint('ret_chair', __name__, url_prefix='/ret_chair')
 def ret_chair_dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
+    from app.models.connection import timed_query
 
     try:
         terms = get_all_terms(cursor)
@@ -18,9 +19,10 @@ def ret_chair_dashboard():
         ret_indicators = []
         ret_rules = []
 
-        cursor.execute(
-            "SELECT DISTINCT academic_rank FROM tbl_employee_profiles WHERE academic_rank IS NOT NULL AND academic_rank != '' ORDER BY academic_rank")
-        academic_ranks = [row[0] for row in cursor.fetchall()]
+        ranks_result = timed_query(cursor,
+            "SELECT DISTINCT academic_rank FROM tbl_employee_profiles WHERE academic_rank IS NOT NULL AND academic_rank != '' ORDER BY academic_rank",
+            label="ret_academic_ranks")
+        academic_ranks = [row['academic_rank'] for row in ranks_result]
 
         if active_term:
             term_id = active_term['term_id']
