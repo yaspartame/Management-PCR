@@ -11,22 +11,22 @@ designated_bp = Blueprint('designated', __name__, url_prefix='/designated')
 def designated_dashboard():
     conn = get_db_connection()
     cursor = conn.cursor()
+    from app.models.connection import timed_query
 
     emp_id = session.get('user_id')
 
-    cursor.execute("""
+    emp_result = timed_query(cursor, """
         SELECT academic_rank, specialization, designation, first_name, last_name, assigned_program 
         FROM tbl_employee_profiles 
         WHERE emp_id = %s
-    """, (emp_id,))
-    emp_profile = cursor.fetchone()
+    """, (emp_id,), label="designated_profile")
     
-    academic_rank = emp_profile[0] if emp_profile else ''
-    specialization = emp_profile[1] if emp_profile else ''
-    designation = emp_profile[2] if emp_profile else ''
-    first_name = emp_profile[3] if emp_profile else ''
-    last_name = emp_profile[4] if emp_profile else ''
-    assigned_program = emp_profile[5] if emp_profile else ''
+    academic_rank = emp_result[0]['academic_rank'] if emp_result else ''
+    specialization = emp_result[0]['specialization'] if emp_result else ''
+    designation = emp_result[0]['designation'] if emp_result else ''
+    first_name = emp_result[0]['first_name'] if emp_result else ''
+    last_name = emp_result[0]['last_name'] if emp_result else ''
+    assigned_program = emp_result[0]['assigned_program'] if emp_result else ''
 
     terms = get_all_terms(cursor)
     active_term = next((t for t in terms if t['is_active'] == 1), None)
@@ -37,29 +37,24 @@ def designated_dashboard():
     if active_term:
         term_id = active_term['term_id']
         
-        # Check if the user has already submitted by looking up tbl_draft_targets
-        cursor.execute("""
-            SELECT COUNT(*) FROM tbl_draft_targets dt
+        # Check if the user has already submitted
+        sub_result = timed_query(cursor, """
+            SELECT COUNT(*) as cnt FROM tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
             WHERE dt.emp_id = %s AND mi.term_id = %s
-        """, (emp_id, term_id))
-        has_submitted = cursor.fetchone()[0] > 0
+        """, (emp_id, term_id), label="designated_submit_check")
+        has_submitted = sub_result[0]['cnt'] > 0 if sub_result else False
 
         if has_submitted:
-            # Load submitted draft targets (both standard and custom) from tbl_draft_targets
-            query = """
+            dpcr_targets = timed_query(cursor, """
                 SELECT dt.draft_id as target_id, dt.indicator_id, dt.proposed_quantity as total_target_value, dt.review_status as status,
                        mi.indicator_description, tc.category_name
                 FROM tbl_draft_targets dt
                 JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
                 LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
                 WHERE dt.emp_id = %s AND mi.term_id = %s
-            """
-            cursor.execute(query, (emp_id, term_id))
-            columns = [col[0] for col in cursor.description]
-            dpcr_targets = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            """, (emp_id, term_id), label="designated_load_drafts")
         else:
-            # Load standard selectable baseline targets
             dpcr_targets = get_designated_selectable_indicators(cursor, term_id)
             for t in dpcr_targets:
                 t['total_target_value'] = 0

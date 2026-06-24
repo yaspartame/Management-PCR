@@ -1,8 +1,8 @@
 def get_designated_selectable_indicators(cursor, term_id):
     """
     Retrieves the standard baseline list of available Instruction and Support functions.
-    Ensures that custom individual modifications from other profiles remain isolated.
     """
+    from app.models.connection import timed_query
     query = """
         SELECT mi.indicator_id, mi.indicator_description, tc.category_name
         FROM tbl_master_indicators mi
@@ -12,9 +12,7 @@ def get_designated_selectable_indicators(cursor, term_id):
           AND tc.category_name IN ('A. Instructions', 'Support Functions')
         ORDER BY tc.category_name, mi.indicator_id
     """
-    cursor.execute(query, (term_id,))
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, (term_id,), label="get_designated_selectable_indicators")
 
 
 def submit_designated_ipcr(conn, cursor, emp_id, term_id, selected_targets, custom_targets):

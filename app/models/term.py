@@ -16,7 +16,6 @@ def open_new_term(conn, cursor, academic_year, semester, deadline_date):
 
 
 def get_all_terms(cursor):
+    from app.models.connection import timed_query
     query = "SELECT term_id, academic_year, semester, deadline_date, is_active FROM tbl_academic_terms ORDER BY term_id DESC"
-    cursor.execute(query)
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, label="get_all_terms")

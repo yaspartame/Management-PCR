@@ -1,14 +1,14 @@
 def get_faculty_assigned_targets(cursor, emp_id, term_id):
+    from app.models.connection import timed_query
     # Check if this user has already submitted their targets to the review registry
-    cursor.execute("""
-        SELECT COUNT(*) FROM tbl_draft_targets dt
+    count_result = timed_query(cursor, """
+        SELECT COUNT(*) as cnt FROM tbl_draft_targets dt
         JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
         WHERE dt.emp_id = %s AND mi.term_id = %s
-    """, (emp_id, term_id))
-    has_submitted = cursor.fetchone()[0] > 0
+    """, (emp_id, term_id), label="get_faculty_assigned_targets_check")
+    has_submitted = count_result[0]['cnt'] > 0 if count_result else False
 
     if has_submitted:
-        # Load from tbl_draft_targets (aliasing columns to maintain frontend template compatibility)
         query = """
             SELECT dt.draft_id as target_id, dt.indicator_id, dt.proposed_quantity as assigned_quantity, dt.review_status as status,
                    mi.indicator_description, tc.category_name
@@ -18,7 +18,6 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
             WHERE dt.emp_id = %s AND mi.term_id = %s
         """
     else:
-        # Load pre-assigned targets from Program Chair's tbl_draft_allocation
         query = """
             SELECT da.allocation_id as target_id, da.indicator_id, da.assigned_quantity, 'Draft' as status,
                    mi.indicator_description, tc.category_name
@@ -27,12 +26,11 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
             LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
             WHERE da.emp_id = %s AND mi.term_id = %s
         """
-    cursor.execute(query, (emp_id, term_id))
-    columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return timed_query(cursor, query, (emp_id, term_id), label="get_faculty_assigned_targets_load")
 
 
 def get_faculty_ret_menu(cursor, academic_rank, term_id):
+    from app.models.connection import timed_query
     query = """
         SELECT r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name
         FROM tbl_ret_rules r
@@ -41,9 +39,7 @@ def get_faculty_ret_menu(cursor, academic_rank, term_id):
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
         WHERE r.academic_rank = %s AND mi.term_id = %s
     """
-    cursor.execute(query, (academic_rank, term_id))
-    columns = [col[0] for col in cursor.description]
-    results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    results = timed_query(cursor, query, (academic_rank, term_id), label="get_faculty_ret_menu")
 
     ret_menu = {
         'research_required': 0,
