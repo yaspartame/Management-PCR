@@ -14,9 +14,17 @@
     <i class="bi bi-diagram-3-fill"></i>
     <span class="nav-text">Quota Cascading</span>
 </button>
+<button class="nav-item" data-section="nav-draft-ipcr" onclick="showSection('nav-draft-ipcr')">
+    <i class="bi bi-file-earmark-check-fill"></i>
+    <span class="nav-text">IPCR Draft Approval</span>
+</button>
 <button class="nav-item" data-section="nav-phase6" onclick="showSection('nav-phase6')">
     <i class="bi bi-check-all"></i>
     <span class="nav-text">Batch Approvals</span>
+</button>
+<button class="nav-item" data-section="nav-target-assign" onclick="showSection('nav-target-assign')">
+    <i class="bi bi-person-plus-fill"></i>
+    <span class="nav-text">Target Assignment</span>
 </button>
 {% endblock %}
 
@@ -173,11 +181,12 @@
                                         </td>
                                         <td>
                                             <input type="number" 
-                                                   class="form-control form-control-sm text-success shadow-sm fw-bold" 
+                                                   class="form-control form-control-sm text-success shadow-sm fw-bold quota-input" 
                                                    name="college[]" 
                                                    min="0" 
                                                    value="{{ existing_quotas.get(indicator.indicator_id, {}).get('College-Wide', 0) }}"
-                                                   disabled>
+                                                   data-indicator="{{ indicator.indicator_id }}"
+                                                   onchange="updateTotals()">
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -281,6 +290,296 @@
             </div>
         </div>
 </div>
+<!-- ──────────────────────────────────────────────
+     IPCR Draft Approval (Designated Faculty Review)
+     ────────────────────────────────────────────── -->
+<div id="nav-draft-ipcr" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>IPCR Draft Approval</h2>
+            <p>Review and approve/reject draft IPCR submissions from Designated Faculty members.</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0" style="border-top: 4px solid #6366F1 !important;">
+        <div class="card-body">
+            {% if draft_submissions %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Faculty Name</th>
+                            <th>Academic Rank</th>
+                            <th>Designation</th>
+                            <th>Assigned Program</th>
+                            <th class="text-center">Targets</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in draft_submissions %}
+                        <tr>
+                            <td class="fw-bold">{{ sub.faculty_name }}</td>
+                            <td>{{ sub.academic_rank }}</td>
+                            <td>{{ sub.designation }}</td>
+                            <td>{{ sub.assigned_program }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ sub.total_targets }} total</span>
+                            </td>
+                            <td class="text-center">
+                                {% if sub.pending_count > 0 and sub.approved_count == 0 and sub.rejected_count == 0 %}
+                                <span class="badge bg-warning text-dark">Pending Review</span>
+                                {% elif sub.approved_count == sub.total_targets %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif sub.rejected_count > 0 %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                <span class="badge bg-info text-dark">Partial</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewDraftTargets('{{ sub.emp_id }}')">
+                                    <i class="bi bi-eye"></i> Review
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="mt-2 text-muted">No draft IPCR submissions from Designated Faculty yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Review Draft Targets Modal -->
+<div class="modal fade" id="reviewDraftModal" tabindex="-1" aria-labelledby="reviewDraftModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold" id="reviewDraftModalLabel">
+                    <i class="bi bi-file-earmark-text me-2"></i> Review Draft IPCR
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="draftFacultyInfo" class="mb-3 p-3 bg-light rounded-3">
+                    <h6 class="fw-bold mb-2" id="draftFacultyName"></h6>
+                    <div class="row text-muted small">
+                        <div class="col-md-4"><strong>Rank:</strong> <span id="draftFacultyRank"></span></div>
+                        <div class="col-md-4"><strong>Designation:</strong> <span id="draftFacultyDesignation"></span></div>
+                        <div class="col-md-4"><strong>Program:</strong> <span id="draftFacultyProgram"></span></div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="draftTargetsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th>Indicator</th>
+                                <th class="text-center" width="120">Proposed Qty</th>
+                                <th class="text-center" width="100">Status</th>
+                                <th class="text-center" width="80">Edit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="draftTargetsBody">
+                            <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <hr>
+                <form id="reviewDraftForm" action="{{ url_for('dean.review_draft') }}" method="POST">
+                    <input type="hidden" name="emp_id" id="reviewEmpId" value="">
+                    <input type="hidden" name="action" id="reviewAction" value="">
+                    <div class="mb-3">
+                        <label for="reviewRemarks" class="form-label fw-bold">
+                            Remarks <span class="text-danger">*</span>
+                            <small class="text-muted fw-normal">(Required for rejection)</small>
+                        </label>
+                        <textarea class="form-control" id="reviewRemarks" name="remarks" rows="2" placeholder="Enter your remarks or reason for rejection..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="button" class="btn btn-outline-success" onclick="submitReview('Approved')">
+                                <i class="bi bi-check-circle me-1"></i> Approve All
+                            </button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-danger me-2" onclick="submitReview('Rejected')">
+                                <i class="bi bi-x-circle me-1"></i> Reject All
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Draft Target Modal -->
+<div class="modal fade" id="editDraftTargetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Edit Commitment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('dean.update_draft_target') }}" method="POST">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="draft_id" id="editDraftId" value="">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Indicator</label>
+                        <p class="mb-0 small text-muted" id="editDraftIndicator"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProposedQty" class="form-label fw-bold">Proposed Quantity</label>
+                        <input type="number" class="form-control form-control-lg text-center fw-bold" id="editProposedQty" name="proposed_quantity" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold">
+                        <i class="bi bi-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ──────────────────────────────────────────────
+     Target Assignment (College-Wide to Designated Faculty)
+     ────────────────────────────────────────────── -->
+<div id="nav-target-assign" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Target Assignment</h2>
+            <p>Assign College-Wide targets to Designated Faculty members based on quota distributions.</p>
+        </div>
+    </div>
+
+    {% if active_term %}
+    <div class="alert alert-info shadow-sm border-0 mb-3 small py-2 rounded">
+        <strong><i class="bi bi-calendar-check me-1"></i>Active Term:</strong>
+        {{ active_term.academic_year }} ({{ active_term.semester }})
+    </div>
+
+    {% if college_wide_quotas %}
+    <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #10B981 !important;">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="fw-bold mb-0 text-success">
+                <i class="bi bi-globe me-2"></i>College-Wide Targets with Quotas
+            </h5>
+            <small class="text-muted">The following indicators have College-Wide target quotas set. Assign them to designated faculty below.</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Indicator</th>
+                            <th>Category</th>
+                            <th class="text-center">College-Wide Quota</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q in college_wide_quotas %}
+                        <tr>
+                            <td class="fw-bold">{{ q.indicator_description }}</td>
+                            <td>{{ q.category_name }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-success fs-6">{{ q.total_target_value }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if designated_faculty_list %}
+    <div class="card shadow-sm border-0" style="border-top: 4px solid #4F8CFF !important;">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-people-fill me-2"></i>Designated Faculty Assignment
+            </h5>
+            <small class="text-muted">Set target quantities for each designated faculty member per College-Wide indicator.</small>
+        </div>
+        <div class="card-body p-0">
+            {% for q in college_wide_quotas %}
+            <div class="p-3 border-bottom {% if loop.first %}pt-0{% endif %}">
+                <h6 class="fw-bold text-success mb-2">
+                    <i class="bi bi-bullseye me-1"></i> {{ q.indicator_description }}
+                    <span class="badge bg-success ms-2">Quota: {{ q.total_target_value }}</span>
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Faculty</th>
+                                <th>Rank</th>
+                                <th>Program</th>
+                                <th class="text-center" width="130">Assigned Qty</th>
+                                <th class="text-center" width="100">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fac in designated_faculty_list %}
+                            <tr>
+                                <td class="fw-bold small">{{ fac.first_name }} {{ fac.last_name }}</td>
+                                <td class="small">{{ fac.academic_rank }}</td>
+                                <td class="small">{{ fac.assigned_program }}</td>
+                                <td class="text-center">
+                                    <form id="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}" action="{{ url_for('dean.assign_designated_target') }}" method="POST" class="m-0">
+                                        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+                                        <input type="hidden" name="emp_id" value="{{ fac.emp_id }}">
+                                        <input type="hidden" name="indicator_id" value="{{ q.indicator_id }}">
+                                        <input type="number" name="quantity" class="form-control form-control-sm text-center fw-bold shadow-sm"
+                                               value="{{ designated_assignments.get(fac.emp_id, {}).get(q.indicator_id, 0) }}" min="0"
+                                               style="width: 100px; margin: 0 auto;">
+                                    </form>
+                                </td>
+                                <td class="text-center">
+                                    <button type="submit" form="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-save"></i> Save
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning border-0 shadow-sm">
+        <i class="bi bi-exclamation-triangle me-2"></i> No active Designated Faculty members found in the roster.
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-warning border-0 shadow-sm">
+        <i class="bi bi-inbox me-2"></i> No College-Wide quotas have been set yet. Go to <strong>Quota Cascading</strong> to set College-Wide target values first.
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-warning border-0 shadow-sm">
+        <i class="bi bi-exclamation-triangle me-2"></i> No active term. Please activate an academic term first.
+    </div>
+    {% endif %}
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -342,6 +641,106 @@ function revertSelected() {
 function viewIPCR(scoreId) {
     // This would redirect to a review page
     window.location.href = `/dean/review_ipcr/${scoreId}`;
+}
+
+// ── Draft IPCR Review Functions ── REVIEW MODAL Mika
+
+function viewDraftTargets(empId) {
+    const formData = new FormData();
+    formData.append('emp_id', empId);
+
+    fetch('{{ url_for("dean.get_draft_targets") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        document.getElementById('reviewEmpId').value = empId;
+        document.getElementById('draftFacultyName').textContent = data.faculty_name;
+        document.getElementById('draftFacultyRank').textContent = data.academic_rank || 'N/A';
+        document.getElementById('draftFacultyDesignation').textContent = data.designation || 'N/A';
+        document.getElementById('draftFacultyProgram').textContent = data.assigned_program || 'N/A';
+        document.getElementById('reviewRemarks').value = '';
+
+        const tbody = document.getElementById('draftTargetsBody');
+        tbody.innerHTML = '';
+
+        if (!data.targets || data.targets.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No draft targets found.</td></tr>';
+        } else {
+            let currentCategory = '';
+            data.targets.forEach(t => {
+                const catLabel = t.category_name || 'Uncategorized';
+                let catRow = '';
+                if (catLabel !== currentCategory) {
+                    currentCategory = catLabel;
+                    catRow = `<tr class="table-secondary"><td colspan="5" class="fw-bold text-uppercase text-dark small">${catLabel}</td></tr>`;
+                }
+
+                const statusBadge = t.review_status === 'Approved' ? '<span class="badge bg-success">Approved</span>' :
+                                    t.review_status === 'Rejected' ? '<span class="badge bg-danger">Rejected</span>' :
+                                    '<span class="badge bg-warning text-dark">Pending</span>';
+
+                const isLocked = t.review_status === 'Approved' || t.review_status === 'Rejected';
+
+                tbody.innerHTML += catRow + `
+                    <tr>
+                        <td class="small text-muted">${catLabel}</td>
+                        <td>
+                            ${t.indicator_description}
+                            ${t.is_custom == 1 ? '<span class="badge bg-warning text-dark ms-1">Custom</span>' : ''}
+                        </td>
+                        <td class="text-center fw-bold">${t.proposed_quantity}</td>
+                        <td class="text-center">${statusBadge}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm ${isLocked ? 'btn-outline-secondary' : 'btn-outline-primary'}" 
+                                    onclick="editDraftTarget(${t.draft_id}, '${t.indicator_description.replace(/'/g, "\\'")}', ${t.proposed_quantity})"
+                                    ${isLocked ? 'disabled' : ''}>
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('reviewDraftModal'));
+        modal.show();
+    })
+    .catch(err => {
+        console.error('Error fetching draft targets:', err);
+        alert('Failed to load draft targets. Please try again.');
+    });
+}
+
+function editDraftTarget(draftId, description, quantity) {
+    document.getElementById('editDraftId').value = draftId;
+    document.getElementById('editDraftIndicator').textContent = description;
+    document.getElementById('editProposedQty').value = quantity;
+    const modal = new bootstrap.Modal(document.getElementById('editDraftTargetModal'));
+    modal.show();
+}
+
+function submitReview(action) {
+    const remarks = document.getElementById('reviewRemarks').value.trim();
+    if (action === 'Rejected' && !remarks) {
+        alert('Please provide remarks explaining why the draft is being rejected.');
+        document.getElementById('reviewRemarks').focus();
+        return;
+    }
+
+    const actionLabel = action === 'Approved' ? 'approve' : 'reject';
+    if (!confirm(`Are you sure you want to ${actionLabel} this draft IPCR?`)) {
+        return;
+    }
+
+    document.getElementById('reviewAction').value = action;
+    document.getElementById('reviewDraftForm').submit();
 }
 
 
