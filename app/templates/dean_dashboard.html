@@ -689,6 +689,104 @@ function viewIPCR(scoreId) {
     window.location.href = `/dean/review_ipcr/${scoreId}`;
 }
 
+// ── Draft IPCR Review Functions ──
+
+function viewDraftTargets(empId) {
+    const formData = new FormData();
+    formData.append('emp_id', empId);
+
+    fetch('{{ url_for("dean.get_draft_targets") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        document.getElementById('reviewEmpId').value = empId;
+        document.getElementById('draftFacultyName').textContent = data.faculty_name;
+        document.getElementById('draftFacultyRank').textContent = data.academic_rank || 'N/A';
+        document.getElementById('draftFacultyDesignation').textContent = data.designation || 'N/A';
+        document.getElementById('draftFacultyProgram').textContent = data.assigned_program || 'N/A';
+        document.getElementById('reviewRemarks').value = '';
+
+        const tbody = document.getElementById('draftTargetsBody');
+        tbody.innerHTML = '';
+
+        if (!data.targets || data.targets.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No draft targets found.</td></tr>';
+        } else {
+            let currentCategory = '';
+            data.targets.forEach(t => {
+                const catLabel = t.category_name || 'Uncategorized';
+                if (catLabel !== currentCategory) {
+                    currentCategory = catLabel;
+                    tbody.innerHTML += `<tr class="table-secondary"><td colspan="5" class="fw-bold text-uppercase text-dark small">${catLabel}</td></tr>`;
+                }
+
+                const statusBadge = t.review_status === 'Approved' ? '<span class="badge bg-success">Approved</span>' :
+                                    t.review_status === 'Rejected' ? '<span class="badge bg-danger">Rejected</span>' :
+                                    '<span class="badge bg-warning text-dark">Pending</span>';
+
+                const isLocked = t.review_status === 'Approved' || t.review_status === 'Rejected';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="small text-muted">${catLabel}</td>
+                        <td>
+                            ${t.indicator_description}
+                            ${t.is_custom == 1 ? '<span class="badge bg-warning text-dark ms-1">Custom</span>' : ''}
+                        </td>
+                        <td class="text-center fw-bold">${t.proposed_quantity}</td>
+                        <td class="text-center">${statusBadge}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm ${isLocked ? 'btn-outline-secondary' : 'btn-outline-primary'}" 
+                                    onclick="editDraftTarget(${t.draft_id}, '${t.indicator_description.replace(/'/g, "\\'")}', ${t.proposed_quantity})"
+                                    ${isLocked ? 'disabled' : ''}>
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('reviewDraftModal'));
+        modal.show();
+    })
+    .catch(err => {
+        console.error('Error fetching draft targets:', err);
+        alert('Failed to load draft targets. Please try again.');
+    });
+}
+
+function editDraftTarget(draftId, description, quantity) {
+    document.getElementById('editDraftId').value = draftId;
+    document.getElementById('editDraftIndicator').textContent = description;
+    document.getElementById('editProposedQty').value = quantity;
+    const modal = new bootstrap.Modal(document.getElementById('editDraftTargetModal'));
+    modal.show();
+}
+
+function submitReview(action) {
+    const remarks = document.getElementById('reviewRemarks').value.trim();
+    if (action === 'Rejected' && !remarks) {
+        alert('Please provide remarks explaining why the draft is being rejected.');
+        document.getElementById('reviewRemarks').focus();
+        return;
+    }
+
+    const actionLabel = action === 'Approved' ? 'approve' : 'reject';
+    if (!confirm(`Are you sure you want to ${actionLabel} this draft IPCR?`)) {
+        return;
+    }
+
+    document.getElementById('reviewAction').value = action;
+    document.getElementById('reviewDraftForm').submit();
+}
 
     function generateSummary() {
         // This would trigger PDF generation
