@@ -53,13 +53,35 @@ def ret_chair_save_rule():
         flash("Please fill all required fields.", "warning")
         return redirect(url_for('ret_chair.ret_chair_dashboard'))
 
+    # Parse quantities for each checked indicator
+    research_indicators = []
+    for r_id in research_indicator_ids:
+        qty_val = request.form.get(f'research_quantity_{r_id}', 1)
+        try:
+            qty = int(qty_val)
+            if qty < 1:
+                qty = 1
+        except ValueError:
+            qty = 1
+        research_indicators.append((int(r_id), qty))
+
+    extension_indicators = []
+    for e_id in extension_indicator_ids:
+        qty_val = request.form.get(f'extension_quantity_{e_id}', 1)
+        try:
+            qty = int(qty_val)
+            if qty < 1:
+                qty = 1
+        except ValueError:
+            qty = 1
+        extension_indicators.append((int(e_id), qty))
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         success, msg = save_ret_rule(conn, cursor, int(term_id), academic_rank,
                                      int(research_selections), int(extension_selections),
-                                     [int(i) for i in research_indicator_ids],
-                                     [int(i) for i in extension_indicator_ids])
+                                     research_indicators, extension_indicators)
         cursor.close()
         conn.close()
 

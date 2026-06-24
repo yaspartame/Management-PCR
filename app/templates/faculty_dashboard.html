@@ -115,13 +115,13 @@
     {# ── Chair Rejection Alert ──────────────────────────────── #}
     {% if chair_review and chair_review.overall_status == 'Rejected' %}
     <div class="alert border-0 shadow-sm mb-4" role="alert"
-         style="background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%); border-left: 5px solid #dc3545 !important; border-radius: 10px;">
+         style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 5px solid #ffc107 !important; border-radius: 10px;">
         <div class="d-flex align-items-start gap-3">
-            <i class="bi bi-exclamation-triangle-fill text-danger fs-4 mt-1"></i>
+            <i class="bi bi-exclamation-circle-fill text-warning fs-4 mt-1" style="color: #d97706 !important;"></i>
             <div>
-                <h6 class="fw-bold text-danger mb-1">Your Draft IPCR was Returned by your Program Chair</h6>
+                <h6 class="fw-bold mb-1" style="color: #b45309 !important;">Your Draft IPCR was Returned by your Program Chair</h6>
                 <p class="mb-1 text-dark"><strong>Remarks:</strong> {{ chair_review.overall_remarks }}</p>
-                <small class="text-muted">Please review the remarks below, make the necessary corrections, and re-submit.</small>
+                <small class="text-muted">Please review the changes and remarks made by the Program Chair below, and click "Re-submit" to acknowledge and send it back for approval.</small>
             </div>
         </div>
     </div>
@@ -202,14 +202,6 @@
                                         </tr>
                                     {% endfor %}
                                     
-                                    {% if not has_core %}
-                                    <tr>
-                                        <td colspan="2" class="text-center py-5 text-muted">
-                                            <i class="bi bi-inbox fs-1 d-block mb-2 text-light"></i>
-                                            No core targets have been assigned to you yet.
-                                        </td>
-                                    </tr>
-                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>
@@ -243,14 +235,17 @@
                                     {% endif %}
                                 {% endfor %}
                                 <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
-                                       style="cursor: pointer; transition: all 0.2s ease;">
+                                       style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
                                     <div class="d-flex align-items-start gap-3">
                                         <div class="form-check mt-1">
                                             <input class="form-check-input research-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
                                                 {% if ns.is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
                                         </div>
                                         <div>
-                                            <p class="mb-0 small text-secondary">{{ ind.indicator_description }}</p>
+                                            <p class="mb-0 small text-secondary">
+                                                {{ ind.indicator_description }}
+                                                <span class="badge bg-primary bg-opacity-10 text-primary ms-2">Qty: {{ ind.target_quantity }}</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </label>
@@ -289,14 +284,17 @@
                                     {% endif %}
                                 {% endfor %}
                                 <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
-                                       style="cursor: pointer; transition: all 0.2s ease;">
+                                       style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
                                     <div class="d-flex align-items-start gap-3">
                                         <div class="form-check mt-1">
                                             <input class="form-check-input extension-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
                                                 {% if ns.is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
                                         </div>
                                         <div>
-                                            <p class="mb-0 small text-secondary">{{ ind.indicator_description }}</p>
+                                            <p class="mb-0 small text-secondary">
+                                                {{ ind.indicator_description }}
+                                                <span class="badge bg-warning bg-opacity-10 text-warning ms-2">Qty: {{ ind.target_quantity }}</span>
+                                            </p>
                                         </div>
                                     </div>
                                 </label>
@@ -338,12 +336,13 @@
                     <div class="alert alert-success border-0 shadow-sm rounded-pill px-4 py-2 m-0">
                         <i class="bi bi-check-circle-fill me-2"></i> Your IPCR has been approved by your Program Chair!
                     </div>
-                    <form action="{{ url_for('faculty.faculty_lock_ipcr') }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to lock your IPCR? Once locked, it is committed for final evaluation and cannot be edited.');">
-                        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
-                        <button type="submit" class="btn btn-warning btn-lg px-5 shadow fw-bold rounded-pill">
-                            <i class="bi bi-lock-fill me-2"></i>Lock My IPCR
-                        </button>
-                    </form>
+                    <button type="submit" form="lockForm" class="btn btn-warning btn-lg px-5 shadow fw-bold rounded-pill">
+                         <i class="bi bi-lock-fill me-2"></i>Lock My IPCR
+                    </button>
+                </div>
+                {% elif chair_review and chair_review.overall_status == 'Rejected' %}
+                <div class="alert alert-danger d-inline-block border-0 shadow-sm rounded-pill px-4">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i> Returned by Program Chair (Read-Only)
                 </div>
                 {% else %}
                 <div class="alert alert-info d-inline-block border-0 shadow-sm rounded-pill px-4">
@@ -353,6 +352,12 @@
             {% endif %}
         </div>
     </form>
+
+    {% if chair_review and chair_review.overall_status == 'Approved' and not is_locked %}
+    <form id="lockForm" action="{{ url_for('faculty.faculty_lock_ipcr') }}" method="POST" style="display:none;" onsubmit="return confirm('Are you sure you want to lock your IPCR? Once locked, it is committed for final evaluation and cannot be edited.');">
+        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+    </form>
+    {% endif %}
     {% endif %}
 </div>
 

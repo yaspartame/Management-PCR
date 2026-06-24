@@ -226,12 +226,19 @@
                                         {% for ind in ret_indicators %}
                                         {% if ind.category_name == 'A. Research' %}
                                         {% set ns_r.found = true %}
-                                        <li class="list-group-item py-2 small">
-                                            <input class="form-check-input me-2 indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
-                                                name="research_indicator_ids[]" value="{{ ind.indicator_id }}">
-                                            <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
-                                                {{ ind.indicator_description }}
-                                            </label>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 small">
+                                            <div class="d-flex align-items-start" style="flex: 1; padding-right: 15px;">
+                                                <input class="form-check-input me-2 indicator-checkbox research-indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
+                                                    name="research_indicator_ids[]" value="{{ ind.indicator_id }}">
+                                                <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
+                                                    {{ ind.indicator_description }}
+                                                </label>
+                                            </div>
+                                            <div style="width: 80px;">
+                                                <input type="number" class="form-control form-control-sm text-center"
+                                                    id="qty_{{ ind.indicator_id }}" name="research_quantity_{{ ind.indicator_id }}"
+                                                    value="1" min="1" disabled placeholder="Qty">
+                                            </div>
                                         </li>
                                         {% endif %}
                                         {% endfor %}
@@ -252,12 +259,19 @@
                                         {% for ind in ret_indicators %}
                                         {% if ind.category_name == 'B. Extension Services / Training / Advisory' %}
                                         {% set ns_e.found = true %}
-                                        <li class="list-group-item py-2 small">
-                                            <input class="form-check-input me-2 indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
-                                                name="extension_indicator_ids[]" value="{{ ind.indicator_id }}">
-                                            <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
-                                                {{ ind.indicator_description }}
-                                            </label>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 small">
+                                            <div class="d-flex align-items-start" style="flex: 1; padding-right: 15px;">
+                                                <input class="form-check-input me-2 indicator-checkbox extension-indicator-checkbox" type="checkbox" id="ind_{{ ind.indicator_id }}"
+                                                    name="extension_indicator_ids[]" value="{{ ind.indicator_id }}">
+                                                <label class="form-check-label" for="ind_{{ ind.indicator_id }}">
+                                                    {{ ind.indicator_description }}
+                                                </label>
+                                            </div>
+                                            <div style="width: 80px;">
+                                                <input type="number" class="form-control form-control-sm text-center"
+                                                    id="qty_{{ ind.indicator_id }}" name="extension_quantity_{{ ind.indicator_id }}"
+                                                    value="1" min="1" disabled placeholder="Qty">
+                                            </div>
                                         </li>
                                         {% endif %}
                                         {% endfor %}
@@ -322,7 +336,7 @@
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-2">
                                         <button type="button" class="btn btn-sm btn-outline-primary px-3" 
-                                            onclick='editRule("{{ rule.academic_rank }}", {{ rule.research_required }}, {{ rule.extension_required }}, [{% for i in rule.research_indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}], [{% for i in rule.extension_indicators %}{{ i.id }}{% if not loop.last %}, {% endif %}{% endfor %}])'>
+                                            onclick='editRule("{{ rule.academic_rank }}", {{ rule.research_required }}, {{ rule.extension_required }}, [{% for i in rule.research_indicators %}{id: {{ i.id }}, qty: {{ i.qty }}}{% if not loop.last %}, {% endif %}{% endfor %}], [{% for i in rule.extension_indicators %}{id: {{ i.id }}, qty: {{ i.qty }}}{% if not loop.last %}, {% endif %}{% endfor %}])'>
                                             <i class="bi bi-pencil me-1"></i>Edit
                                         </button>
                                         <form method="POST" action="{{ url_for('ret_chair.ret_chair_delete_rule') }}" class="m-0"
@@ -398,6 +412,62 @@
     document.addEventListener("DOMContentLoaded", function() {
         const rankSelect = document.getElementById('academic_rank');
         const checkboxes = document.querySelectorAll('.indicator-checkbox');
+        const researchCheckboxes = document.querySelectorAll('.research-indicator-checkbox');
+        const extensionCheckboxes = document.querySelectorAll('.extension-indicator-checkbox');
+        const resSelectionsInput = document.getElementById('research_selections');
+        const extSelectionsInput = document.getElementById('extension_selections');
+        
+        function updateLimits() {
+            const rankVal = rankSelect.value;
+            if (!rankVal) return;
+            
+            const resRequired = parseInt(resSelectionsInput.value) || 0;
+            const extRequired = parseInt(extSelectionsInput.value) || 0;
+            
+            // Enforce Research Limits
+            const resChecked = Array.from(researchCheckboxes).filter(cb => cb.checked);
+            researchCheckboxes.forEach(cb => {
+                const qtyInput = document.getElementById('qty_' + cb.value);
+                if (resRequired <= 0) {
+                    cb.checked = false;
+                    cb.disabled = true;
+                    if (qtyInput) {
+                        qtyInput.disabled = true;
+                        qtyInput.value = 1;
+                    }
+                } else if (resChecked.length >= resRequired) {
+                    if (!cb.checked) {
+                        cb.disabled = true;
+                    } else {
+                        cb.disabled = false;
+                    }
+                } else {
+                    cb.disabled = false;
+                }
+            });
+            
+            // Enforce Extension Limits
+            const extChecked = Array.from(extensionCheckboxes).filter(cb => cb.checked);
+            extensionCheckboxes.forEach(cb => {
+                const qtyInput = document.getElementById('qty_' + cb.value);
+                if (extRequired <= 0) {
+                    cb.checked = false;
+                    cb.disabled = true;
+                    if (qtyInput) {
+                        qtyInput.disabled = true;
+                        qtyInput.value = 1;
+                    }
+                } else if (extChecked.length >= extRequired) {
+                    if (!cb.checked) {
+                        cb.disabled = true;
+                    } else {
+                        cb.disabled = false;
+                    }
+                } else {
+                    cb.disabled = false;
+                }
+            });
+        }
         
         function toggleCheckboxes() {
             const rankVal = rankSelect.value;
@@ -405,10 +475,45 @@
             
             checkboxes.forEach(cb => {
                 cb.disabled = disabled;
-                if(disabled) cb.checked = false;
+                if(disabled) {
+                    cb.checked = false;
+                    const qtyInput = document.getElementById('qty_' + cb.value);
+                    if (qtyInput) {
+                        qtyInput.disabled = true;
+                        qtyInput.value = 1;
+                    }
+                }
             });
+            
+            if (!disabled) {
+                updateLimits();
+            }
         }
-
+        
+        // Listeners for checkbox state changes to enable/disable quantities and enforce limits
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const qtyInput = document.getElementById('qty_' + cb.value);
+                if (qtyInput) {
+                    qtyInput.disabled = !cb.checked;
+                    if (!cb.checked) {
+                        qtyInput.value = 1;
+                    }
+                }
+                updateLimits();
+            });
+        });
+        
+        // Listeners for Required fields
+        if(resSelectionsInput) {
+            resSelectionsInput.addEventListener('input', updateLimits);
+            resSelectionsInput.addEventListener('change', updateLimits);
+        }
+        if(extSelectionsInput) {
+            extSelectionsInput.addEventListener('input', updateLimits);
+            extSelectionsInput.addEventListener('change', updateLimits);
+        }
+        
         if(rankSelect) {
             rankSelect.addEventListener('change', toggleCheckboxes);
             toggleCheckboxes(); // run on load
@@ -435,23 +540,49 @@
         const event = new Event('change');
         document.getElementById('academic_rank').dispatchEvent(event);
         
-        // Uncheck all first
+        // Uncheck and disable all quantities first
         const checkboxes = document.querySelectorAll('.indicator-checkbox');
-        checkboxes.forEach(cb => cb.checked = false);
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            const qtyInput = document.getElementById('qty_' + cb.value);
+            if (qtyInput) {
+                qtyInput.value = 1;
+                qtyInput.disabled = true;
+            }
+        });
         
-        // Check the previously selected ones
-        researchIds.forEach(id => {
+        // Check the previously selected ones and set their quantities
+        researchIds.forEach(item => {
+            const id = item.id;
+            const qty = item.qty;
             const cb = document.getElementById('ind_' + id);
             if(cb) {
                 cb.checked = true;
+                const qtyInput = document.getElementById('qty_' + id);
+                if(qtyInput) {
+                    qtyInput.value = qty;
+                    qtyInput.disabled = false;
+                }
             }
         });
-        extensionIds.forEach(id => {
+        extensionIds.forEach(item => {
+            const id = item.id;
+            const qty = item.qty;
             const cb = document.getElementById('ind_' + id);
             if(cb) {
                 cb.checked = true;
+                const qtyInput = document.getElementById('qty_' + id);
+                if(qtyInput) {
+                    qtyInput.value = qty;
+                    qtyInput.disabled = false;
+                }
             }
         });
+        
+        // Re-enforce limits based on checked counts
+        const rankSelect = document.getElementById('academic_rank');
+        const changeEvent = new Event('change');
+        rankSelect.dispatchEvent(changeEvent);
     }
 </script>
 {% endblock %}

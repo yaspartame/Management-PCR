@@ -13,7 +13,7 @@ def get_ret_indicators(cursor, term_id):
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
-def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, extension_selections, research_indicator_ids, extension_indicator_ids):
+def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, extension_selections, research_indicators, extension_indicators):
     try:
         # 1. Clean up existing rules for this academic rank to avoid conflicts
         cursor.execute("SELECT rule_id FROM tbl_ret_rules WHERE academic_rank = %s", (academic_rank,))
@@ -24,22 +24,22 @@ def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, ext
             cursor.execute(f"DELETE FROM tbl_ret_rules WHERE rule_id IN ({format_strings})", tuple(rule_ids))
 
         # 2. Save Research rule (if indicators are selected)
-        if research_indicator_ids and int(research_selections) > 0:
+        if research_indicators and int(research_selections) > 0:
             cursor.execute("INSERT INTO tbl_ret_rules (academic_rank, required_selections) VALUES (%s, %s)", 
                            (academic_rank, int(research_selections)))
             res_rule_id = cursor.lastrowid
-            for ind_id in set(research_indicator_ids):
-                cursor.execute("INSERT INTO tbl_ret_rule_indicators (rule_id, indicator_id) VALUES (%s, %s)", 
-                               (res_rule_id, ind_id))
+            for ind_id, qty in research_indicators:
+                cursor.execute("INSERT INTO tbl_ret_rule_indicators (rule_id, indicator_id, target_quantity) VALUES (%s, %s, %s)", 
+                               (res_rule_id, ind_id, qty))
 
         # 3. Save Extension rule (if indicators are selected)
-        if extension_indicator_ids and int(extension_selections) > 0:
+        if extension_indicators and int(extension_selections) > 0:
             cursor.execute("INSERT INTO tbl_ret_rules (academic_rank, required_selections) VALUES (%s, %s)", 
                            (academic_rank, int(extension_selections)))
             ext_rule_id = cursor.lastrowid
-            for ind_id in set(extension_indicator_ids):
-                cursor.execute("INSERT INTO tbl_ret_rule_indicators (rule_id, indicator_id) VALUES (%s, %s)", 
-                               (ext_rule_id, ind_id))
+            for ind_id, qty in extension_indicators:
+                cursor.execute("INSERT INTO tbl_ret_rule_indicators (rule_id, indicator_id, target_quantity) VALUES (%s, %s, %s)", 
+                               (ext_rule_id, ind_id, qty))
 
         conn.commit()
         return True, "Menu configuration saved successfully to structural rules templates."
@@ -50,7 +50,7 @@ def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, ext
 
 def get_ret_rules(cursor, term_id):
     query = """
-        SELECT r.rule_id, r.academic_rank, r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name
+        SELECT r.rule_id, r.academic_rank, r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name, rri.target_quantity
         FROM tbl_ret_rules r
         JOIN tbl_ret_rule_indicators rri ON r.rule_id = rri.rule_id
         JOIN tbl_master_indicators mi ON rri.indicator_id = mi.indicator_id
@@ -62,7 +62,7 @@ def get_ret_rules(cursor, term_id):
     rules_dict = {}
 
     for r in rows:
-        rule_id, rank, required, ind_id, desc, category = r
+        rule_id, rank, required, ind_id, desc, category, qty = r
         if rank not in rules_dict:
             rules_dict[rank] = {
                 'rule_id': rank,  # Use rank string as rule_id for frontend delete forms
@@ -75,10 +75,10 @@ def get_ret_rules(cursor, term_id):
 
         if category == 'A. Research':
             rules_dict[rank]['research_required'] = required
-            rules_dict[rank]['research_indicators'].append({'id': ind_id, 'desc': desc})
+            rules_dict[rank]['research_indicators'].append({'id': ind_id, 'desc': desc, 'qty': qty})
         elif category == 'B. Extension Services / Training / Advisory':
             rules_dict[rank]['extension_required'] = required
-            rules_dict[rank]['extension_indicators'].append({'id': ind_id, 'desc': desc})
+            rules_dict[rank]['extension_indicators'].append({'id': ind_id, 'desc': desc, 'qty': qty})
 
     return list(rules_dict.values())
 

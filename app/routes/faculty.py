@@ -53,7 +53,7 @@ def faculty_dashboard():
         """, (emp_id, term_id))
         is_locked = cursor.fetchone()[0] > 0
 
-        # If the Program Chair has rejected/returned the IPCR, unlock the form so faculty can re-submit
+        # If the Program Chair has rejected/returned the IPCR, allow faculty to re-submit (fields are locked via pointer-events)
         if chair_review and chair_review['overall_status'] == 'Rejected':
             has_submitted = False
         elif chair_review and chair_review['overall_status'] == 'Approved':

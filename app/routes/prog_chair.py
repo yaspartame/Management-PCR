@@ -290,9 +290,7 @@ def decide_ipcr():
         flash("Invalid decision parameters.", "danger")
         return redirect(url_for('prog_chair.prog_chair_dashboard'))
 
-    if not overall_remarks:
-        flash("Remarks / Reason is required before approving or rejecting.", "warning")
-        return redirect(url_for('prog_chair.prog_chair_dashboard'))
+
 
     conn = get_db_connection()
     cursor = conn.cursor()

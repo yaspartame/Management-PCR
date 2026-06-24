@@ -57,16 +57,19 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
             ORDER BY tc.category_name, mi.indicator_id
         """
     else:
-        # Load pre-assigned targets from Program Chair's tbl_draft_allocation
+        # Load pre-assigned targets from Program Chair's tbl_draft_allocation for their specialization
         query = """
-            SELECT da.allocation_id as target_id, da.indicator_id, da.assigned_quantity, 'Draft' as status,
+            SELECT MIN(da.allocation_id) as target_id, da.indicator_id, MAX(da.assigned_quantity) as assigned_quantity, 'Draft' as status,
                    mi.indicator_description, tc.category_name,
                    NULL as chair_item_remarks, NULL as chair_reviewed_quantity
             FROM tbl_draft_allocation da
             JOIN tbl_master_indicators mi ON da.indicator_id = mi.indicator_id
             LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-            WHERE da.emp_id = %s AND mi.term_id = %s
-            ORDER BY tc.category_name, mi.indicator_id
+            JOIN tbl_employee_profiles ep ON da.emp_id = ep.emp_id
+            WHERE ep.specialization = (SELECT specialization FROM tbl_employee_profiles WHERE emp_id = %s)
+              AND mi.term_id = %s
+            GROUP BY da.indicator_id, mi.indicator_description, tc.category_name
+            ORDER BY tc.category_name, da.indicator_id
         """
     cursor.execute(query, (emp_id, term_id))
     columns = [col[0] for col in cursor.description]
@@ -97,7 +100,7 @@ def get_faculty_chair_review_status(cursor, emp_id, term_id):
 
 def get_faculty_ret_menu(cursor, academic_rank, term_id):
     query = """
-        SELECT r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name
+        SELECT r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name, rri.target_quantity
         FROM tbl_ret_rules r
         JOIN tbl_ret_rule_indicators rri ON r.rule_id = rri.rule_id
         JOIN tbl_master_indicators mi ON rri.indicator_id = mi.indicator_id
@@ -151,11 +154,13 @@ def submit_faculty_ipcr(conn, cursor, emp_id, selected_research_targets):
             WHERE dt.emp_id = %s
         """, (emp_id,))
 
-        # 2. Gather all assigned regular workloads distributed by the Program Chair (if any)
+        # 2. Gather all assigned regular workloads distributed by the Program Chair for this specialization (if any)
         cursor.execute("""
-            SELECT indicator_id, assigned_quantity 
-            FROM tbl_draft_allocation 
-            WHERE emp_id = %s
+            SELECT da.indicator_id, MAX(da.assigned_quantity)
+            FROM tbl_draft_allocation da
+            JOIN tbl_employee_profiles ep ON da.emp_id = ep.emp_id
+            WHERE ep.specialization = (SELECT specialization FROM tbl_employee_profiles WHERE emp_id = %s)
+            GROUP BY da.indicator_id
         """, (emp_id,))
         chair_allocations = cursor.fetchall()
 
@@ -202,15 +207,26 @@ def submit_faculty_ipcr(conn, cursor, emp_id, selected_research_targets):
         # 6. Process and write the new faculty self-selected Research/Extension targets into tbl_draft_targets
         for target in selected_research_targets:
             res_ind_id = target['indicator_id']
-            res_qty = target['proposed_quantity']
+            
+            # Fetch target quantity configured by RET Chair
+            cursor.execute("""
+                SELECT rri.target_quantity 
+                FROM tbl_ret_rule_indicators rri
+                JOIN tbl_ret_rules r ON rri.rule_id = r.rule_id
+                JOIN tbl_employee_profiles ep ON ep.academic_rank = r.academic_rank
+                WHERE ep.emp_id = %s AND rri.indicator_id = %s
+                LIMIT 1
+            """, (emp_id, res_ind_id))
+            row = cursor.fetchone()
+            res_qty = row[0] if (row and row[0] is not None) else 1
 
             cursor.execute("""
                 INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
                 VALUES (%s, %s, %s, 'Pending Review')
             """, (emp_id, res_ind_id, res_qty))
 
-        # 7. Success — Flush out temporary allocation staging for this employee
-        cursor.execute("DELETE FROM tbl_draft_allocation WHERE emp_id = %s", (emp_id,))
+        # 7. Success — Flush out temporary allocation staging for this employee (Disabled to preserve allocations)
+        # cursor.execute("DELETE FROM tbl_draft_allocation WHERE emp_id = %s", (emp_id,))
 
         # 8. Clear any existing Program Chair review records so the chair sees a fresh 'Pending' submission
         cursor.execute("""

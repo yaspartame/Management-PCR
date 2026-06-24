@@ -25,7 +25,7 @@ def get_specialization_faculty(cursor, specialization):
     query = """
         SELECT emp_id, first_name, last_name, academic_rank, leave_status
         FROM tbl_employee_profiles
-        WHERE specialization = %s AND leave_status = 'Active'
+        WHERE specialization = %s AND leave_status = 'Active' AND designation = 'Regular Faculty'
     """
     cursor.execute(query, (specialization,))
     columns = [col[0] for col in cursor.description]
@@ -100,6 +100,7 @@ def get_pending_drafts_count(cursor, specialization, term_id):
             ON cr.emp_id = dt.emp_id AND cr.term_id = %s
         WHERE mi.term_id = %s
           AND ep.specialization = %s
+          AND ep.designation = 'Regular Faculty'
           AND dt.review_status = 'Pending Review'
           AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending')
     """
@@ -138,6 +139,7 @@ def get_pending_draft_ipcrs(cursor, specialization, term_id):
             ON cr.emp_id = dt.emp_id AND cr.term_id = %s
         WHERE mi.term_id = %s
           AND ep.specialization = %s
+          AND ep.designation = 'Regular Faculty'
           AND dt.review_status = 'Pending Review'
           AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending')
         GROUP BY ep.emp_id, ep.first_name, ep.last_name,
@@ -334,12 +336,14 @@ def lock_and_commit_ipcr(conn, cursor, emp_id, term_id):
         if not review_row or review_row[0] != 'Approved':
             return False, "Your IPCR must be approved by the Program Chair before locking."
 
-        # Fetch all draft targets for this employee and term
+        # Fetch all draft targets for this employee and term, joining with reviewed items to use Program Chair adjusted quantities
         cursor.execute(
             """
-            SELECT dt.indicator_id, dt.proposed_quantity
+            SELECT dt.indicator_id, COALESCE(ri.reviewed_quantity, dt.proposed_quantity)
             FROM tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            LEFT JOIN tbl_ipcr_chair_review cr ON cr.emp_id = dt.emp_id AND cr.term_id = mi.term_id
+            LEFT JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = cr.review_id AND ri.draft_id = dt.draft_id
             WHERE dt.emp_id = %s AND mi.term_id = %s
             """,
             (emp_id, term_id)
@@ -379,6 +383,8 @@ def lock_and_commit_ipcr(conn, cursor, emp_id, term_id):
             """,
             (emp_id, term_id)
         )
+
+
 
         conn.commit()
         return True, "IPCR successfully locked and committed to evaluation targets."
