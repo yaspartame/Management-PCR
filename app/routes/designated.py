@@ -34,6 +34,9 @@ def designated_dashboard():
     dpcr_targets = []
     has_submitted = False
 
+    dean_review = None
+    dean_review_items = {}
+
     if active_term:
         term_id = active_term['term_id']
         
@@ -46,14 +49,28 @@ def designated_dashboard():
         has_submitted = sub_result[0]['cnt'] > 0 if sub_result else False
 
         if has_submitted:
+            # Load draft targets with Dean's review remarks if available
             dpcr_targets = timed_query(cursor, """
                 SELECT dt.draft_id as target_id, dt.indicator_id, dt.proposed_quantity as total_target_value, dt.review_status as status,
-                       mi.indicator_description, tc.category_name
+                       mi.indicator_description, tc.category_name,
+                       dri.item_remarks as dean_remarks, dri.original_quantity, dri.reviewed_quantity
                 FROM tbl_draft_targets dt
                 JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
                 LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                LEFT JOIN tbl_ipcr_dean_review_items dri ON dt.draft_id = dri.draft_id
                 WHERE dt.emp_id = %s AND mi.term_id = %s
+                ORDER BY tc.category_name, mi.indicator_id
             """, (emp_id, term_id), label="designated_load_drafts")
+
+            # Fetch Dean's overall review status & remarks
+            dr_result = timed_query(cursor, """
+                SELECT overall_status, overall_remarks
+                FROM tbl_ipcr_dean_review
+                WHERE emp_id = %s AND term_id = %s
+                ORDER BY reviewed_at DESC LIMIT 1
+            """, (emp_id, term_id), label="designated_dean_review")
+            if dr_result:
+                dean_review = dr_result[0]
         else:
             dpcr_targets = get_designated_selectable_indicators(cursor, term_id)
             for t in dpcr_targets:
@@ -69,7 +86,8 @@ def designated_dashboard():
                            assigned_program=assigned_program,
                            active_term=active_term,
                            dpcr_targets=dpcr_targets,
-                           has_submitted=has_submitted)
+                           has_submitted=has_submitted,
+                           dean_review=dean_review)
 
 
 @designated_bp.route('/submit', methods=['POST'])
