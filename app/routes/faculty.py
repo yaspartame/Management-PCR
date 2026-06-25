@@ -38,15 +38,9 @@ def faculty_dashboard():
             SELECT COUNT(*)
             FROM tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
-<<<<<<< Updated upstream
-            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review'
+            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval')
         """, (emp_id, term_id))
         has_submitted = cursor.fetchone()[0] > 0
-=======
-            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval')
-        """, (emp_id, term_id), label="faculty_submit_check")
-        has_submitted = sub_result[0]['cnt'] > 0 if sub_result else False
->>>>>>> Stashed changes
 
         # Fetch the Program Chair's review decision (if any)
         chair_review = get_faculty_chair_review_status(cursor, emp_id, term_id)

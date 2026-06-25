@@ -1,18 +1,11 @@
 def get_faculty_assigned_targets(cursor, emp_id, term_id):
-<<<<<<< Updated upstream
     # Check if locked (committed targets exist)
-=======
-    from app.models.connection import timed_query
-    
-    # Check if locked first
->>>>>>> Stashed changes
     cursor.execute("""
         SELECT COUNT(*) FROM tbl_committed_targets ct
         JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
         WHERE ct.emp_id = %s AND mi.term_id = %s
     """, (emp_id, term_id))
     is_locked = cursor.fetchone()[0] > 0
-<<<<<<< Updated upstream
 
     if is_locked:
         # Load from tbl_committed_targets
@@ -23,27 +16,15 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
                    mi.indicator_description, tc.category_name,
                    NULL as chair_item_remarks,
                    NULL as chair_reviewed_quantity
-=======
-    
-    if is_locked:
-        query = """
-            SELECT ct.target_id, ct.indicator_id, ct.assigned_quantity, 'Approved' as status,
-                   mi.indicator_description, tc.category_name,
-                   NULL as chair_item_remarks, NULL as chair_reviewed_quantity
->>>>>>> Stashed changes
             FROM tbl_committed_targets ct
             JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
             LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
             WHERE ct.emp_id = %s AND mi.term_id = %s
             ORDER BY tc.category_name, mi.indicator_id
         """
-<<<<<<< Updated upstream
         cursor.execute(query, (emp_id, term_id))
         columns = [col[0] for col in cursor.description]
         return [dict(zip(columns, row)) for row in cursor.fetchall()]
-=======
-        return timed_query(cursor, query, (emp_id, term_id), label="get_faculty_committed_targets_load")
->>>>>>> Stashed changes
 
     # Check if this user has already submitted their targets to the review registry
     cursor.execute("""
