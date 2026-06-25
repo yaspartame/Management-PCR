@@ -121,7 +121,7 @@
             <div>
                 <h6 class="fw-bold mb-1" style="color: #b45309 !important;">Your Draft IPCR was Returned by your Program Chair</h6>
                 <p class="mb-1 text-dark"><strong>Remarks:</strong> {{ chair_review.overall_remarks }}</p>
-                <small class="text-muted">Please review the changes and remarks made by the Program Chair below, and click "Re-submit" to acknowledge and send it back for approval.</small>
+                <small class="text-muted">Please review the changes and remarks made by the Program Chair below, and click "Submit IPCR for Approval" to acknowledge and send it back for approval.</small>
             </div>
         </div>
     </div>
@@ -300,11 +300,6 @@
                                 </label>
                                 {% endfor %}
                             </div>
-                        {% else %}
-                            <div class="text-center py-4">
-                                <i class="bi bi-slash-circle fs-2 text-muted opacity-50 mb-2 d-block"></i>
-                                <p class="text-muted small">No Extension indicators available.</p>
-                            </div>
                         {% endif %}
                     </div>
                 </div>
@@ -313,12 +308,12 @@
 
         <div class="mt-4 text-end">
             {% if not has_submitted %}
-            <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn"
+            <button type="button" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn"
                     {% if ret_menu.research_required > 0 or ret_menu.extension_required > 0 %}disabled{% endif %}>
                 {% if chair_review and chair_review.overall_status == 'Rejected' %}
-                <i class="bi bi-arrow-clockwise me-2"></i>Re-submit for Review
-                {% else %}
                 <i class="bi bi-send-check-fill me-2"></i>Submit IPCR for Approval
+                {% else %}
+                <i class="bi bi-eye-fill me-2"></i>Submit IPCR for Review
                 {% endif %}
             </button>
             <p class="small text-muted mt-2 mb-0" id="submitHelpText">
@@ -336,7 +331,7 @@
                     <div class="alert alert-success border-0 shadow-sm rounded-pill px-4 py-2 m-0">
                         <i class="bi bi-check-circle-fill me-2"></i> Your IPCR has been approved by your Program Chair!
                     </div>
-                    <button type="submit" form="lockForm" class="btn btn-warning btn-lg px-5 shadow fw-bold rounded-pill">
+                    <button type="button" id="lockBtn" class="btn btn-warning btn-lg px-5 shadow fw-bold rounded-pill">
                          <i class="bi bi-lock-fill me-2"></i>Lock My IPCR
                     </button>
                 </div>
@@ -352,9 +347,9 @@
             {% endif %}
         </div>
     </form>
-
+ 
     {% if chair_review and chair_review.overall_status == 'Approved' and not is_locked %}
-    <form id="lockForm" action="{{ url_for('faculty.faculty_lock_ipcr') }}" method="POST" style="display:none;" onsubmit="return confirm('Are you sure you want to lock your IPCR? Once locked, it is committed for final evaluation and cannot be edited.');">
+    <form id="lockForm" action="{{ url_for('faculty.faculty_lock_ipcr') }}" method="POST" style="display:none;">
         <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
     </form>
     {% endif %}
@@ -533,8 +528,122 @@ function simulateSaveEvidence() {
         researchCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
         extensionCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
         
+        // Helper to show custom confirmation modal
+        window.showCustomConfirm = function({ title, mainText, subText, confirmText, confirmClass, iconClass, onConfirm }) {
+            const modal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
+            
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalTextMain').innerHTML = mainText;
+            document.getElementById('confirmModalTextSub').textContent = subText;
+            
+            const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+            confirmBtn.className = `btn px-4 py-2 fw-bold text-white shadow-sm d-inline-flex align-items-center justify-content-center gap-2 ${confirmClass}`;
+            
+            const confirmTextSpan = document.getElementById('confirmModalConfirmText');
+            confirmTextSpan.textContent = confirmText;
+            
+            const icon = document.getElementById('confirmModalIcon');
+            if (iconClass) {
+                icon.className = `bi ${iconClass}`;
+                icon.style.display = '';
+            } else {
+                icon.style.display = 'none';
+            }
+            
+            // Remove previous listeners
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            
+            newConfirmBtn.addEventListener('click', function() {
+                modal.hide();
+                onConfirm();
+            });
+            
+            modal.show();
+        };
+
+        // Submit Button Event Hook
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const isRejected = {{ 'true' if (chair_review and chair_review.overall_status == 'Rejected') else 'false' }};
+                
+                if (isRejected) {
+                    showCustomConfirm({
+                        title: "Submit IPCR for Approval?",
+                        mainText: "This will resubmit your draft IPCR for final approval.",
+                        subText: "Your Program Chair will review and finalize the commitments.",
+                        confirmText: "Yes, Submit",
+                        confirmClass: "btn-success",
+                        iconClass: "bi-send-check-fill",
+                        onConfirm: () => document.getElementById('ipcrForm').submit()
+                    });
+                } else {
+                    showCustomConfirm({
+                        title: "Submit IPCR for Review?",
+                        mainText: "This will submit your draft IPCR to the Program Chair.",
+                        subText: "They will verify your targets. You won't be able to edit while it is pending review.",
+                        confirmText: "Yes, Submit for Review",
+                        confirmClass: "btn-primary",
+                        iconClass: "bi-eye-fill",
+                        onConfirm: () => document.getElementById('ipcrForm').submit()
+                    });
+                }
+            });
+        }
+
+        // Lock Button Event Hook
+        const lockBtn = document.getElementById('lockBtn');
+        if (lockBtn) {
+            lockBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                showCustomConfirm({
+                    title: "Lock IPCR?",
+                    mainText: "Are you sure you want to lock your IPCR?",
+                    subText: "Once locked, it is committed for final evaluation and cannot be edited.",
+                    confirmText: "Yes, Lock IPCR",
+                    confirmClass: "btn-warning text-dark",
+                    iconClass: "bi-lock-fill",
+                    onConfirm: () => document.getElementById('lockForm').submit()
+                });
+            });
+        }
+
         // Initial check
         updateSelectionCount();
     });
 </script>
+
+<!-- Custom Confirmation Modal -->
+<div class="modal fade" id="customConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0 pe-3 pt-3 justify-content-end">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.85rem; opacity: 0.6;"></button>
+            </div>
+            <div class="modal-body text-center px-4 pb-4 pt-1">
+                <h5 class="modal-title fw-bold text-dark mb-3" id="confirmModalTitle" style="font-size: 1.35rem; letter-spacing: -0.2px;">Title</h5>
+                <p class="mb-2 text-secondary fw-semibold px-2" id="confirmModalTextMain" style="font-size: 0.95rem; line-height: 1.5; color: #495057 !important;">Main message</p>
+                <p class="text-muted small px-3 mb-0" id="confirmModalTextSub" style="font-size: 0.85rem; line-height: 1.4;">Sub message</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4 pt-0 gap-2 px-4">
+                <button type="button" class="btn px-4 py-2 fw-bold text-white shadow-sm" data-bs-dismiss="modal" id="confirmModalCancelBtn" style="border-radius: 10px; background-color: #6c757d; font-size: 0.9rem; min-width: 110px; transition: all 0.2s;">Cancel</button>
+                <button type="button" class="btn px-4 py-2 fw-bold text-white shadow-sm d-inline-flex align-items-center justify-content-center gap-2" id="confirmModalConfirmBtn" style="border-radius: 10px; font-size: 0.9rem; min-width: 140px; transition: all 0.2s;">
+                    <i class="" id="confirmModalIcon"></i>
+                    <span id="confirmModalConfirmText">Confirm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #customConfirmModal .btn-close:focus {
+        box-shadow: none;
+    }
+    #customConfirmModal .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.12) !important;
+    }
+</style>
 {% endblock %}

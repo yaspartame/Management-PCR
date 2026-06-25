@@ -1,11 +1,18 @@
 def get_faculty_assigned_targets(cursor, emp_id, term_id):
+<<<<<<< Updated upstream
     # Check if locked (committed targets exist)
+=======
+    from app.models.connection import timed_query
+    
+    # Check if locked first
+>>>>>>> Stashed changes
     cursor.execute("""
         SELECT COUNT(*) FROM tbl_committed_targets ct
         JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
         WHERE ct.emp_id = %s AND mi.term_id = %s
     """, (emp_id, term_id))
     is_locked = cursor.fetchone()[0] > 0
+<<<<<<< Updated upstream
 
     if is_locked:
         # Load from tbl_committed_targets
@@ -16,15 +23,27 @@ def get_faculty_assigned_targets(cursor, emp_id, term_id):
                    mi.indicator_description, tc.category_name,
                    NULL as chair_item_remarks,
                    NULL as chair_reviewed_quantity
+=======
+    
+    if is_locked:
+        query = """
+            SELECT ct.target_id, ct.indicator_id, ct.assigned_quantity, 'Approved' as status,
+                   mi.indicator_description, tc.category_name,
+                   NULL as chair_item_remarks, NULL as chair_reviewed_quantity
+>>>>>>> Stashed changes
             FROM tbl_committed_targets ct
             JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
             LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
             WHERE ct.emp_id = %s AND mi.term_id = %s
             ORDER BY tc.category_name, mi.indicator_id
         """
+<<<<<<< Updated upstream
         cursor.execute(query, (emp_id, term_id))
         columns = [col[0] for col in cursor.description]
         return [dict(zip(columns, row)) for row in cursor.fetchall()]
+=======
+        return timed_query(cursor, query, (emp_id, term_id), label="get_faculty_committed_targets_load")
+>>>>>>> Stashed changes
 
     # Check if this user has already submitted their targets to the review registry
     cursor.execute("""
@@ -144,12 +163,29 @@ def submit_faculty_ipcr(conn, cursor, emp_id, selected_research_targets):
     ]
     """
     try:
+        # Check if they are resubmitting (meaning a review record already exists for the active term)
+        cursor.execute("SELECT term_id FROM tbl_academic_terms WHERE is_active = 1 LIMIT 1")
+        term_row = cursor.fetchone()
+        active_term_id = term_row[0] if term_row else None
+
+        is_resubmission = False
+        if active_term_id:
+            cursor.execute("""
+                SELECT 1 FROM tbl_ipcr_chair_review 
+                WHERE emp_id = %s AND term_id = %s
+                LIMIT 1
+            """, (emp_id, active_term_id))
+            is_resubmission = cursor.fetchone() is not None
+
+        target_status = 'Waiting for Approval' if is_resubmission else 'Pending Review'
+
         # 1. Sync any reviewed quantities from the chair's decision back into tbl_draft_targets FIRST
         # to preserve any adjustments made by the Program Chair on standard workloads.
         cursor.execute("""
             UPDATE tbl_draft_targets dt
-            JOIN tbl_ipcr_chair_review cr ON dt.emp_id = cr.emp_id
-            JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = cr.review_id AND ri.indicator_id = dt.indicator_id
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            JOIN tbl_ipcr_chair_review cr ON dt.emp_id = cr.emp_id AND cr.term_id = mi.term_id
+            JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = cr.review_id AND ri.draft_id = dt.draft_id
             SET dt.proposed_quantity = ri.reviewed_quantity
             WHERE dt.emp_id = %s
         """, (emp_id,))
@@ -173,26 +209,44 @@ def submit_faculty_ipcr(conn, cursor, emp_id, selected_research_targets):
             existing_draft = cursor.fetchone()
 
             if existing_draft:
+                # To prevent overwriting the Program Chair's custom-reviewed target quantities,
+                # we check if a review item exists for this draft. If it does, we preserve the
+                # synced proposed_quantity instead of resetting it to tbl_draft_allocation baseline.
                 cursor.execute("""
-                    UPDATE tbl_draft_targets 
-                    SET proposed_quantity = %s, review_status = 'Pending Review' 
-                    WHERE draft_id = %s
-                """, (qty, existing_draft[0]))
+                    SELECT 1 FROM tbl_ipcr_chair_review_items ri
+                    JOIN tbl_ipcr_chair_review cr ON ri.review_id = cr.review_id
+                    WHERE cr.emp_id = %s AND ri.draft_id = %s
+                    LIMIT 1
+                """, (emp_id, existing_draft[0]))
+                has_review_item = cursor.fetchone() is not None
+
+                if has_review_item:
+                    cursor.execute("""
+                        UPDATE tbl_draft_targets 
+                        SET review_status = %s 
+                        WHERE draft_id = %s
+                    """, (target_status, existing_draft[0]))
+                else:
+                    cursor.execute("""
+                        UPDATE tbl_draft_targets 
+                        SET proposed_quantity = %s, review_status = %s 
+                        WHERE draft_id = %s
+                    """, (qty, target_status, existing_draft[0]))
             else:
                 cursor.execute("""
                     INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
-                    VALUES (%s, %s, %s, 'Pending Review')
-                """, (emp_id, ind_id, qty))
+                    VALUES (%s, %s, %s, %s)
+                """, (emp_id, ind_id, qty, target_status))
 
-        # 4. If this is a re-submission, reset the status of existing standard workloads (not research/extension) to 'Pending Review'
+        # 4. If this is a re-submission, reset the status of existing standard workloads (not research/extension) to target_status
         cursor.execute("""
             UPDATE tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
             JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-            SET dt.review_status = 'Pending Review'
+            SET dt.review_status = %s
             WHERE dt.emp_id = %s
               AND tc.category_name IN ('A. Instructions', 'Support Functions')
-        """, (emp_id,))
+        """, (target_status, emp_id))
 
         # 5. Delete existing Research and Extension targets for this employee from tbl_draft_targets
         # to ensure that any deselected targets are not carried over.
@@ -222,21 +276,36 @@ def submit_faculty_ipcr(conn, cursor, emp_id, selected_research_targets):
 
             cursor.execute("""
                 INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
-                VALUES (%s, %s, %s, 'Pending Review')
-            """, (emp_id, res_ind_id, res_qty))
+                VALUES (%s, %s, %s, %s)
+            """, (emp_id, res_ind_id, res_qty, target_status))
 
         # 7. Success — Flush out temporary allocation staging for this employee (Disabled to preserve allocations)
         # cursor.execute("DELETE FROM tbl_draft_allocation WHERE emp_id = %s", (emp_id,))
 
-        # 8. Clear any existing Program Chair review records so the chair sees a fresh 'Pending' submission
-        cursor.execute("""
-            DELETE ri FROM tbl_ipcr_chair_review_items ri
-            JOIN tbl_ipcr_chair_review cr ON ri.review_id = cr.review_id
-            WHERE cr.emp_id = %s
-        """, (emp_id,))
-        cursor.execute("""
-            DELETE FROM tbl_ipcr_chair_review WHERE emp_id = %s
-        """, (emp_id,))
+        # 8. Update existing Program Chair review records for active term to 'Pending' and clear items/remarks
+        if active_term_id and is_resubmission:
+            cursor.execute("""
+                SELECT review_id FROM tbl_ipcr_chair_review 
+                WHERE emp_id = %s AND term_id = %s
+            """, (emp_id, active_term_id))
+            existing_review = cursor.fetchone()
+            if existing_review:
+                review_id = existing_review[0]
+                # Delete ONLY Research and Extension review items to preserve standard workload adjustments
+                cursor.execute("""
+                    DELETE ri FROM tbl_ipcr_chair_review_items ri
+                    JOIN tbl_master_indicators mi ON ri.indicator_id = mi.indicator_id
+                    JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                    WHERE ri.review_id = %s
+                      AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
+                """, (review_id,))
+                cursor.execute("""
+                    UPDATE tbl_ipcr_chair_review
+                    SET overall_status = 'Pending',
+                        overall_remarks = NULL,
+                        reviewed_at = NULL
+                    WHERE review_id = %s
+                """, (review_id,))
 
         conn.commit()
         return True, "IPCR successfully submitted for review."

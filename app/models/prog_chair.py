@@ -89,7 +89,7 @@ def get_pending_drafts_count(cursor, specialization, term_id):
     """
     Returns the count of faculty members under `specialization` who have
     submitted a draft IPCR (tbl_draft_targets) for the term that still
-    have an overall_status of 'Pending' (or no review record yet).
+    have an overall_status of 'Pending' (or 'Waiting for Approval' or no review record yet).
     """
     query = """
         SELECT COUNT(DISTINCT dt.emp_id)
@@ -102,7 +102,7 @@ def get_pending_drafts_count(cursor, specialization, term_id):
           AND ep.specialization = %s
           AND ep.designation = 'Regular Faculty'
           AND dt.review_status = 'Pending Review'
-          AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending')
+          AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending' OR cr.overall_status = 'Waiting for Approval')
     """
     cursor.execute(query, (term_id, term_id, specialization))
     result = cursor.fetchone()
@@ -113,7 +113,7 @@ def get_pending_draft_ipcrs(cursor, specialization, term_id):
     """
     Returns all faculty members under `specialization` who have submitted
     a Draft IPCR for the active term, along with their current review status.
-    Faculty with no review record yet are treated as 'Not Started'.
+    Faculty with no review record yet are treated as 'Pending Review'.
     Approved or Locked IPCRs are excluded from this list.
     """
     query = """
@@ -127,7 +127,7 @@ def get_pending_draft_ipcrs(cursor, specialization, term_id):
                 WHEN (SELECT COUNT(*) FROM tbl_committed_targets ct 
                       JOIN tbl_master_indicators mi2 ON ct.indicator_id = mi2.indicator_id 
                       WHERE ct.emp_id = ep.emp_id AND mi2.term_id = %s) > 0 THEN 'Locked'
-                ELSE COALESCE(cr.overall_status, 'Not Started')
+                ELSE MAX(dt.review_status)
             END AS review_status,
             cr.review_id,
             cr.overall_remarks,
@@ -140,7 +140,7 @@ def get_pending_draft_ipcrs(cursor, specialization, term_id):
         WHERE mi.term_id = %s
           AND ep.specialization = %s
           AND ep.designation = 'Regular Faculty'
-          AND dt.review_status = 'Pending Review'
+          AND dt.review_status IN ('Pending Review', 'Waiting for Approval')
           AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending')
         GROUP BY ep.emp_id, ep.first_name, ep.last_name,
                  ep.academic_rank, ep.specialization,
@@ -175,7 +175,7 @@ def get_or_create_chair_review(conn, cursor, emp_id, term_id, chair_emp_id):
             FROM tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
             LEFT JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = %s AND ri.draft_id = dt.draft_id
-            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review' AND ri.item_id IS NULL
+            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval') AND ri.item_id IS NULL
             """,
             (review_id, review_id, emp_id, term_id)
         )
@@ -198,7 +198,7 @@ def get_or_create_chair_review(conn, cursor, emp_id, term_id, chair_emp_id):
         SELECT dt.draft_id, dt.indicator_id, dt.proposed_quantity
         FROM tbl_draft_targets dt
         JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
-        WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review'
+        WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval')
         """,
         (emp_id, term_id)
     )
@@ -311,7 +311,7 @@ def decide_chair_review(conn, cursor, review_id, action, overall_remarks):
                     UPDATE tbl_draft_targets dt
                     JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
                     JOIN tbl_ipcr_chair_review cr ON dt.emp_id = cr.emp_id AND cr.term_id = mi.term_id
-                    JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = cr.review_id AND ri.indicator_id = dt.indicator_id
+                    JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = cr.review_id AND ri.draft_id = dt.draft_id
                     SET dt.proposed_quantity = ri.reviewed_quantity
                     WHERE dt.emp_id = %s AND mi.term_id = %s
                     """,

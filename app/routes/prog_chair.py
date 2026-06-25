@@ -160,6 +160,19 @@ def review_ipcr(emp_id):
         overall_status = review_row[0] if review_row else 'Pending'
         overall_remarks = review_row[1] if review_row else ''
 
+        # Check draft status to see if it is Waiting for Approval
+        cursor.execute("""
+            SELECT MAX(review_status) FROM tbl_draft_targets dt
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            WHERE dt.emp_id = %s AND mi.term_id = %s
+        """, (emp_id, term_id))
+        draft_status_row = cursor.fetchone()
+        draft_status = draft_status_row[0] if draft_status_row else 'Pending Review'
+
+        # If Pending overall review but resubmitted, elevate overall_status to Waiting for Approval
+        if overall_status == 'Pending' and draft_status == 'Waiting for Approval':
+            overall_status = 'Waiting for Approval'
+
         # Check if locked
         cursor.execute(
             """
