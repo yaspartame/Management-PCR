@@ -485,12 +485,7 @@
                     </table>
                 </div>
 
-                <!-- Save All button -->
-                <div class="px-4 pb-3 d-flex justify-content-end">
-                    <button type="button" class="btn btn-primary" id="btnDeanSaveAll">
-                        <i class="bi bi-save me-2"></i>Save All Changes
-                    </button>
-                </div>
+                <!-- Save All button removed — auto-saves on decision -->
             </div>
 
             <!-- Modal Footer: Decision -->
@@ -749,9 +744,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Save All button
-    document.getElementById('btnDeanSaveAll')?.addEventListener('click', saveDeanReviewItems);
-
     // Approve button — show confirmation first
     document.getElementById('btnDeanApprove')?.addEventListener('click', function() {
         document.getElementById('confirmAction').value = 'Approved';
@@ -785,6 +777,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function openDeanReview(empId) {
+    // Reset button states from any previous action
+    const approveBtn = document.getElementById('btnDeanApprove');
+    const rejectBtn = document.getElementById('btnDeanReject');
+    approveBtn.disabled = false;
+    approveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Approve & Lock';
+    rejectBtn.disabled = false;
+    rejectBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+
     const loader = document.getElementById('modalLoader');
     const body = document.getElementById('modalBody');
     const footer = document.getElementById('modalFooter');

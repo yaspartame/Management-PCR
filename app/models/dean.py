@@ -255,8 +255,8 @@ def save_dean_review_items(cursor, conn, review_id, items):
                 cursor.execute("""
                     INSERT INTO tbl_ipcr_dean_review_items
                         (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity, item_remarks)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (review_id, new_draft_id, indicator_id, reviewed_qty, reviewed_qty, item_remarks))
+                    VALUES (%s, %s, %s, -1, %s, %s)
+                """, (review_id, new_draft_id, indicator_id, reviewed_qty, item_remarks))
             else:
                 # Existing item — update quantities and remarks
                 item_id = item.get('item_id')

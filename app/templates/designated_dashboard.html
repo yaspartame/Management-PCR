@@ -104,19 +104,27 @@
                                             {{ target.category_name or 'Standard' }}
                                         </span>
                                         <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
-                                        {# Show Dean's per-item remark if present #}
-                                        {% if target.dean_remarks %}
-                                        <div class="mt-1 p-2 rounded" style="background: #e8f4ff; border-left: 3px solid #6366F1;">
-                                            <small class="text-dark"><i class="bi bi-chat-square-text-fill me-1" style="color: #6366F1;"></i><strong>Dean's note:</strong> {{ target.dean_remarks }}</small>
+                                        {# Show 'Added by Dean' badge for Dean-added indicators #}
+                                        {% if target.original_quantity == -1 %}
+                                        <div class="mt-1 p-2 rounded" style="background: #f3e8ff; border-left: 3px solid #7c3aed;">
+                                            <small class="text-dark"><i class="bi bi-plus-circle-fill me-1" style="color: #7c3aed;"></i><strong>Added by Dean</strong>
+                                            {% if target.dean_remarks %} &mdash; {{ target.dean_remarks }}{% endif %}</small>
                                         </div>
-                                        {% endif %}
-                                        {# Show quantity change indicator #}
-                                        {% if target.original_quantity is not none and target.reviewed_quantity is not none and target.original_quantity != target.reviewed_quantity %}
-                                        <div class="mt-1 p-1 rounded text-center" style="background: #fff3cd; font-size: 11px;">
-                                            <span class="text-muted">Original: <strong>{{ target.original_quantity }}</strong></span>
-                                            <i class="bi bi-arrow-right mx-1"></i>
-                                            <span class="text-primary fw-bold">Dean revised: <strong>{{ target.reviewed_quantity }}</strong></span>
-                                        </div>
+                                        {% else %}
+                                            {# Show Dean's per-item remark if present #}
+                                            {% if target.dean_remarks %}
+                                            <div class="mt-1 p-2 rounded" style="background: #e8f4ff; border-left: 3px solid #6366F1;">
+                                                <small class="text-dark"><i class="bi bi-chat-square-text-fill me-1" style="color: #6366F1;"></i><strong>Dean's note:</strong> {{ target.dean_remarks }}</small>
+                                            </div>
+                                            {% endif %}
+                                            {# Show quantity change indicator #}
+                                            {% if target.original_quantity is not none and target.reviewed_quantity is not none and target.original_quantity != target.reviewed_quantity %}
+                                            <div class="mt-1 p-1 rounded text-center" style="background: #fff3cd; font-size: 11px;">
+                                                <span class="text-muted">Original: <strong>{{ target.original_quantity }}</strong></span>
+                                                <i class="bi bi-arrow-right mx-1"></i>
+                                                <span class="text-primary fw-bold">Dean revised: <strong>{{ target.reviewed_quantity }}</strong></span>
+                                            </div>
+                                            {% endif %}
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
