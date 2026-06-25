@@ -522,6 +522,30 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- CONFIRMATION MODAL for Approve/Reject       -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal fade" id="confirmDeanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 py-3" style="background: linear-gradient(135deg, #374151 0%, #1f2937 100%);">
+                <h6 class="modal-title text-white fw-bold mb-0" id="confirmModalTitle">Confirm</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center" id="confirmModalBody">
+                <p>Are you sure?</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
+                <input type="hidden" id="confirmAction" value="">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success fw-bold" id="btnConfirmAction">
+                    <i class="bi bi-check-circle me-1"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ──────────────────────────────────────────────
      Target Assignment (College-Wide to Designated Faculty)
      ────────────────────────────────────────────── -->
@@ -728,14 +752,35 @@ document.addEventListener('DOMContentLoaded', function() {
     // Save All button
     document.getElementById('btnDeanSaveAll')?.addEventListener('click', saveDeanReviewItems);
 
-    // Approve button
+    // Approve button — show confirmation first
     document.getElementById('btnDeanApprove')?.addEventListener('click', function() {
-        submitDeanDecision('Approved');
+        document.getElementById('confirmAction').value = 'Approved';
+        document.getElementById('confirmModalTitle').textContent = 'Approve Draft IPCR?';
+        document.getElementById('confirmModalBody').innerHTML =
+            '<p class="mb-1">This will <strong>approve and lock</strong> the draft IPCR.</p>' +
+            '<p class="mb-0 text-muted small">The designated faculty will no longer be able to modify their targets.</p>';
+        document.getElementById('btnConfirmAction').className = 'btn btn-success fw-bold';
+        document.getElementById('btnConfirmAction').innerHTML = '<i class="bi bi-check-circle me-1"></i> Yes, Approve';
+        new bootstrap.Modal(document.getElementById('confirmDeanModal')).show();
     });
 
-    // Reject button
+    // Reject button — show confirmation first
     document.getElementById('btnDeanReject')?.addEventListener('click', function() {
-        submitDeanDecision('Rejected');
+        document.getElementById('confirmAction').value = 'Rejected';
+        document.getElementById('confirmModalTitle').textContent = 'Return Draft IPCR?';
+        document.getElementById('confirmModalBody').innerHTML =
+            '<p class="mb-1">This will <strong>return</strong> the draft IPCR to the designated faculty.</p>' +
+            '<p class="mb-0 text-muted small">They will be able to review your remarks, make changes, and re-submit.</p>';
+        document.getElementById('btnConfirmAction').className = 'btn btn-danger fw-bold';
+        document.getElementById('btnConfirmAction').innerHTML = '<i class="bi bi-x-circle me-1"></i> Yes, Return';
+        new bootstrap.Modal(document.getElementById('confirmDeanModal')).show();
+    });
+
+    // Confirm button in modal
+    document.getElementById('btnConfirmAction')?.addEventListener('click', function() {
+        const action = document.getElementById('confirmAction').value;
+        bootstrap.Modal.getInstance(document.getElementById('confirmDeanModal')).hide();
+        saveThenDecide(action);
     });
 });
 
@@ -866,6 +911,56 @@ function populateUnpickedItems(items) {
     });
 }
 
+function saveThenDecide(action) {
+    // Auto-save all pending edits before approving or rejecting
+    const btn = document.getElementById(action === 'Approved' ? 'btnDeanApprove' : 'btnDeanReject');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving & processing...';
+
+    const reviewId = document.getElementById('modalDeanReviewId').value;
+    if (!reviewId) { btn.disabled = false; return; }
+
+    // Collect current item values from the DOM
+    const items = [];
+    document.querySelectorAll('.review-qty').forEach(inp => {
+        const itemId = parseInt(inp.getAttribute('data-item-id'));
+        const qty = parseInt(inp.value) || 0;
+        const remark = document.querySelector(`.review-remark[data-item-id="${itemId}"]`)?.value || '';
+        items.push({ item_id: itemId, reviewed_quantity: qty, item_remarks: remark });
+    });
+    document.querySelectorAll('.unpicked-qty').forEach(inp => {
+        const qty = parseInt(inp.value) || 0;
+        if (qty > 0) {
+            const indicatorId = parseInt(inp.getAttribute('data-indicator-id'));
+            const remark = document.querySelector(`.unpicked-remark[data-indicator-id="${indicatorId}"]`)?.value || '';
+            items.push({ indicator_id: indicatorId, reviewed_quantity: qty, item_remarks: remark, is_new: true });
+        }
+    });
+
+    // First save all items
+    fetch('{{ url_for("dean.save_review_items") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id: reviewId, items: items })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            showToast('danger', data.message || 'Failed to save changes.');
+            btn.disabled = false;
+            btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+            return;
+        }
+        // Now submit the decision
+        submitDeanDecision(action);
+    })
+    .catch(err => {
+        showToast('danger', 'Network error saving changes.');
+        btn.disabled = false;
+        btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+    });
+}
+
 function saveDeanReviewItems() {
     const reviewId = document.getElementById('modalDeanReviewId').value;
     if (!reviewId) return;
@@ -923,11 +1018,9 @@ function submitDeanDecision(action) {
         document.getElementById('deanOverallRemarks').focus();
         return;
     }
-    if (!confirm(`Are you sure you want to ${action === 'Approved' ? 'approve' : 'reject'} this draft IPCR?`)) return;
-
     const btn = action === 'Approved' ? document.getElementById('btnDeanApprove') : document.getElementById('btnDeanReject');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    // If saveThenDecide already disabled the button, it already shows "Saving & processing..."
+    const alreadyProcessing = btn.disabled;
 
     fetch('{{ url_for("dean.submit_review_decision") }}', {
         method: 'POST',
@@ -959,13 +1052,17 @@ function submitDeanDecision(action) {
         } else {
             showToast('danger', data.message);
         }
-        btn.disabled = false;
-        btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+        if (!alreadyProcessing) {
+            btn.disabled = false;
+            btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+        }
     })
     .catch(err => {
         showToast('danger', 'Network error submitting decision.');
-        btn.disabled = false;
-        btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+        if (!alreadyProcessing) {
+            btn.disabled = false;
+            btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+        }
     });
 }
 

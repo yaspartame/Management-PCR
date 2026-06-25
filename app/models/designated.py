@@ -19,11 +19,23 @@ def submit_designated_ipcr(conn, cursor, emp_id, term_id, selected_targets, cust
     """
     Transactionally processes standard baseline selections and inserts custom ad-hoc targets 
     upstream before compiling all submissions securely inside tbl_draft_targets.
+    Also resets any prior Dean review so the Dean can review again.
     
     selected_targets: [{'indicator_id': int, 'proposed_quantity': int}]
     custom_targets: [{'description': str, 'proposed_quantity': int}]
     """
     try:
+        # 0. Clear any prior Dean review so Dean can re-review fresh
+        cursor.execute(
+            "SELECT review_id FROM tbl_ipcr_dean_review WHERE emp_id = %s AND term_id = %s",
+            (emp_id, term_id)
+        )
+        old_review = cursor.fetchone()
+        if old_review:
+            old_review_id = old_review[0]
+            cursor.execute("DELETE FROM tbl_ipcr_dean_review_items WHERE review_id = %s", (old_review_id,))
+            cursor.execute("DELETE FROM tbl_ipcr_dean_review WHERE review_id = %s", (old_review_id,))
+
         # 1. Clear any prior unverified submissions for this profile to prevent key errors
         cursor.execute("DELETE FROM tbl_draft_targets WHERE emp_id = %s", (emp_id,))
 
