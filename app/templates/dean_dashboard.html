@@ -343,7 +343,7 @@
     <div class="page-header d-flex justify-content-between align-items-center">
         <div>
             <h2>IPCR Draft Approval</h2>
-            <p>Review and approve/reject draft IPCR submissions from Designated Faculty members.</p>
+            <p>Review and approve/reject draft IPCR submissions from Designated Faculty members. Changes sync back to their drafts.</p>
         </div>
     </div>
 
@@ -365,28 +365,29 @@
                     </thead>
                     <tbody>
                         {% for sub in draft_submissions %}
-                        <tr>
+                        <tr id="draft-row-{{ sub.emp_id }}">
                             <td class="fw-bold">{{ sub.faculty_name }}</td>
                             <td>{{ sub.academic_rank }}</td>
                             <td>{{ sub.designation }}</td>
                             <td>{{ sub.assigned_program }}</td>
                             <td class="text-center">
-                                <span class="badge bg-secondary">{{ sub.total_targets }} total</span>
+                                <span class="badge bg-secondary">{{ sub.total_targets }} targets</span>
                             </td>
-                            <td class="text-center">
-                                {% if sub.pending_count > 0 and sub.approved_count == 0 and sub.rejected_count == 0 %}
-                                <span class="badge bg-warning text-dark">Pending Review</span>
-                                {% elif sub.approved_count == sub.total_targets %}
-                                <span class="badge bg-success">Approved</span>
-                                {% elif sub.rejected_count > 0 %}
-                                <span class="badge bg-danger">Rejected</span>
+                            <td class="text-center" id="status-cell-{{ sub.emp_id }}">
+                                {% if sub.review_status == 'Approved' %}
+                                <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>
+                                {% elif sub.review_status == 'Rejected' %}
+                                <span class="badge bg-danger px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>Returned</span>
                                 {% else %}
-                                <span class="badge bg-info text-dark">Partial</span>
+                                <span class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Pending Review</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewDraftTargets('{{ sub.emp_id }}')">
-                                    <i class="bi bi-eye"></i> Review
+                                <button class="btn btn-sm btn-outline-primary open-review-modal"
+                                        data-emp-id="{{ sub.emp_id }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#reviewDeanModal">
+                                    <i class="bi bi-eye-fill me-1"></i> Review
                                 </button>
                             </td>
                         </tr>
@@ -404,98 +405,119 @@
     </div>
 </div>
 
-<!-- Review Draft Targets Modal -->
-<div class="modal fade" id="reviewDraftModal" tabindex="-1" aria-labelledby="reviewDraftModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<!-- ═══════════════════════════════════════════ -->
+<!-- DEAN IPCR REVIEW MODAL (Program Chair UX)  -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="modal fade" id="reviewDeanModal" tabindex="-1" aria-labelledby="reviewDeanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title fw-bold" id="reviewDraftModalLabel">
-                    <i class="bi bi-file-earmark-text me-2"></i> Review Draft IPCR
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div id="draftFacultyInfo" class="mb-3 p-3 bg-light rounded-3">
-                    <h6 class="fw-bold mb-2" id="draftFacultyName"></h6>
-                    <div class="row text-muted small">
-                        <div class="col-md-4"><strong>Rank:</strong> <span id="draftFacultyRank"></span></div>
-                        <div class="col-md-4"><strong>Designation:</strong> <span id="draftFacultyDesignation"></span></div>
-                        <div class="col-md-4"><strong>Program:</strong> <span id="draftFacultyProgram"></span></div>
-                    </div>
+
+            <!-- Modal Header -->
+            <div class="modal-header border-0 py-3" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
+                <div>
+                    <h5 class="modal-title text-white fw-bold mb-0" id="reviewDeanModalLabel">
+                        <i class="bi bi-file-earmark-person-fill me-2"></i>
+                        <span id="modalFacultyName">Loading...</span>
+                    </h5>
+                    <small class="text-white opacity-75" id="modalFacultyRank"></small>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle" id="draftTargetsTable">
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <span id="modalStatusBadge" class="badge fs-6 px-3 py-2"></span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+
+            <!-- Loading spinner -->
+            <div id="modalLoader" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-3 small">Fetching IPCR data...</p>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body p-0" id="modalBody" style="display:none;">
+
+                <!-- Section: Faculty-chosen targets -->
+                <div class="px-4 pt-4 pb-2">
+                    <h6 class="fw-bold text-secondary text-uppercase mb-3">
+                        <i class="bi bi-list-check me-2"></i>Submitted Targets
+                        <small class="text-muted fw-normal ms-2">(Adjust quantities and add remarks per item)</small>
+                    </h6>
+                </div>
+                <div class="table-responsive px-4 pb-3">
+                    <table class="table table-bordered table-hover align-middle mb-0" id="reviewItemsTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Category</th>
-                                <th>Indicator</th>
-                                <th class="text-center" width="120">Proposed Qty</th>
-                                <th class="text-center" width="100">Status</th>
-                                <th class="text-center" width="80">Edit</th>
+                                <th width="17%">Category</th>
+                                <th width="30%">Indicator</th>
+                                <th class="text-center" width="10%">Original Qty</th>
+                                <th class="text-center" width="11%">Reviewed Qty</th>
+                                <th width="32%">Remarks on this change</th>
                             </tr>
                         </thead>
-                        <tbody id="draftTargetsBody">
-                            <tr><td colspan="5" class="text-center text-muted py-4">Loading...</td></tr>
+                        <tbody id="reviewItemsBody">
+                            <!-- Populated via JS -->
                         </tbody>
                     </table>
                 </div>
-                <hr>
-                <form id="reviewDraftForm" action="{{ url_for('dean.review_draft') }}" method="POST">
-                    <input type="hidden" name="emp_id" id="reviewEmpId" value="">
-                    <input type="hidden" name="action" id="reviewAction" value="">
-                    <div class="mb-3">
-                        <label for="reviewRemarks" class="form-label fw-bold">
-                            Remarks <span class="text-danger">*</span>
-                            <small class="text-muted fw-normal">(Required for rejection)</small>
-                        </label>
-                        <textarea class="form-control" id="reviewRemarks" name="remarks" rows="2" placeholder="Enter your remarks or reason for rejection..."></textarea>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <button type="button" class="btn btn-outline-success" onclick="submitReview('Approved')">
-                                <i class="bi bi-check-circle me-1"></i> Approve All
-                            </button>
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-outline-danger me-2" onclick="submitReview('Rejected')">
-                                <i class="bi bi-x-circle me-1"></i> Reject All
-                            </button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Edit Draft Target Modal -->
-<div class="modal fade" id="editDraftTargetModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i> Edit Commitment</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="{{ url_for('dean.update_draft_target') }}" method="POST">
-                <div class="modal-body p-4">
-                    <input type="hidden" name="draft_id" id="editDraftId" value="">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Indicator</label>
-                        <p class="mb-0 small text-muted" id="editDraftIndicator"></p>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editProposedQty" class="form-label fw-bold">Proposed Quantity</label>
-                        <input type="number" class="form-control form-control-lg text-center fw-bold" id="editProposedQty" name="proposed_quantity" min="0" required>
-                    </div>
+                <!-- Section: Unpicked indicators (faculty didn't select these) -->
+                <div class="px-4 pb-2">
+                    <h6 class="fw-bold text-secondary text-uppercase mb-3">
+                        <i class="bi bi-exclamation-circle me-2"></i>Unselected Indicators
+                        <small class="text-muted fw-normal ms-2">(Faculty did not pick these. You can assign quantities here.)</small>
+                    </h6>
                 </div>
-                <div class="modal-footer border-0 bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary fw-bold">
-                        <i class="bi bi-save me-1"></i> Save Changes
+                <div class="table-responsive px-4 pb-3">
+                    <table class="table table-bordered table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="17%">Category</th>
+                                <th width="42%">Indicator</th>
+                                <th class="text-center" width="11%">Assign Qty</th>
+                                <th width="30%">Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unpickedItemsBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Save All button -->
+                <div class="px-4 pb-3 d-flex justify-content-end">
+                    <button type="button" class="btn btn-primary" id="btnDeanSaveAll">
+                        <i class="bi bi-save me-2"></i>Save All Changes
                     </button>
                 </div>
-            </form>
+            </div>
+
+            <!-- Modal Footer: Decision -->
+            <div class="modal-footer border-top bg-light px-4 py-3 d-block" id="modalFooter" style="display:none;">
+                <h6 class="fw-bold text-secondary text-uppercase mb-2">
+                    <i class="bi bi-stamp me-2"></i>Decision
+                </h6>
+                <input type="hidden" id="modalDeanReviewId">
+                <input type="hidden" id="modalDeanEmpId">
+                <div class="mb-3">
+                    <label for="deanOverallRemarks" class="form-label fw-semibold mb-1">Overall Remarks <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="deanOverallRemarks" rows="2" placeholder="Required for rejection — explain why it was returned."></textarea>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button type="button" class="btn btn-outline-danger" id="btnDeanReject">
+                            <i class="bi bi-x-circle me-1"></i> Reject & Return
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-success" id="btnDeanApprove">
+                            <i class="bi bi-check-circle me-1"></i> Approve & Lock
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -685,107 +707,277 @@
     }
 
 function viewIPCR(scoreId) {
-    // This would redirect to a review page
     window.location.href = `/dean/review_ipcr/${scoreId}`;
 }
 
-// ── Draft IPCR Review Functions ──
+// ── Dean IPCR Review AJAX (Program Chair UX style) ──
 
-function viewDraftTargets(empId) {
-    const formData = new FormData();
-    formData.append('emp_id', empId);
+let deanReviewData = null;
+let deanReviewItems = [];
 
-    fetch('{{ url_for("dean.get_draft_targets") }}', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-            return;
+// Open review modal — triggered by data-bs-toggle on the button
+document.addEventListener('DOMContentLoaded', function() {
+    // Hook into open-review-modal buttons
+    document.querySelectorAll('.open-review-modal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const empId = this.getAttribute('data-emp-id');
+            openDeanReview(empId);
+        });
+    });
+
+    // Save All button
+    document.getElementById('btnDeanSaveAll')?.addEventListener('click', saveDeanReviewItems);
+
+    // Approve button
+    document.getElementById('btnDeanApprove')?.addEventListener('click', function() {
+        submitDeanDecision('Approved');
+    });
+
+    // Reject button
+    document.getElementById('btnDeanReject')?.addEventListener('click', function() {
+        submitDeanDecision('Rejected');
+    });
+});
+
+function openDeanReview(empId) {
+    const loader = document.getElementById('modalLoader');
+    const body = document.getElementById('modalBody');
+    const footer = document.getElementById('modalFooter');
+    loader.style.display = 'block';
+    body.style.display = 'none';
+    footer.style.display = 'none';
+
+    document.getElementById('modalFacultyName').textContent = 'Loading...';
+    document.getElementById('modalFacultyRank').textContent = '';
+    document.getElementById('modalStatusBadge').textContent = '';
+    document.getElementById('deanOverallRemarks').value = '';
+
+    fetch(`/dean/review_draft_fetch/${empId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                loader.style.display = 'none';
+                return;
+            }
+
+            deanReviewData = data;
+            deanReviewItems = data.items || [];
+
+            // Header
+            document.getElementById('modalFacultyName').textContent = data.faculty_name;
+            document.getElementById('modalFacultyRank').textContent =
+                (data.academic_rank || '') + (data.designation ? ' | ' + data.designation : '') + ' | ' + (data.assigned_program || '');
+
+            const statusEl = document.getElementById('modalStatusBadge');
+            if (data.overall_status === 'Approved') {
+                statusEl.className = 'badge bg-success fs-6 px-3 py-2';
+                statusEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Approved';
+            } else if (data.overall_status === 'Rejected') {
+                statusEl.className = 'badge bg-danger fs-6 px-3 py-2';
+                statusEl.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Returned';
+            } else {
+                statusEl.className = 'badge bg-warning text-dark fs-6 px-3 py-2';
+                statusEl.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Pending Review';
+            }
+
+            document.getElementById('deanOverallRemarks').value = data.overall_remarks || '';
+            document.getElementById('modalDeanReviewId').value = data.review_id;
+            document.getElementById('modalDeanEmpId').value = data.emp_id;
+
+            // Populate submitted targets
+            populateReviewItems(data.items);
+
+            // Populate unpicked indicators
+            populateUnpickedItems(data.unpicked || []);
+
+            loader.style.display = 'none';
+            body.style.display = 'block';
+            footer.style.display = 'block';
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Failed to load review data.');
+            loader.style.display = 'none';
+        });
+}
+
+function populateReviewItems(items) {
+    const tbody = document.getElementById('reviewItemsBody');
+    tbody.innerHTML = '';
+    let currentCat = '';
+    items.forEach(item => {
+        if (item.category_name !== currentCat) {
+            currentCat = item.category_name;
+            tbody.innerHTML += `<tr class="table-secondary"><td colspan="5" class="fw-bold text-uppercase text-dark small">${currentCat}</td></tr>`;
         }
-
-        document.getElementById('reviewEmpId').value = empId;
-        document.getElementById('draftFacultyName').textContent = data.faculty_name;
-        document.getElementById('draftFacultyRank').textContent = data.academic_rank || 'N/A';
-        document.getElementById('draftFacultyDesignation').textContent = data.designation || 'N/A';
-        document.getElementById('draftFacultyProgram').textContent = data.assigned_program || 'N/A';
-        document.getElementById('reviewRemarks').value = '';
-
-        const tbody = document.getElementById('draftTargetsBody');
-        tbody.innerHTML = '';
-
-        if (!data.targets || data.targets.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No draft targets found.</td></tr>';
-        } else {
-            let currentCategory = '';
-            data.targets.forEach(t => {
-                const catLabel = t.category_name || 'Uncategorized';
-                if (catLabel !== currentCategory) {
-                    currentCategory = catLabel;
-                    tbody.innerHTML += `<tr class="table-secondary"><td colspan="5" class="fw-bold text-uppercase text-dark small">${catLabel}</td></tr>`;
-                }
-
-                const statusBadge = t.review_status === 'Approved' ? '<span class="badge bg-success">Approved</span>' :
-                                    t.review_status === 'Rejected' ? '<span class="badge bg-danger">Rejected</span>' :
-                                    '<span class="badge bg-warning text-dark">Pending</span>';
-
-                const isLocked = t.review_status === 'Approved' || t.review_status === 'Rejected';
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="small text-muted">${catLabel}</td>
-                        <td>
-                            ${t.indicator_description}
-                            ${t.is_custom == 1 ? '<span class="badge bg-warning text-dark ms-1">Custom</span>' : ''}
-                        </td>
-                        <td class="text-center fw-bold">${t.proposed_quantity}</td>
-                        <td class="text-center">${statusBadge}</td>
-                        <td class="text-center">
-                            <button class="btn btn-sm ${isLocked ? 'btn-outline-secondary' : 'btn-outline-primary'}" 
-                                    onclick="editDraftTarget(${t.draft_id}, '${t.indicator_description.replace(/'/g, "\\'")}', ${t.proposed_quantity})"
-                                    ${isLocked ? 'disabled' : ''}>
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        const modal = new bootstrap.Modal(document.getElementById('reviewDraftModal'));
-        modal.show();
-    })
-    .catch(err => {
-        console.error('Error fetching draft targets:', err);
-        alert('Failed to load draft targets. Please try again.');
+        const isLocked = deanReviewData.overall_status === 'Approved' || deanReviewData.overall_status === 'Rejected';
+        tbody.innerHTML += `
+            <tr>
+                <td class="small text-muted">${item.category_name || ''}</td>
+                <td>
+                    ${item.indicator_description}
+                    ${item.is_custom == 1 ? '<span class="badge bg-warning text-dark ms-1">Custom</span>' : ''}
+                </td>
+                <td class="text-center">${item.original_quantity}</td>
+                <td class="text-center">
+                    <input type="number" class="form-control form-control-sm text-center fw-bold review-qty"
+                           data-item-id="${item.item_id}" value="${item.reviewed_quantity}" min="0"
+                           ${isLocked ? 'disabled' : ''}>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm review-remark"
+                           data-item-id="${item.item_id}" value="${item.item_remarks || ''}"
+                           placeholder="Optional note..." ${isLocked ? 'disabled' : ''}>
+                </td>
+            </tr>
+        `;
     });
 }
 
-function editDraftTarget(draftId, description, quantity) {
-    document.getElementById('editDraftId').value = draftId;
-    document.getElementById('editDraftIndicator').textContent = description;
-    document.getElementById('editProposedQty').value = quantity;
-    const modal = new bootstrap.Modal(document.getElementById('editDraftTargetModal'));
-    modal.show();
+function populateUnpickedItems(items) {
+    const tbody = document.getElementById('unpickedItemsBody');
+    tbody.innerHTML = '';
+    if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">All available indicators have been selected by the faculty.</td></tr>';
+        return;
+    }
+    let currentCat = '';
+    items.forEach(ind => {
+        if (ind.category_name !== currentCat) {
+            currentCat = ind.category_name;
+            tbody.innerHTML += `<tr class="table-secondary"><td colspan="4" class="fw-bold text-uppercase text-dark small">${currentCat}</td></tr>`;
+        }
+        tbody.innerHTML += `
+            <tr class="table-warning">
+                <td class="small text-muted">${ind.category_name || ''}</td>
+                <td>${ind.indicator_description}</td>
+                <td class="text-center">
+                    <input type="number" class="form-control form-control-sm text-center fw-bold unpicked-qty"
+                           data-indicator-id="${ind.indicator_id}" value="0" min="0">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm unpicked-remark"
+                           data-indicator-id="${ind.indicator_id}" value=""
+                           placeholder="Reason for adding...">
+                </td>
+            </tr>
+        `;
+    });
 }
 
-function submitReview(action) {
-    const remarks = document.getElementById('reviewRemarks').value.trim();
+function saveDeanReviewItems() {
+    const reviewId = document.getElementById('modalDeanReviewId').value;
+    if (!reviewId) return;
+
+    const items = [];
+    document.querySelectorAll('.review-qty').forEach(inp => {
+        const itemId = parseInt(inp.getAttribute('data-item-id'));
+        const qty = parseInt(inp.value) || 0;
+        const remark = document.querySelector(`.review-remark[data-item-id="${itemId}"]`)?.value || '';
+        items.push({ item_id: itemId, reviewed_quantity: qty, item_remarks: remark });
+    });
+
+    // For unpicked items, create new draft entries
+    document.querySelectorAll('.unpicked-qty').forEach(inp => {
+        const qty = parseInt(inp.value) || 0;
+        if (qty > 0) {
+            const indicatorId = parseInt(inp.getAttribute('data-indicator-id'));
+            const remark = document.querySelector(`.unpicked-remark[data-indicator-id="${indicatorId}"]`)?.value || '';
+            items.push({ indicator_id: indicatorId, reviewed_quantity: qty, item_remarks: remark, is_new: true });
+        }
+    });
+
+    const btn = document.getElementById('btnDeanSaveAll');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+    fetch('{{ url_for("dean.save_review_items") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id: reviewId, items: items })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', data.message);
+        } else {
+            showToast('danger', data.message);
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
+    })
+    .catch(err => {
+        showToast('danger', 'Network error saving changes.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
+    });
+}
+
+function submitDeanDecision(action) {
+    const reviewId = document.getElementById('modalDeanReviewId').value;
+    const remarks = document.getElementById('deanOverallRemarks').value.trim();
+
     if (action === 'Rejected' && !remarks) {
-        alert('Please provide remarks explaining why the draft is being rejected.');
-        document.getElementById('reviewRemarks').focus();
+        alert('Please provide overall remarks when rejecting.');
+        document.getElementById('deanOverallRemarks').focus();
         return;
     }
+    if (!confirm(`Are you sure you want to ${action === 'Approved' ? 'approve' : 'reject'} this draft IPCR?`)) return;
 
-    const actionLabel = action === 'Approved' ? 'approve' : 'reject';
-    if (!confirm(`Are you sure you want to ${actionLabel} this draft IPCR?`)) {
-        return;
-    }
+    const btn = action === 'Approved' ? document.getElementById('btnDeanApprove') : document.getElementById('btnDeanReject');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
 
-    document.getElementById('reviewAction').value = action;
-    document.getElementById('reviewDraftForm').submit();
+    fetch('{{ url_for("dean.submit_review_decision") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review_id: reviewId, action: action, overall_remarks: remarks })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', data.message);
+            // Update status badge in modal
+            const badge = document.getElementById('modalStatusBadge');
+            badge.className = 'badge ' + (action === 'Approved' ? 'bg-success' : 'bg-danger') + ' fs-6 px-3 py-2';
+            badge.innerHTML = '<i class="bi ' + (action === 'Approved' ? 'bi-check-circle-fill' : 'bi-x-circle-fill') + ' me-1"></i>' + (action === 'Approved' ? 'Approved' : 'Returned');
+            // Update row status in listing
+            const empId = document.getElementById('modalDeanEmpId').value;
+            const statusCell = document.getElementById('status-cell-' + empId);
+            if (statusCell) {
+                statusCell.innerHTML = action === 'Approved'
+                    ? '<span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>'
+                    : '<span class="badge bg-danger px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>Returned</span>';
+            }
+            // Close modal after 1.5s
+            setTimeout(() => {
+                const modalEl = document.getElementById('reviewDeanModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }, 1500);
+        } else {
+            showToast('danger', data.message);
+        }
+        btn.disabled = false;
+        btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+    })
+    .catch(err => {
+        showToast('danger', 'Network error submitting decision.');
+        btn.disabled = false;
+        btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+    });
+}
+
+// Toast notification helper
+function showToast(type, message) {
+    const container = document.querySelector('.flash-container') || document.querySelector('.dipcr-main');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.className = `alert alert-${type} alert-dismissible fade show shadow-sm`;
+    div.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    container.prepend(div);
+    setTimeout(() => div.remove(), 5000);
 }
 
     function generateSummary() {

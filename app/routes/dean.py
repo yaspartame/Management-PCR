@@ -192,121 +192,143 @@ def validate_quotas():
 
 
 # ──────────────────────────────────────────────
-# Draft IPCR Review (Designated Faculty)
+# Draft IPCR Review — AJAX endpoints (Program Chair UX style)
 # ──────────────────────────────────────────────
 
-@dean_bp.route('/get_draft_targets', methods=['POST'])
+@dean_bp.route('/review_draft_fetch/<int:emp_id>')
 @role_required('DEAN')
-def get_draft_targets():
-    """AJAX endpoint to get draft targets for a specific designated faculty member."""
-    emp_id = request.form.get('emp_id')
-    if not emp_id:
-        return jsonify({'error': 'Missing employee ID'}), 400
-
+def review_draft_fetch(emp_id):
+    """AJAX endpoint — returns JSON to populate the Dean's review modal."""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
+        dean_id = session.get('user_id')
         terms = get_all_terms(cursor)
         active_term = next((t for t in terms if t['is_active'] == 1), None)
         if not active_term:
-            return jsonify({'error': 'No active term'}), 400
+            return jsonify({'error': 'No active term found.'}), 400
 
-        targets = get_designated_faculty_draft_targets(cursor, emp_id, active_term['term_id'])
+        term_id = active_term['term_id']
 
-        # Get faculty info
+        # Get or create review record
+        review_id = get_or_create_dean_review(conn, cursor, emp_id, term_id, dean_id)
+
+        # Fetch review items
+        items = get_dean_review_items(cursor, review_id)
+
+        # Fetch overall status & remarks
         cursor.execute(
-            "SELECT CONCAT(first_name, ' ', last_name) AS name, academic_rank, designation, assigned_program FROM tbl_employee_profiles WHERE emp_id = %s",
+            "SELECT overall_status, overall_remarks FROM tbl_ipcr_dean_review WHERE review_id = %s",
+            (review_id,)
+        )
+        row = cursor.fetchone()
+        overall_status = row[0] if row else 'Pending'
+        overall_remarks = row[1] if row else ''
+
+        # Faculty info
+        cursor.execute(
+            "SELECT CONCAT(first_name, ' ', last_name), academic_rank, designation, assigned_program FROM tbl_employee_profiles WHERE emp_id = %s",
             (emp_id,)
         )
-        faculty_info = cursor.fetchone()
-        faculty_name = faculty_info[0] if faculty_info else 'Unknown'
-        academic_rank = faculty_info[1] if faculty_info else ''
-        designation = faculty_info[2] if faculty_info else ''
-        assigned_program = faculty_info[3] if faculty_info else ''
+        fac = cursor.fetchone()
+        faculty_name = fac[0] if fac else 'Unknown'
+        academic_rank = fac[1] if fac else ''
+        designation = fac[2] if fac else ''
+        assigned_program = fac[3] if fac else ''
+
+        # Also get ALL available master indicators for this term
+        all_indicators = get_available_master_indicators(cursor, term_id)
+        picked_ids = {i['indicator_id'] for i in items}
+        unpicked = [ind for ind in all_indicators if ind['indicator_id'] not in picked_ids]
+
+        serializable_items = []
+        for item in items:
+            serializable_items.append({
+                'item_id': item['item_id'],
+                'draft_id': item['draft_id'],
+                'indicator_id': item['indicator_id'],
+                'indicator_description': item['indicator_description'],
+                'category_name': item['category_name'],
+                'original_quantity': item['original_quantity'],
+                'reviewed_quantity': item['reviewed_quantity'],
+                'item_remarks': item['item_remarks'] or '',
+                'is_custom': item['is_custom'],
+            })
 
         return jsonify({
+            'review_id': review_id,
+            'emp_id': emp_id,
             'faculty_name': faculty_name,
             'academic_rank': academic_rank,
             'designation': designation,
             'assigned_program': assigned_program,
-            'targets': targets
+            'overall_status': overall_status,
+            'overall_remarks': overall_remarks or '',
+            'items': serializable_items,
+            'unpicked': unpicked,
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
         conn.close()
 
 
-@dean_bp.route('/update_draft_target', methods=['POST'])
+@dean_bp.route('/save_review_items', methods=['POST'])
 @role_required('DEAN')
-def update_draft_target():
-    """Update the proposed quantity of a single draft target."""
-    draft_id = request.form.get('draft_id')
-    proposed_quantity = request.form.get('proposed_quantity')
+def save_review_items():
+    """Batch save all edited quantities and remarks for one review."""
+    data = request.get_json()
+    review_id = data.get('review_id')
+    items = data.get('items', [])
 
-    if not draft_id or not proposed_quantity:
-        flash('Missing required data.', 'danger')
-        return redirect(url_for('dean.dean_dashboard'))
+    if not review_id or not items:
+        return jsonify({'success': False, 'message': 'Missing review_id or items.'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        success, msg = update_draft_target_quantity(cursor, conn, draft_id, int(proposed_quantity))
-        flash(msg, 'success' if success else 'danger')
+        success, msg = save_dean_review_items(cursor, conn, review_id, items)
+        return jsonify({'success': success, 'message': msg})
     except Exception as e:
-        flash(f'Error updating target: {str(e)}', 'danger')
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         cursor.close()
         conn.close()
 
-    return redirect(url_for('dean.dean_dashboard'))
 
-
-@dean_bp.route('/review_draft', methods=['POST'])
+@dean_bp.route('/submit_review_decision', methods=['POST'])
 @role_required('DEAN')
-def review_draft():
-    """Approve or reject a designated faculty member's draft IPCR with remarks."""
+def submit_review_decision():
+    """Approve or reject the entire review with overall remarks."""
+    data = request.get_json()
+    review_id = data.get('review_id')
+    action = data.get('action')
+    overall_remarks = data.get('overall_remarks', '').strip()
+
+    if not review_id or action not in ('Approved', 'Rejected'):
+        return jsonify({'success': False, 'message': 'Missing review_id or invalid action.'}), 400
+
+    if action == 'Rejected' and not overall_remarks:
+        return jsonify({'success': False, 'message': 'Remarks are required when rejecting.'}), 400
+
     dean_id = session.get('user_id')
-    emp_id = request.form.get('emp_id')
-    action = request.form.get('action')
-    remarks = request.form.get('remarks', '').strip()
-
-    if not emp_id or not action:
-        flash('Missing required data.', 'danger')
-        return redirect(url_for('dean.dean_dashboard'))
-
-    if action not in ('Approved', 'Rejected'):
-        flash('Invalid action.', 'danger')
-        return redirect(url_for('dean.dean_dashboard'))
-
-    if action == 'Rejected' and not remarks:
-        flash('Please provide remarks explaining why the draft is being rejected.', 'danger')
-        return redirect(url_for('dean.dean_dashboard'))
-
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        terms = get_all_terms(cursor)
-        active_term = next((t for t in terms if t['is_active'] == 1), None)
-        if not active_term:
-            flash('No active term found.', 'danger')
-            return redirect(url_for('dean.dean_dashboard'))
+        success, msg = submit_dean_review_decision(cursor, conn, review_id, action, overall_remarks)
 
-        success, msg = review_designated_draft(cursor, conn, emp_id, active_term['term_id'], action, remarks)
-
-        # Log to audit trail
         if success:
-            details = f"Dean {dean_id} {action.lower()} draft IPCR for faculty {emp_id}. Remarks: {remarks}"
+            details = f"Dean {dean_id} {action.lower()} draft IPCR (review #{review_id}). Remarks: {overall_remarks}"
             from app.models.audit import log_audit_action
-            log_audit_action(conn, cursor, dean_id, f'DRAFT_IPCR_{action.upper()}', details, request.remote_addr or '127.0.0.1')
+            log_audit_action(conn, cursor, dean_id, f'DEAN_REVIEW_{action.upper()}', details, request.remote_addr or '127.0.0.1')
 
-        flash(msg, 'success' if success else 'danger')
+        return jsonify({'success': success, 'message': msg})
     except Exception as e:
-        flash(f'Error reviewing draft: {str(e)}', 'danger')
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         cursor.close()
         conn.close()
-
-    return redirect(url_for('dean.dean_dashboard'))
 
 
 # ──────────────────────────────────────────────

@@ -33,15 +33,9 @@ def faculty_dashboard():
         if academic_rank:
             ret_menu = get_faculty_ret_menu(cursor, academic_rank, term_id)
 
-<<<<<<< HEAD
-        # Check if the faculty member has submitted (has rows in tbl_draft_targets with 'Pending Review')
-        cursor.execute("""
-            SELECT COUNT(*)
-=======
         # Check if the faculty member has submitted
         sub_result = timed_query(cursor, """
             SELECT COUNT(*) as cnt
->>>>>>> origin/dean_commitments
             FROM tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
             WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status = 'Pending Review'

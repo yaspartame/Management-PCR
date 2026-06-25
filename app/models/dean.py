@@ -100,7 +100,10 @@ def update_dean_approval_status(cursor, connection, score_ids, new_status):
 
 
 # ──────────────────────────────────────────────
-# Draft IPCR Review (Designated Faculty) Mika
+# Draft IPCR Review (Designated Faculty) — Program Chair UX style
+# Requires tables:
+#   tbl_ipcr_dean_review(review_id, emp_id, term_id, dean_id, overall_status, overall_remarks, reviewed_at)
+#   tbl_ipcr_dean_review_items(item_id, review_id, draft_id, indicator_id, original_quantity, reviewed_quantity, item_remarks)
 # ──────────────────────────────────────────────
 
 def get_designated_draft_submissions(cursor, term_id):
@@ -116,77 +119,196 @@ def get_designated_draft_submissions(cursor, term_id):
             ep.academic_rank,
             ep.assigned_program,
             ep.designation,
-            COUNT(dt.draft_id) AS total_targets,
-            SUM(CASE WHEN dt.review_status = 'Pending Review' THEN 1 ELSE 0 END) AS pending_count,
-            SUM(CASE WHEN dt.review_status = 'Approved' THEN 1 ELSE 0 END) AS approved_count,
-            SUM(CASE WHEN dt.review_status = 'Rejected' THEN 1 ELSE 0 END) AS rejected_count,
-            MAX(dt.review_status) AS overall_status
+            COUNT(DISTINCT dt.draft_id) AS total_targets,
+            COALESCE(MAX(dr.overall_status), 'Pending') AS review_status
         FROM tbl_draft_targets dt
         JOIN tbl_employee_profiles ep ON dt.emp_id = ep.emp_id
         JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
         JOIN tbl_system_access sa ON dt.emp_id = sa.emp_id
+        LEFT JOIN tbl_ipcr_dean_review dr ON dr.emp_id = dt.emp_id AND dr.term_id = %s
         WHERE mi.term_id = %s
           AND sa.system_role = 'DESIGNATED_FACULTY'
           AND mi.is_custom IN (0, 1)
-        GROUP BY dt.emp_id, ep.first_name, ep.last_name, ep.academic_rank, ep.assigned_program, ep.designation
+        GROUP BY dt.emp_id, ep.first_name, ep.last_name, ep.academic_rank, ep.assigned_program, ep.designation, dr.overall_status
         ORDER BY ep.last_name ASC
     """
-    return timed_query(cursor, query, (term_id,), label="get_designated_draft_submissions")
+    return timed_query(cursor, query, (term_id, term_id), label="get_designated_draft_submissions")
 
 
-def get_designated_faculty_draft_targets(cursor, emp_id, term_id):
+def get_or_create_dean_review(conn, cursor, emp_id, term_id, dean_id):
+    """
+    Fetches existing tbl_ipcr_dean_review for emp_id+term_id, or creates one
+    and pre-populates items from tbl_draft_targets + all master indicators.
+    Returns review_id.
+    """
+    cursor.execute(
+        "SELECT review_id FROM tbl_ipcr_dean_review WHERE emp_id = %s AND term_id = %s",
+        (emp_id, term_id)
+    )
+    existing = cursor.fetchone()
+    if existing:
+        review_id = existing[0]
+        # Sync: add any new draft targets that aren't in review items yet
+        cursor.execute("""
+            INSERT IGNORE INTO tbl_ipcr_dean_review_items
+                (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity)
+            SELECT %s, dt.draft_id, dt.indicator_id, dt.proposed_quantity, dt.proposed_quantity
+            FROM tbl_draft_targets dt
+            WHERE dt.emp_id = %s
+              AND dt.draft_id NOT IN (
+                  SELECT COALESCE(draft_id, 0) FROM tbl_ipcr_dean_review_items WHERE review_id = %s
+              )
+        """, (review_id, emp_id, review_id))
+        conn.commit()
+        return review_id
+
+    # Create new review
+    cursor.execute("""
+        INSERT INTO tbl_ipcr_dean_review (emp_id, term_id, dean_id, overall_status)
+        VALUES (%s, %s, %s, 'Pending')
+    """, (emp_id, term_id, dean_id))
+    review_id = cursor.lastrowid
+
+    # Pre-populate review items from draft targets
+    cursor.execute("""
+        INSERT INTO tbl_ipcr_dean_review_items
+            (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity)
+        SELECT %s, dt.draft_id, dt.indicator_id, dt.proposed_quantity, dt.proposed_quantity
+        FROM tbl_draft_targets dt
+        WHERE dt.emp_id = %s
+    """, (review_id, emp_id))
+    conn.commit()
+    return review_id
+
+
+def get_dean_review_items(cursor, review_id):
+    """Get all review items with indicator + category details."""
     from app.models.connection import timed_query
     query = """
-        SELECT 
-            dt.draft_id,
-            dt.indicator_id,
-            dt.proposed_quantity,
-            dt.review_status,
+        SELECT
+            dri.item_id,
+            dri.draft_id,
+            dri.indicator_id,
+            dri.original_quantity,
+            dri.reviewed_quantity,
+            dri.item_remarks,
             mi.indicator_description,
             tc.category_name,
             mi.efficiency_type,
             mi.is_custom
-        FROM tbl_draft_targets dt
-        JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+        FROM tbl_ipcr_dean_review_items dri
+        JOIN tbl_master_indicators mi ON dri.indicator_id = mi.indicator_id
         LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-        WHERE dt.emp_id = %s AND mi.term_id = %s
+        WHERE dri.review_id = %s
         ORDER BY tc.category_name, mi.indicator_id
     """
-    return timed_query(cursor, query, (emp_id, term_id), label="get_designated_faculty_draft_targets")
+    return timed_query(cursor, query, (review_id,), label="get_dean_review_items")
 
 
-def update_draft_target_quantity(cursor, conn, draft_id, proposed_quantity):
-    """Update the proposed quantity of a single draft target."""
+def get_available_master_indicators(cursor, term_id):
+    """Get ALL selectable indicators for the term (including ones not picked by anyone)."""
+    from app.models.connection import timed_query
+    query = """
+        SELECT mi.indicator_id, mi.indicator_description, tc.category_name, mi.efficiency_type, mi.is_custom
+        FROM tbl_master_indicators mi
+        LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        WHERE mi.term_id = %s AND mi.is_custom = 0
+        ORDER BY tc.category_name, mi.indicator_id
+    """
+    return timed_query(cursor, query, (term_id,), label="get_available_master_indicators")
+
+
+def save_dean_review_items(cursor, conn, review_id, items):
+    """
+    Batch save all review item changes (quantities + remarks).
+    Items: [{'item_id': int, 'reviewed_quantity': int, 'item_remarks': str}, ...]
+    For new items (is_new=True, no item_id), creates draft target + review item.
+    Also syncs changes back to tbl_draft_targets so faculty see the update.
+    """
     try:
-        cursor.execute(
-            "UPDATE tbl_draft_targets SET proposed_quantity = %s WHERE draft_id = %s",
-            (proposed_quantity, draft_id)
-        )
+        for item in items:
+            reviewed_qty = item.get('reviewed_quantity', 0)
+            item_remarks = item.get('item_remarks', '')
+
+            if item.get('is_new') and not item.get('item_id'):
+                # New item from unpicked indicators — insert draft target + review item
+                indicator_id = item.get('indicator_id')
+                if not indicator_id:
+                    continue
+                # Get emp_id from review
+                cursor.execute(
+                    "SELECT emp_id, term_id FROM tbl_ipcr_dean_review WHERE review_id = %s",
+                    (review_id,)
+                )
+                r = cursor.fetchone()
+                if not r:
+                    continue
+                emp_id, term_id = r
+                # Insert draft target
+                cursor.execute("""
+                    INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
+                    VALUES (%s, %s, %s, 'Pending Review')
+                """, (emp_id, indicator_id, reviewed_qty))
+                new_draft_id = cursor.lastrowid
+                # Insert review item linked to new draft
+                cursor.execute("""
+                    INSERT INTO tbl_ipcr_dean_review_items
+                        (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity, item_remarks)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (review_id, new_draft_id, indicator_id, reviewed_qty, reviewed_qty, item_remarks))
+            else:
+                # Existing item — update quantities and remarks
+                item_id = item.get('item_id')
+                if not item_id:
+                    continue
+                cursor.execute("""
+                    UPDATE tbl_ipcr_dean_review_items
+                    SET reviewed_quantity = %s, item_remarks = %s
+                    WHERE item_id = %s
+                """, (reviewed_qty, item_remarks, item_id))
+
+                # Sync back to tbl_draft_targets so designated faculty sees the change
+                cursor.execute("""
+                    UPDATE tbl_draft_targets dt
+                    JOIN tbl_ipcr_dean_review_items dri ON dt.draft_id = dri.draft_id
+                    SET dt.proposed_quantity = %s
+                    WHERE dri.item_id = %s
+                """, (reviewed_qty, item_id))
+
         conn.commit()
-        return True, "Target quantity updated successfully."
+        return True, "Review items saved successfully."
     except Exception as e:
         conn.rollback()
-        return False, f"Error updating target: {str(e)}"
+        return False, str(e)
 
 
-def review_designated_draft(cursor, conn, emp_id, term_id, action, remarks):
+def submit_dean_review_decision(cursor, conn, review_id, action, overall_remarks):
     """
-    Approve or reject ALL draft targets for a designated faculty member.
-    action: 'Approved' or 'Rejected'
+    Finalize the Dean's review: approve or reject.
+    Updates both tbl_ipcr_dean_review and tbl_draft_targets.
     """
     try:
-        # Update all draft targets for this faculty in the current term
+        cursor.execute("""
+            UPDATE tbl_ipcr_dean_review
+            SET overall_status = %s, overall_remarks = %s, reviewed_at = NOW()
+            WHERE review_id = %s
+        """, (action, overall_remarks, review_id))
+
+        # Sync decision to tbl_draft_targets
         cursor.execute("""
             UPDATE tbl_draft_targets dt
-            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
-            SET dt.review_status = %s
-            WHERE dt.emp_id = %s AND mi.term_id = %s
-        """, (action, emp_id, term_id))
+            JOIN tbl_ipcr_dean_review_items dri ON dt.draft_id = dri.draft_id
+            JOIN tbl_ipcr_dean_review dr ON dri.review_id = dr.review_id
+            SET dt.review_status = %s,
+                dt.proposed_quantity = dri.reviewed_quantity
+            WHERE dr.review_id = %s
+        """, (action, review_id))
+
         conn.commit()
-        return True, f"Draft IPCR successfully {action.lower()} with remarks."
+        return True, f"Draft IPCR {action.lower()} successfully."
     except Exception as e:
         conn.rollback()
-        return False, f"Error reviewing draft: {str(e)}"
+        return False, str(e)
 
 
 # ──────────────────────────────────────────────
