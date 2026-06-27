@@ -152,6 +152,42 @@ def get_pending_draft_ipcrs(cursor, specialization, term_id):
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
+def get_locked_faculty_ipcrs(cursor, specialization, term_id):
+    """
+    Returns all faculty members under `specialization` who have locked/committed
+    their IPCR for the active term.
+    """
+    query = """
+        SELECT
+            ep.emp_id,
+            CONCAT(ep.first_name, ' ', ep.last_name) AS faculty_name,
+            ep.academic_rank,
+            ep.specialization,
+            (SELECT COUNT(*) FROM tbl_committed_targets ct 
+             JOIN tbl_master_indicators mi2 ON ct.indicator_id = mi2.indicator_id 
+             WHERE ct.emp_id = ep.emp_id AND mi2.term_id = %s) AS target_count,
+            'Locked' AS review_status,
+            cr.review_id,
+            cr.overall_remarks,
+            cr.reviewed_at
+        FROM tbl_employee_profiles ep
+        LEFT JOIN tbl_ipcr_chair_review cr
+            ON cr.emp_id = ep.emp_id AND cr.term_id = %s
+        WHERE ep.specialization = %s
+          AND ep.designation = 'Regular Faculty'
+          AND (SELECT COUNT(*) FROM tbl_committed_targets ct 
+               JOIN tbl_master_indicators mi2 ON ct.indicator_id = mi2.indicator_id 
+               WHERE ct.emp_id = ep.emp_id AND mi2.term_id = %s) > 0
+        GROUP BY ep.emp_id, ep.first_name, ep.last_name,
+                 ep.academic_rank, ep.specialization,
+                 cr.review_id, cr.overall_remarks, cr.reviewed_at
+        ORDER BY ep.last_name, ep.first_name
+    """
+    cursor.execute(query, (term_id, term_id, specialization, term_id))
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
 def get_or_create_chair_review(conn, cursor, emp_id, term_id, chair_emp_id):
     """
     Fetches an existing review record for emp_id + term_id, or creates one

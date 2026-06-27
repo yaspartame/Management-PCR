@@ -36,6 +36,7 @@ def prog_chair_dashboard():
         faculty_count = 0
         pending_drafts = []
         pending_drafts_count = 0
+        locked_drafts = []
 
         if active_term and specialization:
             term_id = active_term['term_id']
@@ -54,6 +55,7 @@ def prog_chair_dashboard():
             # Phase 2: Commitments — live draft IPCR submissions scoped by specialization
             pending_drafts = get_pending_draft_ipcrs(cursor, specialization, term_id)
             pending_drafts_count = get_pending_drafts_count(cursor, specialization, term_id)
+            locked_drafts = get_locked_faculty_ipcrs(cursor, specialization, term_id)
 
         return render_template(
             'prog_chair_dashboard.html',
@@ -63,6 +65,7 @@ def prog_chair_dashboard():
             faculty_count=faculty_count,
             pending_drafts=pending_drafts,
             pending_drafts_count=pending_drafts_count,
+            locked_drafts=locked_drafts,
         )
     finally:
         cursor.close()
