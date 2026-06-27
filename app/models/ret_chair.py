@@ -1,12 +1,28 @@
 def get_ret_indicators(cursor, term_id):
     from app.models.connection import timed_query
     query = """
-        SELECT mi.indicator_id, mi.indicator_description, mi.efficiency_type, tc.category_name, cq.total_target_value as dean_quota
+        SELECT 
+            mi.indicator_id, 
+            mi.indicator_description, 
+            mi.efficiency_type, 
+            tc.category_name, 
+            cq.total_target_value AS dean_quota,
+            COALESCE(SUM(dt.proposed_quantity), 0) AS total_distributed
         FROM tbl_cascaded_quotas cq
         JOIN tbl_master_indicators mi ON cq.indicator_id = mi.indicator_id
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        
+        -- Pull targets submitted by the faculty
+        LEFT JOIN tbl_draft_targets dt ON mi.indicator_id = dt.indicator_id
+        
         WHERE cq.term_id = %s
           AND cq.assigned_to_role = 'RET / Extension'
+        GROUP BY 
+            mi.indicator_id, 
+            mi.indicator_description, 
+            mi.efficiency_type, 
+            tc.category_name, 
+            cq.total_target_value
         ORDER BY tc.category_name, mi.indicator_id
     """
     return timed_query(cursor, query, (term_id,), label="get_ret_indicators")
@@ -57,7 +73,8 @@ def get_ret_rules(cursor, term_id):
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
         WHERE mi.term_id = %s
     """
-    return timed_query(cursor, query, (term_id,), label="get_ret_rules")
+    # FIX: Run the timed query directly but process the results instead of immediate return
+    timed_query(cursor, query, (term_id,), label="get_ret_rules")
     rows = cursor.fetchall()
     rules_dict = {}
 
@@ -73,10 +90,11 @@ def get_ret_rules(cursor, term_id):
                 'extension_indicators': []
             }
 
-        if category == 'A. Research':
+        # Safe matching using 'in' in case formatting contains letters like A. or B.
+        if 'Research' in category:
             rules_dict[rank]['research_required'] = required
             rules_dict[rank]['research_indicators'].append({'id': ind_id, 'desc': desc, 'qty': qty})
-        elif category == 'B. Extension Services / Training / Advisory':
+        elif 'Extension' in category or 'Training' in category or 'Advisory' in category:
             rules_dict[rank]['extension_required'] = required
             rules_dict[rank]['extension_indicators'].append({'id': ind_id, 'desc': desc, 'qty': qty})
 
