@@ -2,7 +2,47 @@
 
 This document outlines the target creation, review, rejection, approval, and locking flow, detailing where the data comes from and where it is stored in the database.
 
+## Database Table Flow Diagram
+
+```mermaid
+flowchart TD
+    %% Style definitions
+    classDef config fill:#f9f5ff,stroke:#7F56D9,stroke-width:2px,color:#000;
+    classDef draft fill:#eff8ff,stroke:#175CD3,stroke-width:2px,color:#000;
+    classDef review fill:#fff1f3,stroke:#D11A2A,stroke-width:2px,color:#000;
+    classDef final fill:#edfcf2,stroke:#039855,stroke-width:2px,color:#000;
+
+    %% Nodes
+    tbl_master_indicators["tbl_master_indicators<br/>(Master Indicators List)"]:::config
+    tbl_ret_rules["tbl_ret_rules &<br/>tbl_ret_rule_indicators<br/>(RET Target Rules by Rank)"]:::config
+    tbl_draft_allocation["tbl_draft_allocation<br/>(Distributed Workloads)"]:::draft
+    tbl_draft_targets["tbl_draft_targets<br/>(Proposed/Draft Targets)"]:::draft
+    tbl_ipcr_chair_review["tbl_ipcr_chair_review<br/>(Review Session Header)"]:::review
+    tbl_ipcr_chair_review_items["tbl_ipcr_chair_review_items<br/>(Review Session Items)"]:::review
+    tbl_committed_targets["tbl_committed_targets<br/>(Locked Final Targets)"]:::final
+
+    %% Flow transitions
+    tbl_master_indicators -->|1. Setup baseline workloads| tbl_draft_allocation
+    
+    tbl_draft_allocation -->|2. Submit Draft IPCR (Instruction/Support)| tbl_draft_targets
+    tbl_master_indicators -->|2. Submit Draft IPCR (RET Selection)| tbl_draft_targets
+    tbl_ret_rules -->|2. Validate RET targets based on rank| tbl_draft_targets
+    
+    tbl_draft_targets -->|3. Open Review Session (Copy Drafts)| tbl_ipcr_chair_review_items
+    tbl_draft_targets -.->|3. Link review header| tbl_ipcr_chair_review
+    
+    tbl_ipcr_chair_review_items -->|4a. Chair rejects / returns| tbl_draft_targets
+    tbl_ipcr_chair_review -->|4a. Set status to 'Rejected'| tbl_draft_targets
+    
+    tbl_ipcr_chair_review_items -->|4b. Chair approves (Sync Quantities)| tbl_draft_targets
+    tbl_ipcr_chair_review -->|4b. Set status to 'Approved'| tbl_draft_targets
+    
+    tbl_draft_targets -->|5. Faculty locks IPCR| tbl_committed_targets
+    tbl_ipcr_chair_review_items -->|5. Coalesce final quantities| tbl_committed_targets
+```
+
 ---
+
 
 ## 1. Workload Distribution (Initial State)
 - **Action**: The Program Chair distributes standard workloads (Instruction & Support Functions) to the faculty.
