@@ -129,3 +129,244 @@ def delete_ret_rule(conn, cursor, rule_id, category_type=None):
     except Exception as e:
         conn.rollback()
         return False
+
+
+def get_pending_ret_draft_ipcrs(cursor, term_id):
+    """
+    Returns all regular faculty members who have submitted their IPCR draft (i.e. tbl_draft_targets has entries for the term),
+    with their RET review status from tbl_ipcr_ret_review.
+    """
+    query = """
+        SELECT
+            ep.emp_id,
+            CONCAT(ep.first_name, ' ', ep.last_name) AS faculty_name,
+            ep.academic_rank,
+            ep.specialization,
+            (
+                SELECT COUNT(dt2.draft_id)
+                FROM tbl_draft_targets dt2
+                JOIN tbl_master_indicators mi2 ON dt2.indicator_id = mi2.indicator_id
+                JOIN tbl_target_categories tc2 ON mi2.category_id = tc2.category_id
+                WHERE dt2.emp_id = ep.emp_id AND mi2.term_id = %s
+                  AND (tc2.category_name LIKE '%%Research%%' OR tc2.category_name LIKE '%%Extension%%' OR tc2.category_name LIKE '%%Training%%' OR tc2.category_name LIKE '%%Advisory%%')
+            ) AS target_count,
+            COALESCE(rr.overall_status, 'Pending Review') AS review_status,
+            rr.review_id,
+            rr.overall_remarks,
+            rr.reviewed_at
+        FROM tbl_employee_profiles ep
+        -- Only check employees who have draft targets for the active term
+        JOIN (
+            SELECT DISTINCT emp_id
+            FROM tbl_draft_targets dt3
+            JOIN tbl_master_indicators mi3 ON dt3.indicator_id = mi3.indicator_id
+            WHERE mi3.term_id = %s
+        ) dt_sub ON ep.emp_id = dt_sub.emp_id
+        LEFT JOIN tbl_ipcr_ret_review rr ON rr.emp_id = ep.emp_id AND rr.term_id = %s
+        WHERE ep.designation = 'Regular Faculty'
+        ORDER BY ep.last_name, ep.first_name
+    """
+    cursor.execute(query, (term_id, term_id, term_id))
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def get_or_create_ret_review(conn, cursor, emp_id, term_id, ret_chair_emp_id):
+    """
+    Gets or creates the RET review record, pre-populating items from tbl_draft_targets
+    for Research and Extension targets.
+    """
+    # Check for existing review
+    cursor.execute(
+        "SELECT review_id FROM tbl_ipcr_ret_review WHERE emp_id = %s AND term_id = %s",
+        (emp_id, term_id)
+    )
+    existing = cursor.fetchone()
+    if existing:
+        review_id = existing[0]
+        # Sync: Insert any draft targets that are missing from review items
+        cursor.execute(
+            """
+            INSERT INTO tbl_ipcr_ret_review_items
+                (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity)
+            SELECT %s, dt.draft_id, dt.indicator_id, dt.proposed_quantity, dt.proposed_quantity
+            FROM tbl_draft_targets dt
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+            LEFT JOIN tbl_ipcr_ret_review_items ri ON ri.review_id = %s AND ri.draft_id = dt.draft_id
+            WHERE dt.emp_id = %s AND mi.term_id = %s 
+              AND (tc.category_name LIKE '%%Research%%' OR tc.category_name LIKE '%%Extension%%' OR tc.category_name LIKE '%%Training%%' OR tc.category_name LIKE '%%Advisory%%')
+              AND ri.item_id IS NULL
+            """,
+            (review_id, review_id, emp_id, term_id)
+        )
+        conn.commit()
+        return review_id
+
+    # Create the review header
+    cursor.execute(
+        """
+        INSERT INTO tbl_ipcr_ret_review (emp_id, term_id, ret_chair_emp_id, overall_status)
+        VALUES (%s, %s, %s, 'Pending')
+        """,
+        (emp_id, term_id, ret_chair_emp_id)
+    )
+    review_id = cursor.lastrowid
+
+    # Pre-populate items from tbl_draft_targets
+    cursor.execute(
+        """
+        SELECT dt.draft_id, dt.indicator_id, dt.proposed_quantity
+        FROM tbl_draft_targets dt
+        JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+        JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        WHERE dt.emp_id = %s AND mi.term_id = %s
+          AND (tc.category_name LIKE '%%Research%%' OR tc.category_name LIKE '%%Extension%%' OR tc.category_name LIKE '%%Training%%' OR tc.category_name LIKE '%%Advisory%%')
+        """,
+        (emp_id, term_id)
+    )
+    draft_rows = cursor.fetchall()
+
+    for draft_id, indicator_id, proposed_qty in draft_rows:
+        cursor.execute(
+            """
+            INSERT INTO tbl_ipcr_ret_review_items
+                (review_id, draft_id, indicator_id, original_quantity, reviewed_quantity)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (review_id, draft_id, indicator_id, proposed_qty, proposed_qty)
+        )
+
+    conn.commit()
+    return review_id
+
+
+def get_ret_review_items(cursor, review_id):
+    """
+    Returns all items for a given RET review_id, joined with indicator descriptions
+    and category names.
+    """
+    query = """
+        SELECT
+            ri.item_id,
+            ri.draft_id,
+            ri.indicator_id,
+            ri.original_quantity,
+            ri.reviewed_quantity,
+            ri.item_remarks,
+            mi.indicator_description,
+            tc.category_name
+        FROM tbl_ipcr_ret_review_items ri
+        JOIN tbl_master_indicators mi ON ri.indicator_id = mi.indicator_id
+        JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        WHERE ri.review_id = %s
+        ORDER BY tc.category_name, mi.indicator_id
+    """
+    cursor.execute(query, (review_id,))
+    columns = [col[0] for col in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def update_ret_review_item(conn, cursor, item_id, reviewed_quantity, item_remarks):
+    """
+    Updates a single RET review item's reviewed quantity and optional remark.
+    """
+    try:
+        cursor.execute(
+            """
+            UPDATE tbl_ipcr_ret_review_items
+            SET reviewed_quantity = %s, item_remarks = %s
+            WHERE item_id = %s
+            """,
+            (reviewed_quantity, item_remarks if item_remarks else None, item_id)
+        )
+        conn.commit()
+        return True, "Change saved."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+
+
+def decide_ret_review(conn, cursor, review_id, action, overall_remarks):
+    """
+    Sets overall_status to 'Approved' or 'Rejected' on the RET review header.
+    On rejection, sets the related RET draft targets to 'Returned'.
+    On approval, updates the draft targets with finalized quantities and sets status to 'Approved'.
+    """
+    from datetime import datetime
+    try:
+        new_status = 'Approved' if action == 'approve' else 'Rejected'
+
+        cursor.execute(
+            """
+            UPDATE tbl_ipcr_ret_review
+            SET overall_status = %s,
+                overall_remarks = %s,
+                reviewed_at = %s
+            WHERE review_id = %s
+            """,
+            (new_status, overall_remarks, datetime.now(), review_id)
+        )
+
+        # Get the emp_id and term_id for this review
+        cursor.execute(
+            "SELECT emp_id, term_id FROM tbl_ipcr_ret_review WHERE review_id = %s",
+            (review_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            emp_id, term_id = row
+            if action == 'reject':
+                # Set RET draft targets review status to 'Returned'
+                cursor.execute(
+                    """
+                    UPDATE tbl_draft_targets dt
+                    JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+                    JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                    SET dt.review_status = 'Returned'
+                    WHERE dt.emp_id = %s AND mi.term_id = %s
+                      AND (tc.category_name LIKE '%%Research%%' OR tc.category_name LIKE '%%Extension%%' OR tc.category_name LIKE '%%Training%%' OR tc.category_name LIKE '%%Advisory%%')
+                    """,
+                    (emp_id, term_id)
+                )
+            elif action == 'approve':
+                # Finalize proposed quantities in tbl_draft_targets to match RET reviewed quantities
+                cursor.execute(
+                    """
+                    UPDATE tbl_draft_targets dt
+                    JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+                    JOIN tbl_ipcr_ret_review rr ON dt.emp_id = rr.emp_id AND rr.term_id = mi.term_id
+                    JOIN tbl_ipcr_ret_review_items ri ON ri.review_id = rr.review_id AND ri.draft_id = dt.draft_id
+                    SET dt.proposed_quantity = ri.reviewed_quantity,
+                        dt.review_status = 'Approved'
+                    WHERE dt.emp_id = %s AND mi.term_id = %s
+                    """,
+                    (emp_id, term_id)
+                )
+
+        conn.commit()
+        return True, f"RET Choices successfully {new_status.lower()}."
+    except Exception as e:
+        conn.rollback()
+        return False, str(e)
+
+
+def get_faculty_ret_review_status(cursor, emp_id, term_id):
+    """
+    Returns the RET Chair's current review record for this faculty member,
+    or None if no review has been started yet.
+    """
+    cursor.execute("""
+        SELECT review_id, overall_status, overall_remarks, reviewed_at
+        FROM tbl_ipcr_ret_review
+        WHERE emp_id = %s AND term_id = %s
+    """, (emp_id, term_id))
+    row = cursor.fetchone()
+    if row:
+        return {
+            'review_id':      row[0],
+            'overall_status': row[1],
+            'overall_remarks': row[2],
+            'reviewed_at':    row[3],
+        }
+    return None

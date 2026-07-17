@@ -41,9 +41,10 @@ def faculty_dashboard():
             WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval')
         """, (emp_id, term_id), label="faculty_submit_check")
         has_submitted = sub_result[0]['cnt'] > 0 if sub_result else False
-
         # Fetch the Program Chair's review decision (if any)
         chair_review = get_faculty_chair_review_status(cursor, emp_id, term_id)
+        # Fetch the RET Chair's review decision (if any)
+        ret_review = get_faculty_ret_review_status(cursor, emp_id, term_id)
 
         # Check if locked
         cursor.execute("""
@@ -53,8 +54,8 @@ def faculty_dashboard():
         """, (emp_id, term_id))
         is_locked = cursor.fetchone()[0] > 0
 
-        # If the Program Chair has rejected/returned the IPCR, allow faculty to re-submit (fields are locked via pointer-events)
-        if chair_review and chair_review['overall_status'] == 'Rejected':
+        # If Program Chair or RET Chair has rejected/returned, allow faculty to re-submit
+        if (chair_review and chair_review['overall_status'] == 'Rejected') or (ret_review and ret_review['overall_status'] == 'Rejected'):
             has_submitted = False
         elif chair_review and chair_review['overall_status'] == 'Approved':
             has_submitted = True
@@ -73,9 +74,8 @@ def faculty_dashboard():
                            specialization=specialization,
                            has_submitted=has_submitted,
                            is_locked=is_locked,
-                           chair_review=chair_review)
-
-
+                           chair_review=chair_review,
+                           ret_review=ret_review)
 @faculty_bp.route('/submit_ipcr', methods=['POST'])
 @role_required('FACULTY')
 def faculty_submit_ipcr():

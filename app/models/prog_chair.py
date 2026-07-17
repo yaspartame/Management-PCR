@@ -165,7 +165,7 @@ def get_pending_draft_ipcrs(cursor, specialization, term_id):
         WHERE mi.term_id = %s
           AND ep.specialization = %s
           AND ep.designation = 'Regular Faculty'
-          AND dt.review_status IN ('Pending Review', 'Waiting for Approval')
+          AND dt.review_status IN ('Pending Review', 'Waiting for Approval', 'Approved', 'Returned')
           AND (cr.overall_status IS NULL OR cr.overall_status = 'Pending')
         GROUP BY ep.emp_id, ep.first_name, ep.last_name,
                  ep.academic_rank, ep.specialization,
@@ -236,9 +236,23 @@ def get_or_create_chair_review(conn, cursor, emp_id, term_id, chair_emp_id):
             FROM tbl_draft_targets dt
             JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
             LEFT JOIN tbl_ipcr_chair_review_items ri ON ri.review_id = %s AND ri.draft_id = dt.draft_id
-            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval') AND ri.item_id IS NULL
+            WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval', 'Approved') AND ri.item_id IS NULL
             """,
             (review_id, review_id, emp_id, term_id)
+        )
+        # Sync RET target quantities to match the finalized RET-approved quantities
+        cursor.execute(
+            """
+            UPDATE tbl_ipcr_chair_review_items ri
+            JOIN tbl_draft_targets dt ON ri.draft_id = dt.draft_id
+            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+            JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+            SET ri.original_quantity = dt.proposed_quantity,
+                ri.reviewed_quantity = dt.proposed_quantity
+            WHERE ri.review_id = %s
+              AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
+            """,
+            (review_id,)
         )
         conn.commit()
         return review_id
@@ -259,7 +273,7 @@ def get_or_create_chair_review(conn, cursor, emp_id, term_id, chair_emp_id):
         SELECT dt.draft_id, dt.indicator_id, dt.proposed_quantity
         FROM tbl_draft_targets dt
         JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
-        WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval')
+        WHERE dt.emp_id = %s AND mi.term_id = %s AND dt.review_status IN ('Pending Review', 'Waiting for Approval', 'Approved')
         """,
         (emp_id, term_id)
     )
@@ -281,8 +295,8 @@ def get_or_create_chair_review(conn, cursor, emp_id, term_id, chair_emp_id):
 
 def get_review_items(cursor, review_id):
     """
-    Returns all items for a given review_id, joined with indicator descriptions
-    and category names.
+    Returns all items for a given review_id, joined with indicator descriptions,
+    category names, and draft review statuses.
     """
     query = """
         SELECT
@@ -293,10 +307,12 @@ def get_review_items(cursor, review_id):
             ri.reviewed_quantity,
             ri.item_remarks,
             mi.indicator_description,
-            tc.category_name
+            tc.category_name,
+            dt.review_status AS draft_status
         FROM tbl_ipcr_chair_review_items ri
         JOIN tbl_master_indicators mi ON ri.indicator_id = mi.indicator_id
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        JOIN tbl_draft_targets dt ON ri.draft_id = dt.draft_id
         WHERE ri.review_id = %s
         ORDER BY tc.category_name, mi.indicator_id
     """
@@ -355,13 +371,16 @@ def decide_chair_review(conn, cursor, review_id, action, overall_remarks):
         if row:
             emp_id, term_id = row
             if action == 'reject':
-                # Flip draft targets back to 'Returned' so faculty can re-submit
+                # Flip standard draft targets back to 'Returned' (leave approved Research/Extension as Approved)
                 cursor.execute(
                     """
                     UPDATE tbl_draft_targets dt
                     JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+                    JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
                     SET dt.review_status = 'Returned'
-                    WHERE dt.emp_id = %s AND mi.term_id = %s
+                    WHERE dt.emp_id = %s 
+                      AND mi.term_id = %s
+                      AND tc.category_name IN ('A. Instructions', 'Support Functions')
                     """,
                     (emp_id, term_id)
                 )

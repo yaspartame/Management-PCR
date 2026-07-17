@@ -198,39 +198,54 @@ def submit_faculty_ipcr(conn, cursor, emp_id, selected_research_targets):
               AND tc.category_name IN ('A. Instructions', 'Support Functions')
         """, (target_status, emp_id))
 
-        # 5. Delete existing Research and Extension targets for this employee from tbl_draft_targets
-        # to ensure that any deselected targets are not carried over.
-        cursor.execute("""
-            DELETE dt FROM tbl_draft_targets dt
-            JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
-            JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
-            WHERE dt.emp_id = %s
-              AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
-        """, (emp_id,))
+        # 4b. Check if Research & Extension targets are editable by the faculty member.
+        # They are only editable on first submission or when returned (Rejected) by the RET Chair.
+        # Otherwise, they are locked/disabled in the UI, and we must preserve the existing selections.
+        ret_editable = True
+        if is_resubmission and active_term_id:
+            cursor.execute(
+                """
+                SELECT overall_status FROM tbl_ipcr_ret_review 
+                WHERE emp_id = %s AND term_id = %s
+                """,
+                (emp_id, active_term_id)
+            )
+            ret_row = cursor.fetchone()
+            ret_status = ret_row[0] if ret_row else 'Pending'
+            if ret_status != 'Rejected':
+                ret_editable = False
 
-        # 6. Process and write the new faculty self-selected Research/Extension targets into tbl_draft_targets
-        for target in selected_research_targets:
-            res_ind_id = target['indicator_id']
-            
-            # Fetch target quantity configured by RET Chair
+        if ret_editable:
+            # 5. Delete existing Research and Extension targets for this employee from tbl_draft_targets
+            # to ensure that any deselected targets are not carried over.
             cursor.execute("""
-                SELECT rri.target_quantity 
-                FROM tbl_ret_rule_indicators rri
-                JOIN tbl_ret_rules r ON rri.rule_id = r.rule_id
-                JOIN tbl_employee_profiles ep ON ep.academic_rank = r.academic_rank
-                WHERE ep.emp_id = %s AND rri.indicator_id = %s
-                LIMIT 1
-            """, (emp_id, res_ind_id))
-            row = cursor.fetchone()
-            res_qty = row[0] if (row and row[0] is not None) else 1
+                DELETE dt FROM tbl_draft_targets dt
+                JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+                JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                WHERE dt.emp_id = %s
+                  AND tc.category_name IN ('A. Research', 'B. Extension Services / Training / Advisory')
+            """, (emp_id,))
 
-            cursor.execute("""
-                INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
-                VALUES (%s, %s, %s, %s)
-            """, (emp_id, res_ind_id, res_qty, target_status))
+            # 6. Process and write the new faculty self-selected Research/Extension targets into tbl_draft_targets
+            for target in selected_research_targets:
+                res_ind_id = target['indicator_id']
+                
+                # Fetch target quantity configured by RET Chair
+                cursor.execute("""
+                    SELECT rri.target_quantity 
+                    FROM tbl_ret_rule_indicators rri
+                    JOIN tbl_ret_rules r ON rri.rule_id = r.rule_id
+                    JOIN tbl_employee_profiles ep ON ep.academic_rank = r.academic_rank
+                    WHERE ep.emp_id = %s AND rri.indicator_id = %s
+                    LIMIT 1
+                """, (emp_id, res_ind_id))
+                row = cursor.fetchone()
+                res_qty = row[0] if (row and row[0] is not None) else 1
 
-        # 7. Success — Flush out temporary allocation staging for this employee (Disabled to preserve allocations)
-        # cursor.execute("DELETE FROM tbl_draft_allocation WHERE emp_id = %s", (emp_id,))
+                cursor.execute("""
+                    INSERT INTO tbl_draft_targets (emp_id, indicator_id, proposed_quantity, review_status)
+                    VALUES (%s, %s, %s, %s)
+                """, (emp_id, res_ind_id, res_qty, target_status))
 
         # 8. Update existing Program Chair review records for active term to 'Pending' and clear items/remarks
         if active_term_id and is_resubmission:
@@ -256,6 +271,24 @@ def submit_faculty_ipcr(conn, cursor, emp_id, selected_research_targets):
                         reviewed_at = NULL
                     WHERE review_id = %s
                 """, (review_id,))
+
+        # 8b. Reset RET Chair review record and items if it exists for active term and is editable
+        if active_term_id and ret_editable:
+            cursor.execute("""
+                SELECT review_id FROM tbl_ipcr_ret_review
+                WHERE emp_id = %s AND term_id = %s
+            """, (emp_id, active_term_id))
+            existing_ret_review = cursor.fetchone()
+            if existing_ret_review:
+                ret_review_id = existing_ret_review[0]
+                cursor.execute("DELETE FROM tbl_ipcr_ret_review_items WHERE review_id = %s", (ret_review_id,))
+                cursor.execute("""
+                    UPDATE tbl_ipcr_ret_review
+                    SET overall_status = 'Pending',
+                        overall_remarks = NULL,
+                        reviewed_at = NULL
+                    WHERE review_id = %s
+                """, (ret_review_id,))
 
         conn.commit()
         return True, "IPCR successfully submitted for review."

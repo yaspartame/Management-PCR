@@ -92,16 +92,41 @@
         <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
             <i class="bi bi-arrow-counterclockwise me-2"></i>Returned by Program Chair
         </span>
-        {% elif has_submitted %}
-        <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm">
-            <i class="bi bi-hourglass-split me-2"></i>Waiting for Review
+        {% elif ret_review and ret_review.overall_status == 'Rejected' %}
+        <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Returned by RET Chair
         </span>
+        {% elif has_submitted %}
+            {% if ret_review and ret_review.overall_status == 'Approved' %}
+            <span class="badge bg-info text-dark px-3 py-2 fs-6 shadow-sm">
+                <i class="bi bi-hourglass-split me-2"></i>Waiting for Program Chair Approval
+            </span>
+            {% else %}
+            <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm">
+                <i class="bi bi-hourglass-split me-2"></i>Waiting for RET Approval
+            </span>
+            {% endif %}
         {% else %}
         <span class="badge bg-secondary px-3 py-2 fs-6 shadow-sm">
             <i class="bi bi-pencil-square me-2"></i>Draft Mode
         </span>
         {% endif %}
     </div>
+
+    {# ── RET Rejection Alert ────────────────────────────────── #}
+    {% if ret_review and ret_review.overall_status == 'Rejected' %}
+    <div class="alert border-0 shadow-sm mb-4" role="alert"
+        style="background: linear-gradient(135deg, #fff5f5 0%, #ffe3e3 100%); border-left: 5px solid #dc3545 !important; border-radius: 10px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-exclamation-circle-fill text-danger fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold mb-1 text-danger">Your Research &amp; Extension choices were Returned by the RET Chair</h6>
+                <p class="mb-1 text-dark"><strong>Remarks:</strong> {{ ret_review.overall_remarks }}</p>
+                <small class="text-muted">Please update your selections below and click "Submit IPCR for Approval" to resubmit.</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     {# ── Chair Rejection Alert ──────────────────────────────── #}
     {% if chair_review and chair_review.overall_status == 'Rejected' %}
@@ -110,14 +135,40 @@
         <div class="d-flex align-items-start gap-3">
             <i class="bi bi-exclamation-circle-fill text-warning fs-4 mt-1" style="color: #d97706 !important;"></i>
             <div>
-                <h6 class="fw-bold mb-1" style="color: #b45309 !important;">Your Draft IPCR was Returned by your Program
-                    Chair</h6>
+                <h6 class="fw-bold mb-1" style="color: #b45309 !important;">Your Draft IPCR was Returned by your Program Chair</h6>
                 <p class="mb-1 text-dark"><strong>Remarks:</strong> {{ chair_review.overall_remarks }}</p>
                 <small class="text-muted">Please review the changes and remarks made by the Program Chair below, and
                     click "Submit IPCR for Approval" to acknowledge and send it back for approval.</small>
             </div>
         </div>
     </div>
+    {% endif %}
+
+    {# ── Waiting Banners ────────────────────────────────────── #}
+    {% if has_submitted and not is_locked and not (chair_review and chair_review.overall_status == 'Approved') %}
+        {% if ret_review and ret_review.overall_status == 'Approved' %}
+        <div class="alert border-0 shadow-sm mb-4" role="alert"
+            style="background: linear-gradient(135deg, #e8f4ff 0%, #dbedff 100%); border-left: 5px solid #0d6efd !important; border-radius: 10px;">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bi bi-clock-history text-primary fs-4 mt-1"></i>
+                <div>
+                    <h6 class="fw-bold text-primary mb-1">Waiting for Program Chair Approval</h6>
+                    <p class="mb-0 text-muted small">Your Research and Extension targets have been approved by the RET Chair. The draft IPCR is now awaiting final review and approval by your Program Chair.</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert border-0 shadow-sm mb-4" role="alert"
+            style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 5px solid #ffc107 !important; border-radius: 10px;">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bi bi-clock-history text-warning fs-4 mt-1" style="color: #d97706 !important;"></i>
+                <div>
+                    <h6 class="fw-bold mb-1" style="color: #b45309 !important;">Waiting for RET Chair Approval</h6>
+                    <p class="mb-0 text-muted small">Your selected Research and Extension targets are currently being reviewed by the RET Chair. Once approved, they will be forwarded to your Program Chair for final approval.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     {% endif %}
 
     {# ── Chair Approval Alert ───────────────────────────────── #}
@@ -298,12 +349,12 @@
                             {% endfor %}
                             <label
                                 class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow"
-                                style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
+                                style="cursor: pointer; transition: all 0.2s ease; {% if has_submitted or (chair_review and chair_review.overall_status == 'Rejected') %}pointer-events: none; opacity: 0.85;{% endif %}">
                                 <div class="d-flex align-items-start gap-3">
                                     <div class="form-check mt-1">
                                         <input class="form-check-input research-checkbox" type="checkbox"
                                             name="ret_indicators[]" value="{{ ind.indicator_id }}" {% if ns.is_selected
-                                            %}checked{% endif %} {% if has_submitted %}disabled{% endif %}
+                                            %}checked{% endif %} {% if has_submitted or (chair_review and chair_review.overall_status == 'Rejected') %}disabled{% endif %}
                                             style="transform: scale(1.2);">
                                     </div>
                                     <div>
@@ -354,12 +405,12 @@
                             {% endfor %}
                             <label
                                 class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow"
-                                style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
+                                style="cursor: pointer; transition: all 0.2s ease; {% if has_submitted or (chair_review and chair_review.overall_status == 'Rejected') %}pointer-events: none; opacity: 0.85;{% endif %}">
                                 <div class="d-flex align-items-start gap-3">
                                     <div class="form-check mt-1">
                                         <input class="form-check-input extension-checkbox" type="checkbox"
                                             name="ret_indicators[]" value="{{ ind.indicator_id }}" {% if ns.is_selected
-                                            %}checked{% endif %} {% if has_submitted %}disabled{% endif %}
+                                            %}checked{% endif %} {% if has_submitted or (chair_review and chair_review.overall_status == 'Rejected') %}disabled{% endif %}
                                             style="transform: scale(1.2);">
                                     </div>
                                     <div>

@@ -453,43 +453,59 @@
 
 <!-- Phase 4: Commitment Verification -->
 <div id="nav-phase4" class="dashboard-section">
-    <div class="page-header">
-        <h2>Phase 4: Research Commitment Verification</h2>
-        <p>Review and approve the specific research targets selected by faculty members for this semester.</p>
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Phase 4: Research &amp; Extension Commitment Verification</h2>
+            <p>Review and approve the specific research and extension targets selected by faculty members for this semester.</p>
+        </div>
+        <span class="badge bg-warning text-dark"><i class="bi bi-handshake me-1"></i> Commitments</span>
     </div>
     
     <div class="card shadow-sm border-0 mb-4" style="border-top: 4px solid #FFC107 !important;">
             <div class="card-body">
-                <p class="text-muted small">Review and approve the specific research targets selected by faculty members
-                    for this semester.</p>
+                <p class="text-muted small">Review and approve the specific research and extension targets selected by faculty members for this semester.</p>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle border shadow-sm">
                         <thead class="table-dark">
                             <tr>
                                 <th>Faculty Name</th>
                                 <th>Rank</th>
-                                <th width="40%">Chosen Research Targets</th>
+                                <th>Specialization</th>
+                                <th class="text-center">Targets Selected</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {% for draft in pending_ret_drafts %}
                             <tr>
-                                <td class="fw-bold small">Chester Developer</td>
-                                <td class="small">Instructor I</td>
-                                <td class="small text-muted">
-                                    <ul class="mb-0 ps-3">
-                                        <li>Number of research papers published in accredited journals.</li>
-                                    </ul>
-                                </td>
-                                <td><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i>
-                                        Awaiting Review</span></td>
+                                <td class="fw-bold small ps-4">{{ draft.faculty_name }}</td>
+                                <td class="small">{{ draft.academic_rank }}</td>
+                                <td class="small">{{ draft.specialization }}</td>
+                                <td class="text-center fw-bold text-primary small">{{ draft.target_count }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-success me-1"><i class="bi bi-check-circle"></i>
-                                        Approve</button>
-                                    <button class="btn btn-sm btn-danger"><i class="bi bi-x-circle"></i> Reject</button>
+                                    {% if draft.review_status == 'Approved' %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>
+                                    {% elif draft.review_status == 'Rejected' or draft.review_status == 'Returned' %}
+                                    <span class="badge bg-danger"><i class="bi bi-arrow-counterclockwise me-1"></i>Returned</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending Review</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-primary open-ret-review-modal"
+                                            data-emp-id="{{ draft.emp_id }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#reviewRetModal">
+                                        <i class="bi bi-pencil-square me-1"></i>Review RET Targets
+                                    </button>
                                 </td>
                             </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">No regular faculty drafts found.</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -497,6 +513,109 @@
         </div>
     </div>
 </div>
+
+<!-- RET REVIEW MODAL -->
+<div class="modal fade" id="reviewRetModal" tabindex="-1" aria-labelledby="reviewRetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <!-- Modal Header -->
+            <div class="modal-header border-0 py-3" style="background: linear-gradient(135deg, #6f42c1 0%, #59359a 100%);">
+                <div>
+                    <h5 class="modal-title text-white fw-bold mb-0" id="reviewRetModalLabel">
+                        <i class="bi bi-journal-check me-2"></i>
+                        <span id="retModalFacultyName">Loading...</span>
+                    </h5>
+                    <small class="text-white opacity-75" id="retModalFacultyRank"></small>
+                </div>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <span id="retModalStatusBadge" class="badge fs-6 px-3 py-2"></span>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <!-- Loading spinner -->
+            <div id="retModalLoader" class="text-center py-5">
+                <div class="spinner-border" role="status" style="color: #6f42c1;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-3 small">Fetching RET selections...</p>
+            </div>
+
+            <!-- Modal Body (Table and Save All Changes) -->
+            <div class="modal-body p-0" id="retModalBody" style="display:none;">
+                <div class="px-4 pt-4 pb-2">
+                    <h6 class="fw-bold text-secondary text-uppercase mb-3">
+                        <i class="bi bi-list-check me-2"></i>Proposed RET Choices
+                        <small class="text-muted fw-normal ms-2 text-capitalize" id="retModalSubTitle">(Adjust quantities and add remarks per research/extension selection)</small>
+                    </h6>
+                </div>
+
+                <div class="table-responsive px-4 pb-3">
+                    <table class="table table-bordered table-hover align-middle mb-0" id="retReviewItemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="20%">Category</th>
+                                <th width="35%">Indicator</th>
+                                <th class="text-center" width="12%">Original Qty</th>
+                                <th class="text-center" width="13%">Reviewed Qty</th>
+                                <th width="20%">Remarks on this change <span class="text-muted fw-normal">(optional)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="retReviewItemsBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Single Save All button -->
+                <div class="px-4 pb-3 d-flex justify-content-end">
+                    <button type="button" class="btn btn-primary" id="btnRetSaveAll">
+                        <i class="bi bi-save me-2"></i>Save All Changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer border-top bg-light px-4 py-3 d-block" id="retModalFooter" style="display:none;">
+                <h6 class="fw-bold text-secondary text-uppercase mb-2">
+                    <i class="bi bi-stamp me-2"></i>Decision
+                </h6>
+
+                <input type="hidden" id="retModalReviewId">
+                <input type="hidden" id="retModalEmpId">
+
+                <div class="mb-3">
+                    <label for="retOverallRemarks" class="form-label fw-semibold mb-1">
+                        Remarks / Reason
+                        <small class="text-muted fw-normal ms-1">(Optional — faculty will see this message)</small>
+                    </label>
+                    <textarea class="form-control form-control-sm" id="retOverallRemarks" rows="2"
+                        placeholder="e.g. 'Please revise your research indicator counts.' or 'Research & Extension choices approved.'"></textarea>
+                </div>
+
+                <div class="d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btnRetReject" onclick="submitRetDecision('reject')">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Return to Faculty
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnRetApprove" onclick="submitRetDecision('approve')">
+                        <i class="bi bi-check-circle-fill me-1"></i>Approve RET Choices
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for RET decide POST -->
+<form id="retDecisionForm" action="{{ url_for('ret_chair.decide_ipcr') }}" method="POST" style="display:none;">
+    <input type="hidden" name="review_id" id="retDecisionReviewId">
+    <input type="hidden" name="action" id="retDecisionAction">
+    <input type="hidden" name="overall_remarks" id="retDecisionRemarks">
+</form>
+
 {% endif %}
 
 <script>
@@ -607,5 +726,279 @@
         const changeEvent = new Event('change');
         rankSelect.dispatchEvent(changeEvent);
     }
+
+    // ── RET Review Modal Logic ──────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        // Open modal and fetch review data
+        document.querySelectorAll('.open-ret-review-modal').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const empId = this.dataset.empId;
+                loadRetReviewModal(empId);
+            });
+        });
+
+        function loadRetReviewModal(empId) {
+            // Reset modal to loading state
+            document.getElementById('retModalLoader').style.display = 'block';
+            document.getElementById('retModalBody').style.display = 'none';
+            document.getElementById('retModalFooter').style.display = 'none';
+            document.getElementById('retModalFacultyName').textContent = 'Loading...';
+            document.getElementById('retModalFacultyRank').textContent = '';
+            document.getElementById('retOverallRemarks').value = '';
+            document.getElementById('retOverallRemarks').classList.remove('is-invalid');
+            document.getElementById('retReviewItemsBody').innerHTML = '';
+
+            fetch(`/ret_chair/review_ipcr/${empId}`)
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.error) {
+                        alert('Error loading IPCR RET choices: ' + data.error);
+                        return;
+                    }
+                    populateRetModal(data);
+                })
+                .catch(function (err) {
+                    alert('Network error: ' + err);
+                });
+        }
+
+        function populateRetModal(data) {
+            document.getElementById('retModalFacultyName').textContent = data.faculty_name;
+            document.getElementById('retModalFacultyRank').textContent = data.academic_rank;
+            document.getElementById('retModalReviewId').value = data.review_id;
+            document.getElementById('retModalEmpId').value = data.emp_id;
+            document.getElementById('retOverallRemarks').value = data.overall_remarks || '';
+
+            // Status badge
+            const badge = document.getElementById('retModalStatusBadge');
+            const statusMap = {
+                'Approved':    ['bg-success', 'check-circle-fill',      'Approved by RET'],
+                'Rejected':    ['bg-danger',  'x-circle-fill',          'Returned'],
+                'Pending':     ['bg-warning text-dark', 'hourglass-split', 'Pending Review'],
+                'Pending Review': ['bg-warning text-dark', 'hourglass-split', 'Pending Review']
+            };
+            const s = statusMap[data.overall_status] || statusMap['Pending'];
+            badge.className = `badge fs-6 px-3 py-2 ${s[0]}`;
+            badge.innerHTML = `<i class="bi bi-${s[1]} me-1"></i>${s[2]}`;
+
+            const decided = (data.overall_status === 'Approved');
+
+            // Disable overall buttons if approved
+            document.getElementById('btnRetApprove').disabled = decided;
+            document.getElementById('btnRetReject').disabled = decided;
+            
+            // Build items table
+            const tbody = document.getElementById('retReviewItemsBody');
+            tbody.innerHTML = '';
+
+            if (data.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No Research/Extension targets found.</td></tr>';
+            } else {
+                let lastCategory = null;
+                data.items.forEach(function (item) {
+                    const qtyChanged = item.reviewed_quantity !== item.original_quantity;
+                    const isInputDisabled = decided;
+
+                    // Insert category banner row if category changes
+                    if (item.category_name !== lastCategory) {
+                        lastCategory = item.category_name;
+                        const headerTr = document.createElement('tr');
+                        headerTr.className = 'table-secondary';
+                        headerTr.innerHTML = `
+                            <td colspan="5" class="fw-bold text-uppercase text-dark py-2 px-3" style="font-size: 0.85rem; letter-spacing: 0.5px; background-color: #e9ecef;">
+                                ${item.category_name}
+                            </td>
+                        `;
+                        tbody.appendChild(headerTr);
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.id = `ret-item-row-${item.item_id}`;
+
+                    tr.innerHTML = `
+                        <td><span class="badge bg-light text-dark border small">${item.category_name}</span></td>
+                        <td class="small fw-semibold">${item.indicator_description}</td>
+                        <td class="text-center text-muted">${item.original_quantity}</td>
+                        <td class="text-center">
+                            <input type="number" class="form-control form-control-sm text-center fw-bold ret-reviewed-qty-input"
+                                   id="ret-qty-${item.item_id}"
+                                   value="${item.reviewed_quantity}"
+                                   min="0"
+                                   data-item-id="${item.item_id}"
+                                   data-original="${item.original_quantity}"
+                                   data-initial-val="${item.reviewed_quantity}"
+                                   ${isInputDisabled ? 'disabled' : ''}>
+                            ${qtyChanged ? `<small class="ret-qty-edited-tag text-warning d-block mt-1"><i class="bi bi-pencil-fill"></i> Edited</small>` : '<small class="ret-qty-edited-tag" style="display:none"></small>'}
+                        </td>
+                        <td>
+                            <textarea class="form-control form-control-sm ret-item-remarks-input"
+                                      id="ret-remarks-${item.item_id}"
+                                      rows="2"
+                                      placeholder="Optional note on this change..."
+                                      data-item-id="${item.item_id}"
+                                      data-initial-remarks="${(item.item_remarks || '').trim()}"
+                                      ${isInputDisabled ? 'disabled' : ''}>${item.item_remarks || ''}</textarea>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Hide Save All button if decided
+            const saveAllBtn = document.getElementById('btnRetSaveAll');
+            if (saveAllBtn) {
+                saveAllBtn.style.display = decided ? 'none' : '';
+                saveAllBtn.disabled = decided;
+            }
+
+            // Show modal body and footer
+            document.getElementById('retModalLoader').style.display = 'none';
+            document.getElementById('retModalBody').style.display = 'block';
+            document.getElementById('retModalFooter').style.display = 'block';
+        }
+
+        function saveAllRetEdits() {
+            const inputs = document.querySelectorAll('.ret-reviewed-qty-input:not([disabled])');
+            if (inputs.length === 0) return Promise.resolve({ success: true });
+
+            // Filter to only include inputs that have actually been modified
+            const modifiedInputs = Array.from(inputs).filter(function (inp) {
+                const val = parseInt(inp.value, 10);
+                const initialVal = parseInt(inp.dataset.initialVal, 10);
+                
+                const itemId = inp.dataset.itemId;
+                const remarksTextarea = document.getElementById(`ret-remarks-${itemId}`);
+                const remarks = remarksTextarea ? remarksTextarea.value.trim() : '';
+                const initialRemarks = remarksTextarea ? (remarksTextarea.dataset.initialRemarks || '').trim() : '';
+                
+                return val !== initialVal || remarks !== initialRemarks;
+            });
+
+            // If no items were modified, return success immediately
+            if (modifiedInputs.length === 0) return Promise.resolve({ success: true });
+
+            // Validate modified inputs
+            let hasError = false;
+            modifiedInputs.forEach(function (inp) {
+                const val = parseInt(inp.value, 10);
+                if (isNaN(val) || val < 0) {
+                    inp.classList.add('is-invalid');
+                    hasError = true;
+                } else {
+                    inp.classList.remove('is-invalid');
+                }
+            });
+            if (hasError) return Promise.resolve({ success: false, message: 'Invalid quantity values.' });
+
+            // Build array of save promises
+            const savePromises = modifiedInputs.map(function (inp) {
+                const itemId  = inp.dataset.itemId;
+                const qty     = parseInt(inp.value, 10);
+                const remarks = (document.getElementById(`ret-remarks-${itemId}`) || {}).value || '';
+
+                return fetch('/ret_chair/edit_review_item', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_id: parseInt(itemId), reviewed_quantity: qty, item_remarks: remarks.trim() }),
+                })
+                .then(function (r) { 
+                    if (!r.ok) {
+                        return r.text().then(text => { throw new Error(text || `HTTP ${r.status}`); });
+                    }
+                    return r.json(); 
+                })
+                .then(function (res) {
+                    if (res.success) {
+                        inp.dataset.initialVal = qty;
+                        const remarksTextarea = document.getElementById(`ret-remarks-${itemId}`);
+                        if (remarksTextarea) {
+                            remarksTextarea.dataset.initialRemarks = remarks.trim();
+                        }
+
+                        const original = parseInt(inp.dataset.original || '0', 10);
+                        const tag = inp.parentElement.querySelector('.ret-qty-edited-tag');
+                        if (tag) {
+                            if (qty !== original) {
+                                tag.style.display = '';
+                                tag.className = 'ret-qty-edited-tag text-warning d-block mt-1';
+                                tag.innerHTML = '<i class="bi bi-pencil-fill"></i> Edited';
+                            } else {
+                                tag.style.display = 'none';
+                            }
+                        }
+                    }
+                    return res;
+                });
+            });
+
+            return Promise.all(savePromises)
+                .then(function (results) {
+                    const failed = results.filter(r => !r.success);
+                    if (failed.length > 0) {
+                        return {
+                            success: false,
+                            message: failed.map(r => r.message || 'Save failed.').join('\n')
+                        };
+                    }
+                    return { success: true };
+                })
+                .catch(function (err) {
+                    return { success: false, message: err.message || err };
+                });
+        }
+
+        // Save All Changes (single button)
+        document.getElementById('btnRetSaveAll').addEventListener('click', function () {
+            const btn = this;
+            const originalLabel = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+            saveAllRetEdits().then(function (res) {
+                btn.disabled = false;
+                if (res.success) {
+                    btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>All Changes Saved';
+                    btn.classList.replace('btn-primary', 'btn-success');
+                    setTimeout(function () {
+                        btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
+                        btn.classList.replace('btn-success', 'btn-primary');
+                    }, 2000);
+                } else {
+                    btn.innerHTML = originalLabel;
+                    alert('Failed to save some changes:\n' + res.message);
+                }
+            });
+        });
+
+        function proceedRetDecision(action, remarks) {
+            const btnApprove = document.getElementById('btnRetApprove');
+            const btnReject = document.getElementById('btnRetReject');
+            if (btnApprove) btnApprove.disabled = true;
+            if (btnReject) btnReject.disabled = true;
+
+            saveAllRetEdits().then(function (res) {
+                if (!res.success) {
+                    if (btnApprove) btnApprove.disabled = false;
+                    if (btnReject) btnReject.disabled = false;
+                    alert('Could not process decision because target changes failed to save:\n' + res.message);
+                    return;
+                }
+
+                document.getElementById('retDecisionReviewId').value = document.getElementById('retModalReviewId').value;
+                document.getElementById('retDecisionAction').value = action;
+                document.getElementById('retDecisionRemarks').value = remarks;
+                document.getElementById('retDecisionForm').submit();
+            });
+        }
+
+        window.submitRetDecision = function (action) {
+            const remarks = document.getElementById('retOverallRemarks').value.trim();
+            if (action === 'approve') {
+                proceedRetDecision('approve', remarks);
+            } else {
+                proceedRetDecision('reject', remarks);
+            }
+        };
+    });
 </script>
 {% endblock %}

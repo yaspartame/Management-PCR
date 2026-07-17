@@ -214,6 +214,7 @@ def review_ipcr(emp_id):
                 'original_quantity': item['original_quantity'],
                 'reviewed_quantity': item['reviewed_quantity'],
                 'item_remarks': item['item_remarks'] or '',
+                'draft_status': item['draft_status'],
             })
 
         return jsonify({

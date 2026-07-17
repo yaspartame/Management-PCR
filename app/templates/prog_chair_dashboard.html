@@ -751,16 +751,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 const rankB = catOrder[b.category_name] || 6;
                 if (rankA !== rankB) return rankA - rankB;
                 return a.item_id - b.item_id;
-            });
+            });            let lastCategory = null;
+            let hasUnapprovedRet = false;
 
-            let lastCategory = null;
             data.items.forEach(function (item) {
                 const qtyChanged = item.reviewed_quantity !== item.original_quantity;
                 
                 // Research and Extension categories are read-only for Program Chair review
                 const catLower = (item.category_name || '').toLowerCase();
-                const isRet = catLower.includes('research') || catLower.includes('extension');
+                const isRet = catLower.includes('research') || catLower.includes('extension') || catLower.includes('training') || catLower.includes('advisory');
                 const isInputDisabled = decided || isRet || window.isWaiting;
+
+                if (isRet && item.draft_status !== 'Approved') {
+                    hasUnapprovedRet = true;
+                }
 
                 // Insert category banner row if category changes
                 if (item.category_name !== lastCategory) {
@@ -778,9 +782,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 const tr = document.createElement('tr');
                 tr.id = `item-row-${item.item_id}`;
 
+                let retTag = '';
+                if (isRet) {
+                    if (item.draft_status === 'Approved') {
+                        retTag = `<span class="badge bg-success bg-opacity-10 text-success border border-success ms-2" style="font-size:0.75rem;"><i class="bi bi-check-circle-fill me-1"></i>Approved by RET</span>`;
+                    } else {
+                        retTag = `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning ms-2" style="font-size:0.75rem;"><i class="bi bi-hourglass-split me-1"></i>Awaiting RET Approval</span>`;
+                    }
+                }
+
                 tr.innerHTML = `
                     <td><span class="badge bg-light text-dark border small">${item.category_name}</span></td>
-                    <td class="small fw-semibold">${item.indicator_description}</td>
+                    <td class="small fw-semibold">${item.indicator_description}${retTag}</td>
                     <td class="text-center text-muted">${item.original_quantity}</td>
                     <td class="text-center">
                         <input type="number" class="form-control form-control-sm text-center fw-bold reviewed-qty-input"
@@ -806,6 +819,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 tbody.appendChild(tr);
             });
 
+            // Set up button warning for unapproved RET
+            const btnApprove = document.getElementById('btnApprove');
+            if (btnApprove) {
+                if (hasUnapprovedRet) {
+                    btnApprove.disabled = true;
+                    btnApprove.setAttribute('title', 'Cannot approve. Awaiting RET Chair approval of Research/Extension targets.');
+                    
+                    let retAlert = document.getElementById('retChairAlertMessage');
+                    if (!retAlert) {
+                        retAlert = document.createElement('div');
+                        retAlert.id = 'retChairAlertMessage';
+                        retAlert.className = 'alert alert-warning py-2 px-3 small border-0 shadow-sm mt-3 mb-0 w-100';
+                        retAlert.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Awaiting RET Chair Approval:</strong> You cannot approve this draft IPCR until all Research and Extension selections are verified and approved by the RET Chair.';
+                        btnApprove.parentElement.parentElement.insertBefore(retAlert, btnApprove.parentElement);
+                    } else {
+                        retAlert.style.display = '';
+                    }
+                } else {
+                    btnApprove.disabled = decided;
+                    btnApprove.removeAttribute('title');
+                    const retAlert = document.getElementById('retChairAlertMessage');
+                    if (retAlert) {
+                        retAlert.style.display = 'none';
+                    }
+                }
+            }
+
         }
 
         // Hide Save All button if waiting or decided
@@ -819,9 +859,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('modalLoader').style.display = 'none';
         document.getElementById('modalBody').style.display = 'block';
         document.getElementById('modalFooter').style.display = 'block';
-    }
-
-    // Helper to save all edits on review items
+    }    // Helper to save all edits on review items
     function saveAllEdits() {
         const inputs = document.querySelectorAll('.reviewed-qty-input:not([disabled])');
         if (inputs.length === 0) return Promise.resolve({ success: true });
