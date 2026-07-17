@@ -414,3 +414,32 @@ def save_designated_faculty_assignment(cursor, conn, term_id, emp_id, indicator_
     except Exception as e:
         conn.rollback()
         return False, f"Error saving assignment: {str(e)}"
+
+
+def get_college_wide_allocations_tracker(cursor, term_id):
+    """
+    Get actual target distributions (from tbl_draft_targets) for indicators
+    that have a College-Wide quota set in tbl_cascaded_quotas.
+    """
+    from app.models.connection import timed_query
+    query = """
+        SELECT 
+            dt.indicator_id,
+            dt.emp_id,
+            CONCAT(ep.first_name, ' ', ep.last_name) AS faculty_name,
+            ep.assigned_program,
+            dt.proposed_quantity,
+            dt.review_status
+        FROM tbl_draft_targets dt
+        JOIN tbl_employee_profiles ep ON dt.emp_id = ep.emp_id
+        JOIN tbl_system_access sa ON ep.emp_id = sa.emp_id
+        WHERE sa.system_role = 'DESIGNATED_FACULTY'
+          AND ep.leave_status = 'Active'
+          AND dt.indicator_id IN (
+              SELECT indicator_id 
+              FROM tbl_cascaded_quotas 
+              WHERE term_id = %s AND assigned_to_role = 'College-Wide' AND total_target_value > 0
+          )
+        ORDER BY ep.last_name, ep.first_name
+    """
+    return timed_query(cursor, query, (term_id,), label="get_college_wide_allocations_tracker")

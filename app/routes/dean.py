@@ -65,6 +65,17 @@ def dean_dashboard():
     emp_ids = [fac['emp_id'] for fac in designated_faculty_list]
     designated_assignments = get_designated_faculty_assignments_batch(cursor, term_id, emp_ids)
 
+    # Fetch college-wide allocations for tracking
+    allocations_list = get_college_wide_allocations_tracker(cursor, term_id)
+    
+    # Structure them by indicator_id: {indicator_id: [allocations]}
+    college_wide_allocations = {}
+    for alloc in allocations_list:
+        ind_id = alloc['indicator_id']
+        if ind_id not in college_wide_allocations:
+            college_wide_allocations[ind_id] = []
+        college_wide_allocations[ind_id].append(alloc)
+
     cursor.close()
     conn.close()
 
@@ -79,7 +90,8 @@ def dean_dashboard():
                            draft_submissions=draft_submissions,
                            college_wide_quotas=college_wide_quotas,
                            designated_faculty_list=designated_faculty_list,
-                           designated_assignments=designated_assignments)
+                           designated_assignments=designated_assignments,
+                           college_wide_allocations=college_wide_allocations)
 
 
 @dean_bp.route('/cascade_quotas', methods=['POST'])
@@ -236,10 +248,27 @@ def review_draft_fetch(emp_id):
         designation = fac[2] if fac else ''
         assigned_program = fac[3] if fac else ''
 
+        # Get college-wide quotas
+        college_wide = get_college_wide_cascaded_quotas(cursor, term_id)
+        college_wide_ids = {q['indicator_id'] for q in college_wide}
+
         # Also get ALL available master indicators for this term
         all_indicators = get_available_master_indicators(cursor, term_id)
         picked_ids = {i['indicator_id'] for i in items}
-        unpicked = [ind for ind in all_indicators if ind['indicator_id'] not in picked_ids]
+        
+        # Filter unpicked to exclude picked AND college wide targets
+        unpicked = [ind for ind in all_indicators if ind['indicator_id'] not in picked_ids and ind['indicator_id'] not in college_wide_ids]
+
+        # Filter college wide to only show those that are unpicked
+        college_wide_unpicked = []
+        for q in college_wide:
+            if q['indicator_id'] not in picked_ids:
+                college_wide_unpicked.append({
+                    'indicator_id': q['indicator_id'],
+                    'indicator_description': q['indicator_description'],
+                    'category_name': q['category_name'],
+                    'total_target_value': q['total_target_value']
+                })
 
         serializable_items = []
         for item in items:
@@ -266,6 +295,14 @@ def review_draft_fetch(emp_id):
             'overall_remarks': overall_remarks or '',
             'items': serializable_items,
             'unpicked': unpicked,
+            'college_wide_unpicked': college_wide_unpicked,
+            'college_wide_all': [{
+                'indicator_id': q['indicator_id'],
+                'indicator_description': q['indicator_description'],
+                'category_name': q['category_name'],
+                'total_target_value': q['total_target_value']
+            } for q in college_wide],
+            'college_wide_ids': list(college_wide_ids),
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -173,10 +173,10 @@
                                 </td>
                                 <td>
                                     <input type="number"
-                                        class="form-control form-control-sm text-success shadow-sm fw-bold"
+                                        class="form-control form-control-sm text-success shadow-sm fw-bold quota-input"
                                         name="college[]" min="0"
                                         value="{{ existing_quotas.get(indicator.indicator_id, {}).get('College-Wide', 0) }}"
-                                        disabled>
+                                        data-indicator="{{ indicator.indicator_id }}" onchange="updateTotals()">
                                 </td>
                             </tr>
                             {% endfor %}
@@ -480,6 +480,29 @@
                     </table>
                 </div>
 
+                <!-- Section: College-Wide Targets -->
+                <div class="px-4 pb-2">
+                    <h6 class="fw-bold text-secondary text-uppercase mb-3">
+                        <i class="bi bi-globe me-2"></i>College-Wide Targets
+                        <small class="text-muted fw-normal ms-2">(Cascaded college-wide targets. You can assign them to this faculty here.)</small>
+                    </h6>
+                </div>
+                <div class="table-responsive px-4 pb-3">
+                    <table class="table table-bordered table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="17%">Category</th>
+                                <th width="63%">Indicator</th>
+                                <th class="text-center" width="10%">Quota</th>
+                                <th class="text-center" width="10%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collegeWideItemsBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
                 <!-- Save All button removed — auto-saves on decision -->
             </div>
 
@@ -595,59 +618,95 @@
     <div class="card shadow-sm border-0" style="border-top: 4px solid #4F8CFF !important;">
         <div class="card-header bg-white border-0 py-3">
             <h5 class="fw-bold mb-0 text-primary">
-                <i class="bi bi-people-fill me-2"></i>Designated Faculty Assignment
+                <i class="bi bi-pie-chart-fill me-2"></i>College-Wide Distribution Tracker
             </h5>
-            <small class="text-muted">Set target quantities for each designated faculty member per College-Wide
-                indicator.</small>
+            <small class="text-muted">Track how cascaded College-Wide targets are distributed across Designated Faculty and if quotas are met.</small>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body p-3">
             {% for q in college_wide_quotas %}
-            <div class="p-3 border-bottom {% if loop.first %}pt-0{% endif %}">
-                <h6 class="fw-bold text-success mb-2">
-                    <i class="bi bi-bullseye me-1"></i> {{ q.indicator_description }}
-                    <span class="badge bg-success ms-2">Quota: {{ q.total_target_value }}</span>
-                </h6>
+            {% set allocs = college_wide_allocations.get(q.indicator_id, []) %}
+            {% set total_allocated = namespace(val=0) %}
+            {% for a in allocs %}
+                {% set total_allocated.val = total_allocated.val + a.proposed_quantity %}
+            {% endfor %}
+            {% set percent = (total_allocated.val / q.total_target_value * 100) | round(0) | int %}
+            
+            <div class="p-3 mb-4 rounded border shadow-sm bg-white">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                    <div style="flex: 1; min-width: 250px;">
+                        <h6 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-bullseye text-success me-1"></i> {{ q.indicator_description }}
+                        </h6>
+                        <span class="badge bg-secondary small">{{ q.category_name }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-end">
+                            <span class="small text-muted d-block">Distribution Progress</span>
+                            <span class="fw-bold fs-5 {% if total_allocated.val >= q.total_target_value %}text-success{% else %}text-warning{% endif %}">
+                                {{ total_allocated.val }} / {{ q.total_target_value }}
+                            </span>
+                        </div>
+                        <div>
+                            {% if total_allocated.val >= q.total_target_value %}
+                            <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Fully Distributed</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Under Allocated (-{{ q.total_target_value - total_allocated.val }})</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress mb-3 shadow-sm" style="height: 10px;">
+                    <div class="progress-bar {% if total_allocated.val >= q.total_target_value %}bg-success{% else %}bg-warning{% endif %}" 
+                         role="progressbar" 
+                         style="width: {{ [percent, 100]|min }}%;" 
+                         aria-valuenow="{{ total_allocated.val }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ q.total_target_value }}"></div>
+                </div>
+
+                {% if allocs %}
                 <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0">
+                    <table class="table table-sm table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Faculty</th>
-                                <th>Rank</th>
+                                <th>Faculty Member</th>
                                 <th>Program</th>
-                                <th class="text-center" width="130">Assigned Qty</th>
-                                <th class="text-center" width="100">Action</th>
+                                <th class="text-center" width="150">Allocated Qty</th>
+                                <th class="text-center" width="150">Review Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for fac in designated_faculty_list %}
+                            {% for a in allocs %}
                             <tr>
-                                <td class="fw-bold small">{{ fac.first_name }} {{ fac.last_name }}</td>
-                                <td class="small">{{ fac.academic_rank }}</td>
-                                <td class="small">{{ fac.assigned_program }}</td>
+                                <td class="fw-semibold small">{{ a.faculty_name }}</td>
+                                <td class="small">{{ a.assigned_program }}</td>
+                                <td class="text-center fw-bold text-primary small">{{ a.proposed_quantity }}</td>
                                 <td class="text-center">
-                                    <form id="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}"
-                                        action="{{ url_for('dean.assign_designated_target') }}" method="POST"
-                                        class="m-0">
-                                        <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
-                                        <input type="hidden" name="emp_id" value="{{ fac.emp_id }}">
-                                        <input type="hidden" name="indicator_id" value="{{ q.indicator_id }}">
-                                        <input type="number" name="quantity"
-                                            class="form-control form-control-sm text-center fw-bold shadow-sm"
-                                            value="{{ designated_assignments.get(fac.emp_id, {}).get(q.indicator_id, 0) }}"
-                                            min="0" style="width: 100px; margin: 0 auto;">
-                                    </form>
-                                </td>
-                                <td class="text-center">
-                                    <button type="submit" form="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}"
-                                        class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-save"></i> Save
-                                    </button>
+                                    {% if a.review_status == 'Approved' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Approved
+                                    </span>
+                                    {% elif a.review_status == 'Rejected' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 small">
+                                        <i class="bi bi-x-circle-fill me-1"></i>Returned
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 small">
+                                        <i class="bi bi-hourglass-split me-1"></i>Pending Review
+                                    </span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center py-3 bg-light rounded border border-dashed">
+                    <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>This target has not been allocated to any faculty yet. Review drafts to assign it.</p>
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -813,6 +872,33 @@
             }
         });
 
+        // Event delegation for college-wide targets
+        document.getElementById('collegeWideItemsBody')?.addEventListener('click', function (e) {
+            const btn = e.target.closest('.add-college-wide-btn');
+            if (btn) {
+                const indId = parseInt(btn.getAttribute('data-indicator-id'));
+                const index = deanReviewData.college_wide_unpicked.findIndex(x => x.indicator_id === indId);
+                if (index > -1) {
+                    const ind = deanReviewData.college_wide_unpicked[index];
+                    deanReviewData.college_wide_unpicked.splice(index, 1);
+
+                    deanReviewItems.push({
+                        item_id: null,
+                        indicator_id: ind.indicator_id,
+                        indicator_description: ind.indicator_description,
+                        category_name: ind.category_name,
+                        original_quantity: -1,
+                        reviewed_quantity: 1,
+                        item_remarks: '',
+                        is_new: true
+                    });
+
+                    populateReviewItems(deanReviewItems);
+                    populateCollegeWideItems(deanReviewData.college_wide_unpicked);
+                }
+            }
+        });
+
         // Event delegation for removing Dean-added review items
         document.getElementById('reviewItemsBody')?.addEventListener('click', function (e) {
             const btn = e.target.closest('.remove-dean-added-btn');
@@ -823,21 +909,41 @@
                     const item = deanReviewItems[index];
                     deanReviewItems.splice(index, 1);
 
-                    deanReviewData.unpicked.push({
-                        indicator_id: item.indicator_id,
-                        indicator_description: item.indicator_description,
-                        category_name: item.category_name
-                    });
-
-                    deanReviewData.unpicked.sort((a, b) => {
-                        if (a.category_name !== b.category_name) {
-                            return a.category_name.localeCompare(b.category_name);
+                    // Check if this indicator is originally a College-Wide target
+                    if (deanReviewData.college_wide_ids && deanReviewData.college_wide_ids.includes(indId)) {
+                        const origCW = deanReviewData.college_wide_all.find(x => x.indicator_id === indId);
+                        if (origCW) {
+                            deanReviewData.college_wide_unpicked.push({
+                                indicator_id: origCW.indicator_id,
+                                indicator_description: origCW.indicator_description,
+                                category_name: origCW.category_name,
+                                total_target_value: origCW.total_target_value
+                            });
+                            deanReviewData.college_wide_unpicked.sort((a, b) => {
+                                if (a.category_name !== b.category_name) {
+                                    return a.category_name.localeCompare(b.category_name);
+                                }
+                                return a.indicator_id - b.indicator_id;
+                            });
                         }
-                        return a.indicator_id - b.indicator_id;
-                    });
+                    } else {
+                        deanReviewData.unpicked.push({
+                            indicator_id: item.indicator_id,
+                            indicator_description: item.indicator_description,
+                            category_name: item.category_name
+                        });
+
+                        deanReviewData.unpicked.sort((a, b) => {
+                            if (a.category_name !== b.category_name) {
+                                return a.category_name.localeCompare(b.category_name);
+                            }
+                            return a.indicator_id - b.indicator_id;
+                        });
+                    }
 
                     populateReviewItems(deanReviewItems);
                     populateUnpickedItems(deanReviewData.unpicked);
+                    populateCollegeWideItems(deanReviewData.college_wide_unpicked);
                 }
             }
         });
@@ -930,6 +1036,9 @@
 
                 // Populate unpicked indicators
                 populateUnpickedItems(data.unpicked || []);
+
+                // Populate college wide targets
+                populateCollegeWideItems(data.college_wide_unpicked || []);
 
                 loader.style.display = 'none';
                 body.style.display = 'block';
@@ -1026,6 +1135,35 @@
                 <td>${ind.indicator_description}</td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-success add-unpicked-btn fw-bold"
+                            data-indicator-id="${ind.indicator_id}">
+                        <i class="bi bi-plus-lg me-1"></i> Add
+                    </button>
+                </td>
+            </tr>
+        `;
+        });
+    }
+
+    function populateCollegeWideItems(items) {
+        const tbody = document.getElementById('collegeWideItemsBody');
+        tbody.innerHTML = '';
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No available College-Wide targets for this term or all have been selected.</td></tr>';
+            return;
+        }
+        let currentCat = '';
+        items.forEach(ind => {
+            if (ind.category_name !== currentCat) {
+                currentCat = ind.category_name;
+                tbody.innerHTML += `<tr class="table-secondary"><td colspan="4" class="fw-bold text-uppercase text-dark small py-2">${currentCat}</td></tr>`;
+            }
+            tbody.innerHTML += `
+            <tr class="table-info">
+                <td class="small text-muted">${ind.category_name || ''}</td>
+                <td>${ind.indicator_description}</td>
+                <td class="text-center"><span class="badge bg-success">${ind.total_target_value}</span></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-success add-college-wide-btn fw-bold"
                             data-indicator-id="${ind.indicator_id}">
                         <i class="bi bi-plus-lg me-1"></i> Add
                     </button>
