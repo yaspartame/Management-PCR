@@ -33,9 +33,8 @@ def designated_dashboard():
 
     dpcr_targets = []
     has_submitted = False
-
+    can_edit = True
     dean_review = None
-    dean_review_items = {}
 
     if active_term:
         term_id = active_term['term_id']
@@ -48,11 +47,32 @@ def designated_dashboard():
         """, (emp_id, term_id), label="designated_submit_check")
         has_submitted = sub_result[0]['cnt'] > 0 if sub_result else False
 
-        if has_submitted:
-            # Load draft targets with Dean's review remarks if available
-            dpcr_targets = timed_query(cursor, """
+        # Fetch Dean's overall review status & remarks
+        dr_result = timed_query(cursor, """
+            SELECT overall_status, overall_remarks
+            FROM tbl_ipcr_dean_review
+            WHERE emp_id = %s AND term_id = %s
+            ORDER BY reviewed_at DESC LIMIT 1
+        """, (emp_id, term_id), label="designated_dean_review")
+        if dr_result:
+            dean_review = dr_result[0]
+
+        # Determine editability: allowed if not submitted, or if returned/rejected by Dean
+        if not has_submitted:
+            can_edit = True
+        else:
+            if dean_review and dean_review['overall_status'] == 'Rejected':
+                can_edit = True
+            else:
+                can_edit = False
+
+        if can_edit:
+            # Load standard selectable indicators
+            standard_targets = get_designated_selectable_indicators(cursor, term_id)
+            
+            draft_targets = timed_query(cursor, """
                 SELECT dt.draft_id as target_id, dt.indicator_id, dt.proposed_quantity as total_target_value, dt.review_status as status,
-                       mi.indicator_description, tc.category_name,
+                       mi.indicator_description, tc.category_name, mi.is_custom,
                        dri.item_remarks as dean_remarks, dri.original_quantity, dri.reviewed_quantity
                 FROM tbl_draft_targets dt
                 JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
@@ -61,20 +81,54 @@ def designated_dashboard():
                 WHERE dt.emp_id = %s AND mi.term_id = %s
                 ORDER BY tc.category_name, mi.indicator_id
             """, (emp_id, term_id), label="designated_load_drafts")
-
-            # Fetch Dean's overall review status & remarks
-            dr_result = timed_query(cursor, """
-                SELECT overall_status, overall_remarks
-                FROM tbl_ipcr_dean_review
-                WHERE emp_id = %s AND term_id = %s
-                ORDER BY reviewed_at DESC LIMIT 1
-            """, (emp_id, term_id), label="designated_dean_review")
-            if dr_result:
-                dean_review = dr_result[0]
+            
+            for d in draft_targets:
+                if d['category_name'] == 'Custom Target Items':
+                    d['category_name'] = 'Support Functions'
+            
+            draft_map = {d['indicator_id']: d for d in draft_targets}
+            
+            dpcr_targets = []
+            for t in standard_targets:
+                ind_id = t['indicator_id']
+                if ind_id in draft_map:
+                    t['total_target_value'] = draft_map[ind_id]['total_target_value']
+                    t['status'] = draft_map[ind_id]['status']
+                    t['dean_remarks'] = draft_map[ind_id]['dean_remarks']
+                    t['original_quantity'] = draft_map[ind_id]['original_quantity']
+                    t['reviewed_quantity'] = draft_map[ind_id]['reviewed_quantity']
+                    t['is_selected'] = True
+                else:
+                    t['total_target_value'] = 0
+                    t['status'] = None
+                    t['dean_remarks'] = None
+                    t['original_quantity'] = None
+                    t['reviewed_quantity'] = None
+                    t['is_selected'] = False
+                dpcr_targets.append(t)
+                
+            # Add custom targets from drafts
+            for d in draft_targets:
+                if d['is_custom']:
+                    d['is_selected'] = True
+                    dpcr_targets.append(d)
         else:
-            dpcr_targets = get_designated_selectable_indicators(cursor, term_id)
+            # If they cannot edit, we just load their submitted drafts (as before)
+            dpcr_targets = timed_query(cursor, """
+                SELECT dt.draft_id as target_id, dt.indicator_id, dt.proposed_quantity as total_target_value, dt.review_status as status,
+                       mi.indicator_description, tc.category_name, mi.is_custom,
+                       dri.item_remarks as dean_remarks, dri.original_quantity, dri.reviewed_quantity
+                FROM tbl_draft_targets dt
+                JOIN tbl_master_indicators mi ON dt.indicator_id = mi.indicator_id
+                LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+                LEFT JOIN tbl_ipcr_dean_review_items dri ON dt.draft_id = dri.draft_id
+                WHERE dt.emp_id = %s AND mi.term_id = %s
+                ORDER BY tc.category_name, mi.indicator_id
+            """, (emp_id, term_id), label="designated_load_drafts")
             for t in dpcr_targets:
-                t['total_target_value'] = 0
+                t['is_selected'] = True
+                if t['category_name'] == 'Custom Target Items':
+                    t['category_name'] = 'Support Functions'
 
     cursor.close()
     conn.close()
@@ -87,6 +141,7 @@ def designated_dashboard():
                            active_term=active_term,
                            dpcr_targets=dpcr_targets,
                            has_submitted=has_submitted,
+                           can_edit=can_edit,
                            dean_review=dean_review)
 
 
@@ -113,13 +168,15 @@ def submit_designated_ipcr_route():
     # Parse custom targets added on the frontend
     custom_descriptions = request.form.getlist('custom_descriptions[]')
     custom_quantities = request.form.getlist('custom_quantities[]')
+    custom_categories = request.form.getlist('custom_categories[]')
     
     custom_targets = []
-    for desc, qty in zip(custom_descriptions, custom_quantities):
+    for desc, qty, cat in zip(custom_descriptions, custom_quantities, custom_categories):
         if desc.strip():
             custom_targets.append({
                 'description': desc.strip(),
-                'proposed_quantity': int(qty) if str(qty).isdigit() else 1
+                'proposed_quantity': int(qty) if str(qty).isdigit() else 1,
+                'category_name': cat.strip()
             })
 
     conn = get_db_connection()

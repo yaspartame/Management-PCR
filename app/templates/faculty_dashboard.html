@@ -34,18 +34,23 @@
 
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card shadow-sm border-0 border-start border-primary border-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div class="card shadow-sm border-0 border-start border-primary border-4"
+                style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body py-4">
-                    <h6 class="text-primary fw-bold text-uppercase mb-1"><i class="bi bi-person-badge me-2"></i>My Profile</h6>
-                    <p class="mb-1 text-muted small"><strong>Rank:</strong> <span class="text-dark">{{ academic_rank or 'Not Assigned' }}</span></p>
-                    <p class="mb-0 text-muted small"><strong>Specialization:</strong> <span class="text-dark">{{ specialization or 'None' }}</span></p>
+                    <h6 class="text-primary fw-bold text-uppercase mb-1"><i class="bi bi-person-badge me-2"></i>My
+                        Profile</h6>
+                    <p class="mb-1 text-muted small"><strong>Rank:</strong> <span class="text-dark">{{ academic_rank or
+                            'Not Assigned' }}</span></p>
+                    <p class="mb-0 text-muted small"><strong>Specialization:</strong> <span class="text-dark">{{
+                            specialization or 'None' }}</span></p>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
                 <div class="card-body py-4 d-flex flex-column justify-content-center">
-                    <h6 class="text-success fw-bold text-uppercase mb-1"><i class="bi bi-calendar-check me-2"></i>Current Term</h6>
+                    <h6 class="text-success fw-bold text-uppercase mb-1"><i
+                            class="bi bi-calendar-check me-2"></i>Current Term</h6>
                     {% if active_term %}
                     <h3 class="text-dark mb-1">{{ active_term.academic_year }}</h3>
                     <p class="text-muted small mb-0">{{ active_term.semester }}</p>
@@ -76,38 +81,40 @@
             <p>Review your assigned targets and select your RET components.</p>
         </div>
         {% if is_locked %}
-            <span class="badge bg-dark px-3 py-2 fs-6 shadow-sm">
-                <i class="bi bi-lock-fill me-2"></i>Approved &amp; Locked
-            </span>
+        <span class="badge bg-dark px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-lock-fill me-2"></i>Approved &amp; Locked
+        </span>
         {% elif chair_review and chair_review.overall_status == 'Approved' %}
-            <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">
-                <i class="bi bi-check-circle-fill me-2"></i>Approved by Program Chair
-            </span>
+        <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i>Approved by Program Chair
+        </span>
         {% elif chair_review and chair_review.overall_status == 'Rejected' %}
-            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
-                <i class="bi bi-arrow-counterclockwise me-2"></i>Returned by Program Chair
-            </span>
+        <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Returned by Program Chair
+        </span>
         {% elif has_submitted %}
-            <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm">
-                <i class="bi bi-hourglass-split me-2"></i>Waiting for Review
-            </span>
+        <span class="badge bg-warning text-dark px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-hourglass-split me-2"></i>Waiting for Review
+        </span>
         {% else %}
-            <span class="badge bg-secondary px-3 py-2 fs-6 shadow-sm">
-                <i class="bi bi-pencil-square me-2"></i>Draft Mode
-            </span>
+        <span class="badge bg-secondary px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-pencil-square me-2"></i>Draft Mode
+        </span>
         {% endif %}
     </div>
 
     {# ── Chair Rejection Alert ──────────────────────────────── #}
     {% if chair_review and chair_review.overall_status == 'Rejected' %}
     <div class="alert border-0 shadow-sm mb-4" role="alert"
-         style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 5px solid #ffc107 !important; border-radius: 10px;">
+        style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 5px solid #ffc107 !important; border-radius: 10px;">
         <div class="d-flex align-items-start gap-3">
             <i class="bi bi-exclamation-circle-fill text-warning fs-4 mt-1" style="color: #d97706 !important;"></i>
             <div>
-                <h6 class="fw-bold mb-1" style="color: #b45309 !important;">Your Draft IPCR was Returned by your Program Chair</h6>
+                <h6 class="fw-bold mb-1" style="color: #b45309 !important;">Your Draft IPCR was Returned by your Program
+                    Chair</h6>
                 <p class="mb-1 text-dark"><strong>Remarks:</strong> {{ chair_review.overall_remarks }}</p>
-                <small class="text-muted">Please review the changes and remarks made by the Program Chair below, and click "Submit IPCR for Approval" to acknowledge and send it back for approval.</small>
+                <small class="text-muted">Please review the changes and remarks made by the Program Chair below, and
+                    click "Submit IPCR for Approval" to acknowledge and send it back for approval.</small>
             </div>
         </div>
     </div>
@@ -116,18 +123,19 @@
     {# ── Chair Approval Alert ───────────────────────────────── #}
     {% if is_locked %}
     <div class="alert border-0 shadow-sm mb-4" role="alert"
-         style="background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); border-left: 5px solid #212529 !important; border-radius: 10px;">
+        style="background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%); border-left: 5px solid #212529 !important; border-radius: 10px;">
         <div class="d-flex align-items-start gap-3">
             <i class="bi bi-lock-fill text-dark fs-4 mt-1"></i>
             <div>
                 <h6 class="fw-bold text-dark mb-1">Your IPCR has been Approved and Locked</h6>
-                <p class="mb-0 text-muted small">Your targets have been committed to your final evaluation. Editing is disabled.</p>
+                <p class="mb-0 text-muted small">Your targets have been committed to your final evaluation. Editing is
+                    disabled.</p>
             </div>
         </div>
     </div>
     {% elif chair_review and chair_review.overall_status == 'Approved' %}
     <div class="alert border-0 shadow-sm mb-4" role="alert"
-         style="background: linear-gradient(135deg, #f0fff4 0%, #dcffe4 100%); border-left: 5px solid #198754 !important; border-radius: 10px;">
+        style="background: linear-gradient(135deg, #f0fff4 0%, #dcffe4 100%); border-left: 5px solid #198754 !important; border-radius: 10px;">
         <div class="d-flex align-items-start gap-3">
             <i class="bi bi-check-circle-fill text-success fs-4 mt-1"></i>
             <div>
@@ -142,13 +150,14 @@
 
     {% if not active_term %}
     <div class="alert alert-warning border-0 shadow-sm" style="border-radius: 10px;">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i> There is no active term set by the administration. You cannot manage targets right now.
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> There is no active term set by the administration. You
+        cannot manage targets right now.
     </div>
     {% else %}
-    
+
     <form action="{{ url_for('faculty.faculty_submit_ipcr') }}" method="POST" id="ipcrForm">
         <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
-        
+
         <div class="row g-4">
             <!-- Left Column: Core Assigned Targets -->
             <div class="col-lg-7">
@@ -170,31 +179,36 @@
                                 <tbody>
                                     {% set ns_inst = namespace(has_core=false) %}
                                     {% for target in assigned_targets %}
-                                        {% if target.category_name == 'A. Instructions' %}
-                                            {% set ns_inst.has_core = true %}
-                                            <tr>
-                                                <td class="ps-4 py-3">
-                                                    <span class="badge bg-light text-dark border mb-1">{{ target.category_name }}</span>
-                                                    <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
-                                                    {# Show chair item remark if IPCR was returned #}
-                                                    {% if chair_review and chair_review.overall_status == 'Rejected' and target.chair_item_remarks %}
-                                                    <div class="mt-1 p-2 rounded" style="background:#fff3cd; border-left: 3px solid #ffc107;">
-                                                        <small class="text-dark"><i class="bi bi-chat-square-text-fill text-warning me-1"></i><strong>Chair Note:</strong> {{ target.chair_item_remarks }}</small>
-                                                    </div>
-                                                    {% endif %}
-                                                </td>
-                                                <td class="text-center fw-bold fs-5 text-primary">
-                                                    {{ target.assigned_quantity }}
-                                                </td>
-                                            </tr>
-                                        {% endif %}
+                                    {% if target.category_name == 'A. Instructions' %}
+                                    {% set ns_inst.has_core = true %}
+                                    <tr>
+                                        <td class="ps-4 py-3">
+                                            <span class="badge bg-light text-dark border mb-1">{{ target.category_name
+                                                }}</span>
+                                            <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
+                                            {# Show chair item remark if IPCR was returned #}
+                                            {% if chair_review and chair_review.overall_status == 'Rejected' and
+                                            target.chair_item_remarks %}
+                                            <div class="mt-1 p-2 rounded"
+                                                style="background:#fff3cd; border-left: 3px solid #ffc107;">
+                                                <small class="text-dark"><i
+                                                        class="bi bi-chat-square-text-fill text-warning me-1"></i><strong>Chair
+                                                        Note:</strong> {{ target.chair_item_remarks }}</small>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center fw-bold fs-5 text-primary">
+                                            {{ target.assigned_quantity }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
                                     {% endfor %}
                                     {% if not ns_inst.has_core %}
-                                        <tr>
-                                            <td colspan="2" class="text-center py-4 text-muted small">
-                                                No instruction workloads assigned.
-                                            </td>
-                                        </tr>
+                                    <tr>
+                                        <td colspan="2" class="text-center py-4 text-muted small">
+                                            No instruction workloads assigned.
+                                        </td>
+                                    </tr>
                                     {% endif %}
                                 </tbody>
                             </table>
@@ -204,7 +218,8 @@
 
                 <!-- Support Functions Card -->
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-header bg-warning border-0 py-3" style="background: linear-gradient(90deg, #fff8e8 0%, #fffcf5 100%); border-left: 4px solid #fd7e14 !important;">
+                    <div class="card-header bg-warning border-0 py-3"
+                        style="background: linear-gradient(90deg, #fff8e8 0%, #fffcf5 100%); border-left: 4px solid #fd7e14 !important;">
                         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-tools me-2"></i>B. Support Functions</h5>
                         <p class="small mb-0 text-muted">Assigned administrative and support workloads</p>
                     </div>
@@ -220,31 +235,36 @@
                                 <tbody>
                                     {% set ns_supp = namespace(has_core=false) %}
                                     {% for target in assigned_targets %}
-                                        {% if target.category_name == 'Support Functions' %}
-                                            {% set ns_supp.has_core = true %}
-                                            <tr>
-                                                <td class="ps-4 py-3">
-                                                    <span class="badge bg-light text-dark border mb-1">{{ target.category_name }}</span>
-                                                    <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
-                                                    {# Show chair item remark if IPCR was returned #}
-                                                    {% if chair_review and chair_review.overall_status == 'Rejected' and target.chair_item_remarks %}
-                                                    <div class="mt-1 p-2 rounded" style="background:#fff3cd; border-left: 3px solid #ffc107;">
-                                                        <small class="text-dark"><i class="bi bi-chat-square-text-fill text-warning me-1"></i><strong>Chair Note:</strong> {{ target.chair_item_remarks }}</small>
-                                                    </div>
-                                                    {% endif %}
-                                                </td>
-                                                <td class="text-center fw-bold fs-5 text-warning">
-                                                    {{ target.assigned_quantity }}
-                                                </td>
-                                            </tr>
-                                        {% endif %}
+                                    {% if target.category_name == 'Support Functions' %}
+                                    {% set ns_supp.has_core = true %}
+                                    <tr>
+                                        <td class="ps-4 py-3">
+                                            <span class="badge bg-light text-dark border mb-1">{{ target.category_name
+                                                }}</span>
+                                            <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
+                                            {# Show chair item remark if IPCR was returned #}
+                                            {% if chair_review and chair_review.overall_status == 'Rejected' and
+                                            target.chair_item_remarks %}
+                                            <div class="mt-1 p-2 rounded"
+                                                style="background:#fff3cd; border-left: 3px solid #ffc107;">
+                                                <small class="text-dark"><i
+                                                        class="bi bi-chat-square-text-fill text-warning me-1"></i><strong>Chair
+                                                        Note:</strong> {{ target.chair_item_remarks }}</small>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center fw-bold fs-5 text-warning">
+                                            {{ target.assigned_quantity }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
                                     {% endfor %}
                                     {% if not ns_supp.has_core %}
-                                        <tr>
-                                            <td colspan="2" class="text-center py-4 text-muted small">
-                                                No support function workloads assigned.
-                                            </td>
-                                        </tr>
+                                    <tr>
+                                        <td colspan="2" class="text-center py-4 text-muted small">
+                                            No support function workloads assigned.
+                                        </td>
+                                    </tr>
                                     {% endif %}
                                 </tbody>
                             </table>
@@ -262,7 +282,8 @@
                         <p class="small mb-0 opacity-75">Select based on your academic rank ({{ academic_rank }})</p>
                     </div>
                     <div class="card-body bg-light">
-                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-primary border-opacity-25">
+                        <div
+                            class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-primary border-opacity-25">
                             <span class="fw-semibold text-dark">Required Selections:</span>
                             <span class="badge bg-primary fs-5 px-3 py-2 rounded-pill" id="researchCountDisplay">
                                 0 / {{ ret_menu.research_required }}
@@ -270,36 +291,40 @@
                         </div>
 
                         {% if ret_menu.research_indicators|length > 0 %}
-                            <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
-                                {% for ind in ret_menu.research_indicators %}
-                                {% set ns = namespace(is_selected=false) %}
-                                {% for t in assigned_targets %}
-                                    {% if t.indicator_id == ind.indicator_id %}
-                                        {% set ns.is_selected = true %}
-                                    {% endif %}
-                                {% endfor %}
-                                <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
-                                       style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
-                                    <div class="d-flex align-items-start gap-3">
-                                        <div class="form-check mt-1">
-                                            <input class="form-check-input research-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
-                                                {% if ns.is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
-                                        </div>
-                                        <div>
-                                            <p class="mb-0 small text-secondary">
-                                                {{ ind.indicator_description }}
-                                                <span class="badge bg-primary bg-opacity-10 text-primary ms-2">Qty: {{ ind.target_quantity }}</span>
-                                            </p>
-                                        </div>
+                        <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
+                            {% for ind in ret_menu.research_indicators %}
+                            {% set ns = namespace(is_selected=false) %}
+                            {% for t in assigned_targets %}
+                            {% if t.indicator_id == ind.indicator_id %}
+                            {% set ns.is_selected = true %}
+                            {% endif %}
+                            {% endfor %}
+                            <label
+                                class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow"
+                                style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input research-checkbox" type="checkbox"
+                                            name="ret_indicators[]" value="{{ ind.indicator_id }}" {% if ns.is_selected
+                                            %}checked{% endif %} {% if has_submitted %}disabled{% endif %}
+                                            style="transform: scale(1.2);">
                                     </div>
-                                </label>
-                                {% endfor %}
-                            </div>
+                                    <div>
+                                        <p class="mb-0 small text-secondary">
+                                            {{ ind.indicator_description }}
+                                            <span class="badge bg-primary bg-opacity-10 text-primary ms-2">Qty: {{
+                                                ind.target_quantity }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
                         {% else %}
-                            <div class="text-center py-4">
-                                <i class="bi bi-slash-circle fs-2 text-muted opacity-50 mb-2 d-block"></i>
-                                <p class="text-muted small">No Research indicators available.</p>
-                            </div>
+                        <div class="text-center py-4">
+                            <i class="bi bi-slash-circle fs-2 text-muted opacity-50 mb-2 d-block"></i>
+                            <p class="text-muted small">No Research indicators available.</p>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -308,42 +333,49 @@
                 <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
                     <div class="card-header border-0 py-3" style="background-color: #fd7e14;">
                         <h5 class="mb-0 fw-bold text-white"><i class="bi bi-tools me-2"></i>Extension Menu</h5>
-                        <p class="small mb-0 text-white opacity-75">Select based on your academic rank ({{ academic_rank }})</p>
+                        <p class="small mb-0 text-white opacity-75">Select based on your academic rank ({{ academic_rank
+                            }})</p>
                     </div>
                     <div class="card-body bg-light">
-                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-warning border-opacity-25">
+                        <div
+                            class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded shadow-sm border border-warning border-opacity-25">
                             <span class="fw-semibold text-dark">Required Selections:</span>
-                            <span class="badge bg-warning text-dark fs-5 px-3 py-2 rounded-pill" id="extensionCountDisplay">
+                            <span class="badge bg-warning text-dark fs-5 px-3 py-2 rounded-pill"
+                                id="extensionCountDisplay">
                                 0 / {{ ret_menu.extension_required }}
                             </span>
                         </div>
 
                         {% if ret_menu.extension_indicators|length > 0 %}
-                            <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
-                                {% for ind in ret_menu.extension_indicators %}
-                                {% set ns = namespace(is_selected=false) %}
-                                {% for t in assigned_targets %}
-                                    {% if t.indicator_id == ind.indicator_id %}
-                                        {% set ns.is_selected = true %}
-                                    {% endif %}
-                                {% endfor %}
-                                <label class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow" 
-                                       style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
-                                    <div class="d-flex align-items-start gap-3">
-                                        <div class="form-check mt-1">
-                                            <input class="form-check-input extension-checkbox" type="checkbox" name="ret_indicators[]" value="{{ ind.indicator_id }}"
-                                                {% if ns.is_selected %}checked{% endif %} {% if has_submitted %}disabled{% endif %} style="transform: scale(1.2);">
-                                        </div>
-                                        <div>
-                                            <p class="mb-0 small text-secondary">
-                                                {{ ind.indicator_description }}
-                                                <span class="badge bg-warning bg-opacity-10 text-warning ms-2">Qty: {{ ind.target_quantity }}</span>
-                                            </p>
-                                        </div>
+                        <div class="ret-options-container" style="max-height: 250px; overflow-y: auto;">
+                            {% for ind in ret_menu.extension_indicators %}
+                            {% set ns = namespace(is_selected=false) %}
+                            {% for t in assigned_targets %}
+                            {% if t.indicator_id == ind.indicator_id %}
+                            {% set ns.is_selected = true %}
+                            {% endif %}
+                            {% endfor %}
+                            <label
+                                class="ret-card d-block p-3 mb-2 bg-white rounded shadow-sm border border-light transition-all hover-shadow"
+                                style="cursor: pointer; transition: all 0.2s ease; {% if chair_review and chair_review.overall_status == 'Rejected' %}pointer-events: none; opacity: 0.85;{% endif %}">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input extension-checkbox" type="checkbox"
+                                            name="ret_indicators[]" value="{{ ind.indicator_id }}" {% if ns.is_selected
+                                            %}checked{% endif %} {% if has_submitted %}disabled{% endif %}
+                                            style="transform: scale(1.2);">
                                     </div>
-                                </label>
-                                {% endfor %}
-                            </div>
+                                    <div>
+                                        <p class="mb-0 small text-secondary">
+                                            {{ ind.indicator_description }}
+                                            <span class="badge bg-warning bg-opacity-10 text-warning ms-2">Qty: {{
+                                                ind.target_quantity }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -352,8 +384,8 @@
 
         <div class="mt-4 text-end">
             {% if not has_submitted %}
-            <button type="button" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn"
-                    {% if ret_menu.research_required > 0 or ret_menu.extension_required > 0 %}disabled{% endif %}>
+            <button type="button" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn" {% if
+                ret_menu.research_required> 0 or ret_menu.extension_required > 0 %}disabled{% endif %}>
                 {% if chair_review and chair_review.overall_status == 'Rejected' %}
                 <i class="bi bi-send-check-fill me-2"></i>Submit IPCR for Approval
                 {% else %}
@@ -366,32 +398,32 @@
                 {% endif %}
             </p>
             {% else %}
-                {% if is_locked %}
-                <div class="alert alert-dark d-inline-block border-0 shadow-sm rounded-pill px-4">
-                    <i class="bi bi-lock-fill me-2"></i> Your IPCR is locked and committed.
+            {% if is_locked %}
+            <div class="alert alert-dark d-inline-block border-0 shadow-sm rounded-pill px-4">
+                <i class="bi bi-lock-fill me-2"></i> Your IPCR is locked and committed.
+            </div>
+            {% elif chair_review and chair_review.overall_status == 'Approved' %}
+            <div class="d-inline-flex flex-column align-items-end gap-2">
+                <div class="alert alert-success border-0 shadow-sm rounded-pill px-4 py-2 m-0">
+                    <i class="bi bi-check-circle-fill me-2"></i> Your IPCR has been approved by your Program Chair!
                 </div>
-                {% elif chair_review and chair_review.overall_status == 'Approved' %}
-                <div class="d-inline-flex flex-column align-items-end gap-2">
-                    <div class="alert alert-success border-0 shadow-sm rounded-pill px-4 py-2 m-0">
-                        <i class="bi bi-check-circle-fill me-2"></i> Your IPCR has been approved by your Program Chair!
-                    </div>
-                    <button type="button" id="lockBtn" class="btn btn-warning btn-lg px-5 shadow fw-bold rounded-pill">
-                         <i class="bi bi-lock-fill me-2"></i>Lock My IPCR
-                    </button>
-                </div>
-                {% elif chair_review and chair_review.overall_status == 'Rejected' %}
-                <div class="alert alert-danger d-inline-block border-0 shadow-sm rounded-pill px-4">
-                    <i class="bi bi-arrow-counterclockwise me-2"></i> Returned by Program Chair (Read-Only)
-                </div>
-                {% else %}
-                <div class="alert alert-info d-inline-block border-0 shadow-sm rounded-pill px-4">
-                    <i class="bi bi-info-circle-fill me-2"></i> Your IPCR is currently waiting for review.
-                </div>
-                {% endif %}
+                <button type="button" id="lockBtn" class="btn btn-warning btn-lg px-5 shadow fw-bold rounded-pill">
+                    <i class="bi bi-lock-fill me-2"></i>Lock My IPCR
+                </button>
+            </div>
+            {% elif chair_review and chair_review.overall_status == 'Rejected' %}
+            <div class="alert alert-danger d-inline-block border-0 shadow-sm rounded-pill px-4">
+                <i class="bi bi-arrow-counterclockwise me-2"></i> Returned by Program Chair (Read-Only)
+            </div>
+            {% else %}
+            <div class="alert alert-info d-inline-block border-0 shadow-sm rounded-pill px-4">
+                <i class="bi bi-info-circle-fill me-2"></i> Your IPCR is currently waiting for review.
+            </div>
+            {% endif %}
             {% endif %}
         </div>
     </form>
- 
+
     {% if chair_review and chair_review.overall_status == 'Approved' and not is_locked %}
     <form id="lockForm" action="{{ url_for('faculty.faculty_lock_ipcr') }}" method="POST" style="display:none;">
         <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
@@ -413,12 +445,13 @@
     </div>
 
     <div class="alert border-0 shadow-sm mb-4" role="alert"
-         style="background: linear-gradient(135deg, #eaf2ff 0%, #dbe9ff 100%); border-left: 5px solid #0d6efd !important; border-radius: 10px;">
+        style="background: linear-gradient(135deg, #eaf2ff 0%, #dbe9ff 100%); border-left: 5px solid #0d6efd !important; border-radius: 10px;">
         <div class="d-flex align-items-start gap-3">
             <i class="bi bi-info-circle-fill text-primary fs-4 mt-1"></i>
             <div>
                 <h6 class="fw-bold text-primary mb-1">Committed Evaluation Targets</h6>
-                <p class="mb-0 text-muted small">Please fill out the accomplishment boxes and upload necessary files for verification by your department dean and program chair.</p>
+                <p class="mb-0 text-muted small">Please fill out the accomplishment boxes and upload necessary files for
+                    verification by your department dean and program chair.</p>
             </div>
         </div>
     </div>
@@ -427,9 +460,12 @@
         <!-- Accomplishments Column -->
         <div class="col-lg-12">
             <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
-                <div class="card-header bg-primary text-white border-0 py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-check-fill me-2"></i>My Evidence Submission Checklist</h5>
-                    <span class="badge bg-light text-primary fw-semibold">{{ assigned_targets|length }} Target{{ 's' if assigned_targets|length != 1 }} Locked</span>
+                <div
+                    class="card-header bg-primary text-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-check-fill me-2"></i>My Evidence Submission
+                        Checklist</h5>
+                    <span class="badge bg-light text-primary fw-semibold">{{ assigned_targets|length }} Target{{ 's' if
+                        assigned_targets|length != 1 }} Locked</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -446,26 +482,35 @@
                                 {% for target in assigned_targets %}
                                 <tr>
                                     <td class="ps-4 py-4">
-                                        <span class="badge bg-light text-dark border mb-1">{{ target.category_name }}</span>
-                                        <p class="mb-0 small fw-semibold text-dark">{{ target.indicator_description }}</p>
+                                        <span class="badge bg-light text-dark border mb-1">{{ target.category_name
+                                            }}</span>
+                                        <p class="mb-0 small fw-semibold text-dark">{{ target.indicator_description }}
+                                        </p>
                                     </td>
                                     <td class="text-center fw-bold fs-5 text-primary">
                                         {{ target.assigned_quantity }}
                                     </td>
                                     <td class="text-center">
-                                        <input type="number" class="form-control form-control-sm text-center mx-auto" style="max-width: 80px;" min="0" placeholder="0" name="accomplished_qty_{{ target.target_id }}">
+                                        <input type="number" class="form-control form-control-sm text-center mx-auto"
+                                            style="max-width: 80px;" min="0" placeholder="0"
+                                            name="accomplished_qty_{{ target.target_id }}">
                                     </td>
                                     <td class="pe-4 py-4">
-                                        {% if 'Research' in target.category_name or 'Extension' in target.category_name or 'RET' in target.category_name %}
-                                        <div class="upload-area p-3 bg-light rounded text-center border border-dashed border-secondary border-opacity-50 hover-shadow transition-all">
+                                        {% if 'Research' in target.category_name or 'Extension' in target.category_name
+                                        or 'RET' in target.category_name %}
+                                        <div
+                                            class="upload-area p-3 bg-light rounded text-center border border-dashed border-secondary border-opacity-50 hover-shadow transition-all">
                                             <i class="bi bi-cloud-arrow-up text-primary fs-3 d-block mb-1"></i>
-                                            <small class="text-muted d-block mb-2">Upload research artifact, certificate, or paper (.pdf, .zip, max 10MB)</small>
-                                            <input type="file" class="form-control form-control-sm text-center mx-auto" style="max-width: 320px;" name="evidence_file_{{ target.target_id }}">
+                                            <small class="text-muted d-block mb-2">Upload research artifact,
+                                                certificate, or paper (.pdf, .zip, max 10MB)</small>
+                                            <input type="file" class="form-control form-control-sm text-center mx-auto"
+                                                style="max-width: 320px;" name="evidence_file_{{ target.target_id }}">
                                         </div>
                                         {% else %}
                                         <div class="mb-0">
-                                            <textarea class="form-control form-control-sm accomplishment-textarea" rows="2" 
-                                                      placeholder="Describe actual results achieved (e.g. 'Conducted 18 class lectures, prepared syllabus...')"></textarea>
+                                            <textarea class="form-control form-control-sm accomplishment-textarea"
+                                                rows="2"
+                                                placeholder="Describe actual results achieved (e.g. 'Conducted 18 class lectures, prepared syllabus...')"></textarea>
                                         </div>
                                         {% endif %}
                                     </td>
@@ -476,9 +521,10 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="text-end mb-4">
-                <button type="button" class="btn btn-success btn-lg px-5 shadow fw-bold rounded-pill" onclick="simulateSaveEvidence()">
+                <button type="button" class="btn btn-success btn-lg px-5 shadow fw-bold rounded-pill"
+                    onclick="simulateSaveEvidence()">
                     <i class="bi bi-cloud-upload-fill me-2"></i>Save &amp; Submit Evidence
                 </button>
             </div>
@@ -488,9 +534,9 @@
 
 <!-- Evidence Mock Toast/Modal script -->
 <script>
-function simulateSaveEvidence() {
-    alert("Draft evidence and accomplishments saved successfully!\n(Note: This is a front-end simulation for Phase 3 evidence gathering.)");
-}
+    function simulateSaveEvidence() {
+        alert("Draft evidence and accomplishments saved successfully!\n(Note: This is a front-end simulation for Phase 3 evidence gathering.)");
+    }
 </script>
 {% endif %}
 
@@ -498,12 +544,14 @@ function simulateSaveEvidence() {
     .ret-card:hover {
         border-color: #198754 !important;
         transform: translateY(-2px);
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important;
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
     }
+
     .ret-card:has(input:checked) {
         background-color: #f0fdf4 !important;
         border-color: #198754 !important;
     }
+
     .form-check-input:checked {
         background-color: #198754;
         border-color: #198754;
@@ -511,150 +559,152 @@ function simulateSaveEvidence() {
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const researchCheckboxes = document.querySelectorAll('.research-checkbox');
         const extensionCheckboxes = document.querySelectorAll('.extension-checkbox');
         const submitBtn = document.getElementById('submitBtn');
         const rCountDisplay = document.getElementById('researchCountDisplay');
         const eCountDisplay = document.getElementById('extensionCountDisplay');
         const helpText = document.getElementById('submitHelpText');
-        const rRequiredCount = {{ ret_menu.research_required }};
-        const eRequiredCount = {{ ret_menu.extension_required }};
-        const hasSubmitted = {{ 'true' if has_submitted else 'false' }};
-        
-        function updateSelectionCount() {
-            let rSelected = Array.from(researchCheckboxes).filter(cb => cb.checked).length;
-            let eSelected = Array.from(extensionCheckboxes).filter(cb => cb.checked).length;
-            
-            if (rCountDisplay) rCountDisplay.innerText = `${rSelected} / ${rRequiredCount}`;
-            if (eCountDisplay) eCountDisplay.innerText = `${eSelected} / ${eRequiredCount}`;
-            
-            if (hasSubmitted) return;
-            
-            let rValid = rSelected === rRequiredCount;
-            let eValid = eSelected === eRequiredCount;
-            
-            // Handle Research Count Display
-            if (rCountDisplay) {
-                if (rValid) {
-                    rCountDisplay.classList.remove('bg-warning', 'text-dark');
-                    rCountDisplay.classList.add('bg-primary', 'text-white');
-                    researchCheckboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
-                } else {
-                    rCountDisplay.classList.remove('bg-primary', 'text-white');
-                    rCountDisplay.classList.add('bg-warning', 'text-dark');
-                    researchCheckboxes.forEach(cb => cb.disabled = false);
-                }
-            }
-            
-            // Handle Extension Count Display
-            if (eCountDisplay) {
-                if (eValid) {
-                    eCountDisplay.classList.remove('bg-warning', 'text-dark');
-                    eCountDisplay.classList.add('bg-success', 'text-white');
-                    extensionCheckboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
-                } else {
-                    eCountDisplay.classList.remove('bg-success', 'text-white');
-                    eCountDisplay.classList.add('bg-warning', 'text-dark');
-                    extensionCheckboxes.forEach(cb => cb.disabled = false);
-                }
-            }
-            
-            if (rValid && eValid) {
-                if (submitBtn) submitBtn.disabled = false;
-                if (helpText) helpText.style.display = 'none';
+        const rRequiredCount = {{ ret_menu.research_required }
+    };
+    const eRequiredCount = {{ ret_menu.extension_required }};
+    const hasSubmitted = {{ 'true' if has_submitted else 'false' }};
+
+    function updateSelectionCount() {
+        let rSelected = Array.from(researchCheckboxes).filter(cb => cb.checked).length;
+        let eSelected = Array.from(extensionCheckboxes).filter(cb => cb.checked).length;
+
+        if (rCountDisplay) rCountDisplay.innerText = `${rSelected} / ${rRequiredCount}`;
+        if (eCountDisplay) eCountDisplay.innerText = `${eSelected} / ${eRequiredCount}`;
+
+        if (hasSubmitted) return;
+
+        let rValid = rSelected === rRequiredCount;
+        let eValid = eSelected === eRequiredCount;
+
+        // Handle Research Count Display
+        if (rCountDisplay) {
+            if (rValid) {
+                rCountDisplay.classList.remove('bg-warning', 'text-dark');
+                rCountDisplay.classList.add('bg-primary', 'text-white');
+                researchCheckboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
             } else {
-                if (submitBtn) submitBtn.disabled = true;
-                if (helpText) helpText.style.display = 'block';
+                rCountDisplay.classList.remove('bg-primary', 'text-white');
+                rCountDisplay.classList.add('bg-warning', 'text-dark');
+                researchCheckboxes.forEach(cb => cb.disabled = false);
             }
         }
-        
-        researchCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
-        extensionCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
-        
-        // Helper to show custom confirmation modal
-        window.showCustomConfirm = function({ title, mainText, subText, confirmText, confirmClass, iconClass, onConfirm }) {
-            const modal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
-            
-            document.getElementById('confirmModalTitle').textContent = title;
-            document.getElementById('confirmModalTextMain').innerHTML = mainText;
-            document.getElementById('confirmModalTextSub').textContent = subText;
-            
-            const confirmBtn = document.getElementById('confirmModalConfirmBtn');
-            confirmBtn.className = `btn px-4 py-2 fw-bold text-white shadow-sm d-inline-flex align-items-center justify-content-center gap-2 ${confirmClass}`;
-            
-            const confirmTextSpan = document.getElementById('confirmModalConfirmText');
-            confirmTextSpan.textContent = confirmText;
-            
-            const icon = document.getElementById('confirmModalIcon');
-            if (iconClass) {
-                icon.className = `bi ${iconClass}`;
-                icon.style.display = '';
+
+        // Handle Extension Count Display
+        if (eCountDisplay) {
+            if (eValid) {
+                eCountDisplay.classList.remove('bg-warning', 'text-dark');
+                eCountDisplay.classList.add('bg-success', 'text-white');
+                extensionCheckboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
             } else {
-                icon.style.display = 'none';
+                eCountDisplay.classList.remove('bg-success', 'text-white');
+                eCountDisplay.classList.add('bg-warning', 'text-dark');
+                extensionCheckboxes.forEach(cb => cb.disabled = false);
             }
-            
-            // Remove previous listeners
-            const newConfirmBtn = confirmBtn.cloneNode(true);
-            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-            
-            newConfirmBtn.addEventListener('click', function() {
-                modal.hide();
-                onConfirm();
-            });
-            
-            modal.show();
-        };
+        }
 
-        // Submit Button Event Hook
-        if (submitBtn) {
-            submitBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const isRejected = {{ 'true' if (chair_review and chair_review.overall_status == 'Rejected') else 'false' }};
-                
-                if (isRejected) {
-                    showCustomConfirm({
-                        title: "Submit IPCR for Approval?",
-                        mainText: "This will resubmit your draft IPCR for final approval.",
-                        subText: "Your Program Chair will review and finalize the commitments.",
-                        confirmText: "Yes, Submit",
-                        confirmClass: "btn-success",
-                        iconClass: "bi-send-check-fill",
-                        onConfirm: () => document.getElementById('ipcrForm').submit()
-                    });
-                } else {
-                    showCustomConfirm({
-                        title: "Submit IPCR for Review?",
-                        mainText: "This will submit your draft IPCR to the Program Chair.",
-                        subText: "They will verify your targets. You won't be able to edit while it is pending review.",
-                        confirmText: "Yes, Submit for Review",
-                        confirmClass: "btn-primary",
-                        iconClass: "bi-eye-fill",
-                        onConfirm: () => document.getElementById('ipcrForm').submit()
-                    });
-                }
+        if (rValid && eValid) {
+            if (submitBtn) submitBtn.disabled = false;
+            if (helpText) helpText.style.display = 'none';
+        } else {
+            if (submitBtn) submitBtn.disabled = true;
+            if (helpText) helpText.style.display = 'block';
+        }
+    }
+
+    researchCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
+    extensionCheckboxes.forEach(cb => cb.addEventListener('change', updateSelectionCount));
+
+    // Helper to show custom confirmation modal
+    window.showCustomConfirm = function ({ title, mainText, subText, confirmText, confirmClass, iconClass, onConfirm }) {
+        const modal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
+
+        document.getElementById('confirmModalTitle').textContent = title;
+        document.getElementById('confirmModalTextMain').innerHTML = mainText;
+        document.getElementById('confirmModalTextSub').textContent = subText;
+
+        const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+        confirmBtn.className = `btn px-4 py-2 fw-bold text-white shadow-sm d-inline-flex align-items-center justify-content-center gap-2 ${confirmClass}`;
+
+        const confirmTextSpan = document.getElementById('confirmModalConfirmText');
+        confirmTextSpan.textContent = confirmText;
+
+        const icon = document.getElementById('confirmModalIcon');
+        if (iconClass) {
+            icon.className = `bi ${iconClass}`;
+            icon.style.display = '';
+        } else {
+            icon.style.display = 'none';
+        }
+
+        // Remove previous listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+        newConfirmBtn.addEventListener('click', function () {
+            modal.hide();
+            onConfirm();
+        });
+
+        modal.show();
+    };
+
+    // Submit Button Event Hook
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const isRejected = {{ 'true' if (chair_review and chair_review.overall_status == 'Rejected') else 'false'
+    }};
+
+    if (isRejected) {
+        showCustomConfirm({
+            title: "Submit IPCR for Approval?",
+            mainText: "This will resubmit your draft IPCR for final approval.",
+            subText: "Your Program Chair will review and finalize the commitments.",
+            confirmText: "Yes, Submit",
+            confirmClass: "btn-success",
+            iconClass: "bi-send-check-fill",
+            onConfirm: () => document.getElementById('ipcrForm').submit()
+        });
+    } else {
+        showCustomConfirm({
+            title: "Submit IPCR for Review?",
+            mainText: "This will submit your draft IPCR to the Program Chair.",
+            subText: "They will verify your targets. You won't be able to edit while it is pending review.",
+            confirmText: "Yes, Submit for Review",
+            confirmClass: "btn-primary",
+            iconClass: "bi-eye-fill",
+            onConfirm: () => document.getElementById('ipcrForm').submit()
+        });
+    }
             });
         }
 
-        // Lock Button Event Hook
-        const lockBtn = document.getElementById('lockBtn');
-        if (lockBtn) {
-            lockBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                showCustomConfirm({
-                    title: "Lock IPCR?",
-                    mainText: "Are you sure you want to lock your IPCR?",
-                    subText: "Once locked, it is committed for final evaluation and cannot be edited.",
-                    confirmText: "Yes, Lock IPCR",
-                    confirmClass: "btn-warning text-dark",
-                    iconClass: "bi-lock-fill",
-                    onConfirm: () => document.getElementById('lockForm').submit()
-                });
+    // Lock Button Event Hook
+    const lockBtn = document.getElementById('lockBtn');
+    if (lockBtn) {
+        lockBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            showCustomConfirm({
+                title: "Lock IPCR?",
+                mainText: "Are you sure you want to lock your IPCR?",
+                subText: "Once locked, it is committed for final evaluation and cannot be edited.",
+                confirmText: "Yes, Lock IPCR",
+                confirmClass: "btn-warning text-dark",
+                iconClass: "bi-lock-fill",
+                onConfirm: () => document.getElementById('lockForm').submit()
             });
-        }
+        });
+    }
 
-        // Initial check
-        updateSelectionCount();
+    // Initial check
+    updateSelectionCount();
     });
 </script>
 
@@ -663,16 +713,25 @@ function simulateSaveEvidence() {
     <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header border-0 pb-0 pe-3 pt-3 justify-content-end">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.85rem; opacity: 0.6;"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                    style="font-size: 0.85rem; opacity: 0.6;"></button>
             </div>
             <div class="modal-body text-center px-4 pb-4 pt-1">
-                <h5 class="modal-title fw-bold text-dark mb-3" id="confirmModalTitle" style="font-size: 1.35rem; letter-spacing: -0.2px;">Title</h5>
-                <p class="mb-2 text-secondary fw-semibold px-2" id="confirmModalTextMain" style="font-size: 0.95rem; line-height: 1.5; color: #495057 !important;">Main message</p>
-                <p class="text-muted small px-3 mb-0" id="confirmModalTextSub" style="font-size: 0.85rem; line-height: 1.4;">Sub message</p>
+                <h5 class="modal-title fw-bold text-dark mb-3" id="confirmModalTitle"
+                    style="font-size: 1.35rem; letter-spacing: -0.2px;">Title</h5>
+                <p class="mb-2 text-secondary fw-semibold px-2" id="confirmModalTextMain"
+                    style="font-size: 0.95rem; line-height: 1.5; color: #495057 !important;">Main message</p>
+                <p class="text-muted small px-3 mb-0" id="confirmModalTextSub"
+                    style="font-size: 0.85rem; line-height: 1.4;">Sub message</p>
             </div>
             <div class="modal-footer border-0 justify-content-center pb-4 pt-0 gap-2 px-4">
-                <button type="button" class="btn px-4 py-2 fw-bold text-white shadow-sm" data-bs-dismiss="modal" id="confirmModalCancelBtn" style="border-radius: 10px; background-color: #6c757d; font-size: 0.9rem; min-width: 110px; transition: all 0.2s;">Cancel</button>
-                <button type="button" class="btn px-4 py-2 fw-bold text-white shadow-sm d-inline-flex align-items-center justify-content-center gap-2" id="confirmModalConfirmBtn" style="border-radius: 10px; font-size: 0.9rem; min-width: 140px; transition: all 0.2s;">
+                <button type="button" class="btn px-4 py-2 fw-bold text-white shadow-sm" data-bs-dismiss="modal"
+                    id="confirmModalCancelBtn"
+                    style="border-radius: 10px; background-color: #6c757d; font-size: 0.9rem; min-width: 110px; transition: all 0.2s;">Cancel</button>
+                <button type="button"
+                    class="btn px-4 py-2 fw-bold text-white shadow-sm d-inline-flex align-items-center justify-content-center gap-2"
+                    id="confirmModalConfirmBtn"
+                    style="border-radius: 10px; font-size: 0.9rem; min-width: 140px; transition: all 0.2s;">
                     <i class="" id="confirmModalIcon"></i>
                     <span id="confirmModalConfirmText">Confirm</span>
                 </button>
@@ -685,9 +744,10 @@ function simulateSaveEvidence() {
     #customConfirmModal .btn-close:focus {
         box-shadow: none;
     }
+
     #customConfirmModal .btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.12) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
     }
 </style>
 {% endblock %}

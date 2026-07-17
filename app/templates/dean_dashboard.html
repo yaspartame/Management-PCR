@@ -93,126 +93,117 @@
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-                {% if active_term %}
-                <div class="alert alert-info shadow-sm border-0 mb-3 small py-2 rounded">
-                    <strong><i class="bi bi-calendar-check me-1"></i>Active Term Target:</strong> 
-                    {{ active_term.academic_year }} ({{ active_term.semester }}) 
-                    | Deadline: {{ active_term.deadline_date.strftime('%B %d, %Y') if active_term.deadline_date else 'N/A' }}
-                </div>
-                
-                {% if master_indicators %}
-                <form action="{{ url_for('dean.cascade_quotas') }}" method="POST" id="cascadeForm" onsubmit="return validateQuotas()">
-                    <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
-                    
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle shadow-sm">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Master Indicator</th>
-                                    <th width="10%">WST Program</th>
-                                    <th width="10%">DST Program</th>
-                                    <th width="10%">NST Program</th>
-                                    <th width="10%">BSDS Program</th>
-                                    <th width="10%">RET / Extension</th>
-                                    <th width="11%">College-Wide</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% set current_category = namespace(name='') %}
-                                {% for indicator in master_indicators %}
-                                    {% if indicator.category_name != current_category.name %}
-                                    {% set current_category.name = indicator.category_name %}
-                                    <tr class="table-secondary">
-                                        <td colspan="7" class="fw-bold text-uppercase text-dark border-bottom border-2">
-                                            <i class="bi bi-folder2-open me-2"></i> {{ indicator.category_name }}
-                                        </td>
-                                    </tr>
-                                    {% endif %}
-                                    <tr>
-                                        <td class="ps-4">
-                                            <input type="hidden" name="indicator_id[]" value="{{ indicator.indicator_id }}">
-                                            {{ indicator.indicator_description }}
-                                            <span class="badge bg-dark ms-2">{{ indicator.efficiency_type }}</span>
-                                        </td>
-                                        <td>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
-                                                   name="wst[]" 
-                                                   min="0" 
-                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('WST Program', 0) }}"
-                                                   data-indicator="{{ indicator.indicator_id }}"
-                                                   onchange="updateTotals()">
-                                        </td>
-                                        <td>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
-                                                   name="dst[]" 
-                                                   min="0" 
-                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('DST Program', 0) }}"
-                                                   data-indicator="{{ indicator.indicator_id }}"
-                                                   onchange="updateTotals()">
-                                        </td>
-                                        <td>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
-                                                   name="nst[]" 
-                                                   min="0" 
-                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('NST Program', 0) }}"
-                                                   data-indicator="{{ indicator.indicator_id }}"
-                                                   onchange="updateTotals()">
-                                        </td>
-                                        <td>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
-                                                   name="bsds[]" 
-                                                   min="0" 
-                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('BSDS Program', 0) }}"
-                                                   data-indicator="{{ indicator.indicator_id }}"
-                                                   onchange="updateTotals()">
-                                        </td>
-                                        <td>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm shadow-sm fw-bold quota-input" 
-                                                   name="ret[]" 
-                                                   min="0" 
-                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('RET / Extension', 0) }}"
-                                                   data-indicator="{{ indicator.indicator_id }}"
-                                                   onchange="updateTotals()">
-                                        </td>
-                                        <td>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm text-success shadow-sm fw-bold" 
-                                                   name="college[]" 
-                                                   min="0" 
-                                                   value="{{ existing_quotas.get(indicator.indicator_id, {}).get('College-Wide', 0) }}"
-                                                   disabled>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div id="validationMessage" class="alert d-none mt-2"></div>
-                    
-                    <div class="text-end mt-3 border-top pt-3">
-                        <button type="submit" class="btn btn-primary fw-bold shadow-sm px-4" id="cascadeBtn">
-                            Cascade Institutional Targets <i class="bi bi-arrow-right-circle-fill ms-1"></i>
-                        </button>
-                    </div>
-                </form>
-                {% else %}
-                <div class="alert alert-warning">
-                    No master indicators found for the active term. Please ensure indicators are configured.
-                </div>
-                {% endif %}
-                
-                {% else %}
-                <div class="alert alert-warning">
-                    <strong>No Active Term:</strong> Please activate an academic term to begin cascading targets.
-                </div>
-                {% endif %}
+            {% if active_term %}
+            <div class="alert alert-info shadow-sm border-0 mb-3 small py-2 rounded">
+                <strong><i class="bi bi-calendar-check me-1"></i>Active Term Target:</strong>
+                {{ active_term.academic_year }} ({{ active_term.semester }})
+                | Deadline: {{ active_term.deadline_date.strftime('%B %d, %Y') if active_term.deadline_date else 'N/A'
+                }}
             </div>
+
+            {% if master_indicators %}
+            <form action="{{ url_for('dean.cascade_quotas') }}" method="POST" id="cascadeForm"
+                onsubmit="return validateQuotas()">
+                <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle shadow-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Master Indicator</th>
+                                <th width="10%">WST Program</th>
+                                <th width="10%">DST Program</th>
+                                <th width="10%">NST Program</th>
+                                <th width="10%">BSDS Program</th>
+                                <th width="10%">RET / Extension</th>
+                                <th width="11%">College-Wide</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set current_category = namespace(name='') %}
+                            {% for indicator in master_indicators %}
+                            {% if indicator.category_name != current_category.name %}
+                            {% set current_category.name = indicator.category_name %}
+                            <tr class="table-secondary">
+                                <td colspan="7" class="fw-bold text-uppercase text-dark border-bottom border-2">
+                                    <i class="bi bi-folder2-open me-2"></i> {{ indicator.category_name }}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="ps-4">
+                                    <input type="hidden" name="indicator_id[]" value="{{ indicator.indicator_id }}">
+                                    {{ indicator.indicator_description }}
+                                    <span class="badge bg-dark ms-2">{{ indicator.efficiency_type }}</span>
+                                </td>
+                                <td>
+                                    <input type="number"
+                                        class="form-control form-control-sm shadow-sm fw-bold quota-input" name="wst[]"
+                                        min="0"
+                                        value="{{ existing_quotas.get(indicator.indicator_id, {}).get('WST Program', 0) }}"
+                                        data-indicator="{{ indicator.indicator_id }}" onchange="updateTotals()">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                        class="form-control form-control-sm shadow-sm fw-bold quota-input" name="dst[]"
+                                        min="0"
+                                        value="{{ existing_quotas.get(indicator.indicator_id, {}).get('DST Program', 0) }}"
+                                        data-indicator="{{ indicator.indicator_id }}" onchange="updateTotals()">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                        class="form-control form-control-sm shadow-sm fw-bold quota-input" name="nst[]"
+                                        min="0"
+                                        value="{{ existing_quotas.get(indicator.indicator_id, {}).get('NST Program', 0) }}"
+                                        data-indicator="{{ indicator.indicator_id }}" onchange="updateTotals()">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                        class="form-control form-control-sm shadow-sm fw-bold quota-input" name="bsds[]"
+                                        min="0"
+                                        value="{{ existing_quotas.get(indicator.indicator_id, {}).get('BSDS Program', 0) }}"
+                                        data-indicator="{{ indicator.indicator_id }}" onchange="updateTotals()">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                        class="form-control form-control-sm shadow-sm fw-bold quota-input" name="ret[]"
+                                        min="0"
+                                        value="{{ existing_quotas.get(indicator.indicator_id, {}).get('RET / Extension', 0) }}"
+                                        data-indicator="{{ indicator.indicator_id }}" onchange="updateTotals()">
+                                </td>
+                                <td>
+                                    <input type="number"
+                                        class="form-control form-control-sm text-success shadow-sm fw-bold"
+                                        name="college[]" min="0"
+                                        value="{{ existing_quotas.get(indicator.indicator_id, {}).get('College-Wide', 0) }}"
+                                        disabled>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="validationMessage" class="alert d-none mt-2"></div>
+
+                <div class="text-end mt-3 border-top pt-3">
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm px-4" id="cascadeBtn">
+                        Cascade Institutional Targets <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-warning">
+                No master indicators found for the active term. Please ensure indicators are configured.
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="alert alert-warning">
+                <strong>No Active Term:</strong> Please activate an academic term to begin cascading targets.
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -343,7 +334,8 @@
     <div class="page-header d-flex justify-content-between align-items-center">
         <div>
             <h2>IPCR Draft Approval</h2>
-            <p>Review and approve/reject draft IPCR submissions from Designated Faculty members. Changes sync back to their drafts.</p>
+            <p>Review and approve/reject draft IPCR submissions from Designated Faculty members. Changes sync back to
+                their drafts.</p>
         </div>
     </div>
 
@@ -375,18 +367,20 @@
                             </td>
                             <td class="text-center" id="status-cell-{{ sub.emp_id }}">
                                 {% if sub.review_status == 'Approved' %}
-                                <span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>
+                                <span class="badge bg-success px-3 py-2"><i
+                                        class="bi bi-check-circle-fill me-1"></i>Approved</span>
                                 {% elif sub.review_status == 'Rejected' %}
-                                <span class="badge bg-danger px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>Returned</span>
+                                <span class="badge bg-danger px-3 py-2"><i
+                                        class="bi bi-x-circle-fill me-1"></i>Returned</span>
                                 {% else %}
-                                <span class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-hourglass-split me-1"></i>Pending Review</span>
+                                <span class="badge bg-warning text-dark px-3 py-2"><i
+                                        class="bi bi-hourglass-split me-1"></i>Pending Review</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">
                                 <button class="btn btn-sm btn-outline-primary open-review-modal"
-                                        data-emp-id="{{ sub.emp_id }}"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#reviewDeanModal">
+                                    data-emp-id="{{ sub.emp_id }}" data-bs-toggle="modal"
+                                    data-bs-target="#reviewDeanModal">
                                     <i class="bi bi-eye-fill me-1"></i> Review
                                 </button>
                             </td>
@@ -413,7 +407,8 @@
         <div class="modal-content border-0 shadow-lg">
 
             <!-- Modal Header -->
-            <div class="modal-header border-0 py-3" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
+            <div class="modal-header border-0 py-3"
+                style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
                 <div>
                     <h5 class="modal-title text-white fw-bold mb-0" id="reviewDeanModalLabel">
                         <i class="bi bi-file-earmark-person-fill me-2"></i>
@@ -466,7 +461,8 @@
                 <div class="px-4 pb-2">
                     <h6 class="fw-bold text-secondary text-uppercase mb-3">
                         <i class="bi bi-exclamation-circle me-2"></i>Unselected Indicators
-                        <small class="text-muted fw-normal ms-2">(Faculty did not pick these. You can assign quantities here.)</small>
+                        <small class="text-muted fw-normal ms-2">(Faculty did not pick these. You can assign quantities
+                            here.)</small>
                     </h6>
                 </div>
                 <div class="table-responsive px-4 pb-3">
@@ -474,9 +470,8 @@
                         <thead class="table-light">
                             <tr>
                                 <th width="17%">Category</th>
-                                <th width="42%">Indicator</th>
-                                <th class="text-center" width="11%">Assign Qty</th>
-                                <th width="30%">Remarks</th>
+                                <th width="73%">Indicator</th>
+                                <th class="text-center" width="10%">Action</th>
                             </tr>
                         </thead>
                         <tbody id="unpickedItemsBody">
@@ -496,8 +491,10 @@
                 <input type="hidden" id="modalDeanReviewId">
                 <input type="hidden" id="modalDeanEmpId">
                 <div class="mb-3">
-                    <label for="deanOverallRemarks" class="form-label fw-semibold mb-1">Overall Remarks <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="deanOverallRemarks" rows="2" placeholder="Required for rejection — explain why it was returned."></textarea>
+                    <label for="deanOverallRemarks" class="form-label fw-semibold mb-1">Overall Remarks <span
+                            class="text-danger">*</span></label>
+                    <textarea class="form-control" id="deanOverallRemarks" rows="2"
+                        placeholder="Required for rejection — explain why it was returned."></textarea>
                 </div>
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -523,7 +520,8 @@
 <div class="modal fade" id="confirmDeanModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-0 py-3" style="background: linear-gradient(135deg, #374151 0%, #1f2937 100%);">
+            <div class="modal-header border-0 py-3"
+                style="background: linear-gradient(135deg, #374151 0%, #1f2937 100%);">
                 <h6 class="modal-title text-white fw-bold mb-0" id="confirmModalTitle">Confirm</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -564,7 +562,8 @@
             <h5 class="fw-bold mb-0 text-success">
                 <i class="bi bi-globe me-2"></i>College-Wide Targets with Quotas
             </h5>
-            <small class="text-muted">The following indicators have College-Wide target quotas set. Assign them to designated faculty below.</small>
+            <small class="text-muted">The following indicators have College-Wide target quotas set. Assign them to
+                designated faculty below.</small>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -598,7 +597,8 @@
             <h5 class="fw-bold mb-0 text-primary">
                 <i class="bi bi-people-fill me-2"></i>Designated Faculty Assignment
             </h5>
-            <small class="text-muted">Set target quantities for each designated faculty member per College-Wide indicator.</small>
+            <small class="text-muted">Set target quantities for each designated faculty member per College-Wide
+                indicator.</small>
         </div>
         <div class="card-body p-0">
             {% for q in college_wide_quotas %}
@@ -625,17 +625,21 @@
                                 <td class="small">{{ fac.academic_rank }}</td>
                                 <td class="small">{{ fac.assigned_program }}</td>
                                 <td class="text-center">
-                                    <form id="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}" action="{{ url_for('dean.assign_designated_target') }}" method="POST" class="m-0">
+                                    <form id="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}"
+                                        action="{{ url_for('dean.assign_designated_target') }}" method="POST"
+                                        class="m-0">
                                         <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
                                         <input type="hidden" name="emp_id" value="{{ fac.emp_id }}">
                                         <input type="hidden" name="indicator_id" value="{{ q.indicator_id }}">
-                                        <input type="number" name="quantity" class="form-control form-control-sm text-center fw-bold shadow-sm"
-                                               value="{{ designated_assignments.get(fac.emp_id, {}).get(q.indicator_id, 0) }}" min="0"
-                                               style="width: 100px; margin: 0 auto;">
+                                        <input type="number" name="quantity"
+                                            class="form-control form-control-sm text-center fw-bold shadow-sm"
+                                            value="{{ designated_assignments.get(fac.emp_id, {}).get(q.indicator_id, 0) }}"
+                                            min="0" style="width: 100px; margin: 0 auto;">
                                     </form>
                                 </td>
                                 <td class="text-center">
-                                    <button type="submit" form="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}" class="btn btn-sm btn-outline-primary">
+                                    <button type="submit" form="assignForm_{{ fac.emp_id }}_{{ q.indicator_id }}"
+                                        class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-save"></i> Save
                                     </button>
                                 </td>
@@ -656,7 +660,8 @@
 
     {% else %}
     <div class="alert alert-warning border-0 shadow-sm">
-        <i class="bi bi-inbox me-2"></i> No College-Wide quotas have been set yet. Go to <strong>Quota Cascading</strong> to set College-Wide target values first.
+        <i class="bi bi-inbox me-2"></i> No College-Wide quotas have been set yet. Go to <strong>Quota
+            Cascading</strong> to set College-Wide target values first.
     </div>
     {% endif %}
 
@@ -725,357 +730,493 @@
         }
     }
 
-function viewIPCR(scoreId) {
-    window.location.href = `/dean/review_ipcr/${scoreId}`;
-}
+    function viewIPCR(scoreId) {
+        window.location.href = `/dean/review_ipcr/${scoreId}`;
+    }
 
-// ── Dean IPCR Review AJAX (Program Chair UX style) ──
+    // ── Dean IPCR Review AJAX (Program Chair UX style) ──
 
-let deanReviewData = null;
-let deanReviewItems = [];
+    let deanReviewData = null;
+    let deanReviewItems = [];
 
-// Open review modal — triggered by data-bs-toggle on the button
-document.addEventListener('DOMContentLoaded', function() {
-    // Hook into open-review-modal buttons
-    document.querySelectorAll('.open-review-modal').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const empId = this.getAttribute('data-emp-id');
-            openDeanReview(empId);
+    // Open review modal — triggered by data-bs-toggle on the button
+    document.addEventListener('DOMContentLoaded', function () {
+        // Hook into open-review-modal buttons
+        document.querySelectorAll('.open-review-modal').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const empId = this.getAttribute('data-emp-id');
+                openDeanReview(empId);
+            });
         });
-    });
 
-    // Approve button — show confirmation first
-    document.getElementById('btnDeanApprove')?.addEventListener('click', function() {
-        document.getElementById('confirmAction').value = 'Approved';
-        document.getElementById('confirmModalTitle').textContent = 'Approve Draft IPCR?';
-        document.getElementById('confirmModalBody').innerHTML =
-            '<p class="mb-1">This will <strong>approve and lock</strong> the draft IPCR.</p>' +
-            '<p class="mb-0 text-muted small">The designated faculty will no longer be able to modify their targets.</p>';
-        document.getElementById('btnConfirmAction').className = 'btn btn-success fw-bold';
-        document.getElementById('btnConfirmAction').innerHTML = '<i class="bi bi-check-circle me-1"></i> Yes, Approve';
-        new bootstrap.Modal(document.getElementById('confirmDeanModal')).show();
-    });
+        // Approve button — show confirmation first
+        document.getElementById('btnDeanApprove')?.addEventListener('click', function () {
+            document.getElementById('confirmAction').value = 'Approved';
+            document.getElementById('confirmModalTitle').textContent = 'Approve Draft IPCR?';
+            document.getElementById('confirmModalBody').innerHTML =
+                '<p class="mb-1">This will <strong>approve and lock</strong> the draft IPCR.</p>' +
+                '<p class="mb-0 text-muted small">The designated faculty will no longer be able to modify their targets.</p>';
+            document.getElementById('btnConfirmAction').className = 'btn btn-success fw-bold';
+            document.getElementById('btnConfirmAction').innerHTML = '<i class="bi bi-check-circle me-1"></i> Yes, Approve';
+            new bootstrap.Modal(document.getElementById('confirmDeanModal')).show();
+        });
 
-    // Reject button — show confirmation first
-    document.getElementById('btnDeanReject')?.addEventListener('click', function() {
-        document.getElementById('confirmAction').value = 'Rejected';
-        document.getElementById('confirmModalTitle').textContent = 'Return Draft IPCR?';
-        document.getElementById('confirmModalBody').innerHTML =
-            '<p class="mb-1">This will <strong>return</strong> the draft IPCR to the designated faculty.</p>' +
-            '<p class="mb-0 text-muted small">They will be able to review your remarks, make changes, and re-submit.</p>';
-        document.getElementById('btnConfirmAction').className = 'btn btn-danger fw-bold';
-        document.getElementById('btnConfirmAction').innerHTML = '<i class="bi bi-x-circle me-1"></i> Yes, Return';
-        new bootstrap.Modal(document.getElementById('confirmDeanModal')).show();
-    });
-
-    // Confirm button in modal
-    document.getElementById('btnConfirmAction')?.addEventListener('click', function() {
-        const action = document.getElementById('confirmAction').value;
-        bootstrap.Modal.getInstance(document.getElementById('confirmDeanModal')).hide();
-        saveThenDecide(action);
-    });
-});
-
-function openDeanReview(empId) {
-    // Reset button states from any previous action
-    const approveBtn = document.getElementById('btnDeanApprove');
-    const rejectBtn = document.getElementById('btnDeanReject');
-    approveBtn.disabled = false;
-    approveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Approve & Lock';
-    rejectBtn.disabled = false;
-    rejectBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i> Reject & Return';
-
-    const loader = document.getElementById('modalLoader');
-    const body = document.getElementById('modalBody');
-    const footer = document.getElementById('modalFooter');
-    loader.style.display = 'block';
-    body.style.display = 'none';
-    footer.style.display = 'none';
-
-    document.getElementById('modalFacultyName').textContent = 'Loading...';
-    document.getElementById('modalFacultyRank').textContent = '';
-    document.getElementById('modalStatusBadge').textContent = '';
-    document.getElementById('deanOverallRemarks').value = '';
-
-    fetch(`/dean/review_draft_fetch/${empId}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-                loader.style.display = 'none';
+        // Reject button — show confirmation first
+        document.getElementById('btnDeanReject')?.addEventListener('click', function () {
+            const remarks = document.getElementById('deanOverallRemarks').value.trim();
+            if (!remarks) {
+                alert('Please provide overall remarks when rejecting.');
+                document.getElementById('deanOverallRemarks').focus();
                 return;
             }
-
-            deanReviewData = data;
-            deanReviewItems = data.items || [];
-
-            // Header
-            document.getElementById('modalFacultyName').textContent = data.faculty_name;
-            document.getElementById('modalFacultyRank').textContent =
-                (data.academic_rank || '') + (data.designation ? ' | ' + data.designation : '') + ' | ' + (data.assigned_program || '');
-
-            const statusEl = document.getElementById('modalStatusBadge');
-            if (data.overall_status === 'Approved') {
-                statusEl.className = 'badge bg-success fs-6 px-3 py-2';
-                statusEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Approved';
-            } else if (data.overall_status === 'Rejected') {
-                statusEl.className = 'badge bg-danger fs-6 px-3 py-2';
-                statusEl.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Returned';
-            } else {
-                statusEl.className = 'badge bg-warning text-dark fs-6 px-3 py-2';
-                statusEl.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Pending Review';
-            }
-
-            document.getElementById('deanOverallRemarks').value = data.overall_remarks || '';
-            document.getElementById('modalDeanReviewId').value = data.review_id;
-            document.getElementById('modalDeanEmpId').value = data.emp_id;
-
-            // Populate submitted targets
-            populateReviewItems(data.items);
-
-            // Populate unpicked indicators
-            populateUnpickedItems(data.unpicked || []);
-
-            loader.style.display = 'none';
-            body.style.display = 'block';
-            footer.style.display = 'block';
-        })
-        .catch(err => {
-            console.error('Error:', err);
-            alert('Failed to load review data.');
-            loader.style.display = 'none';
+            document.getElementById('confirmAction').value = 'Rejected';
+            document.getElementById('confirmModalTitle').textContent = 'Return Draft IPCR?';
+            document.getElementById('confirmModalBody').innerHTML =
+                '<p class="mb-1">This will <strong>return</strong> the draft IPCR to the designated faculty.</p>' +
+                '<p class="mb-0 text-muted small">They will be able to review your remarks, make changes, and re-submit.</p>';
+            document.getElementById('btnConfirmAction').className = 'btn btn-danger fw-bold';
+            document.getElementById('btnConfirmAction').innerHTML = '<i class="bi bi-x-circle me-1"></i> Yes, Return';
+            new bootstrap.Modal(document.getElementById('confirmDeanModal')).show();
         });
-}
 
-function populateReviewItems(items) {
-    const tbody = document.getElementById('reviewItemsBody');
-    tbody.innerHTML = '';
-    let currentCat = '';
-    items.forEach(item => {
-        if (item.category_name !== currentCat) {
-            currentCat = item.category_name;
-            tbody.innerHTML += `<tr class="table-secondary"><td colspan="5" class="fw-bold text-uppercase text-dark small">${currentCat}</td></tr>`;
-        }
-        const isLocked = deanReviewData.overall_status === 'Approved' || deanReviewData.overall_status === 'Rejected';
-        tbody.innerHTML += `
-            <tr>
+        // Confirm button in modal
+        document.getElementById('btnConfirmAction')?.addEventListener('click', function () {
+            const action = document.getElementById('confirmAction').value;
+            bootstrap.Modal.getInstance(document.getElementById('confirmDeanModal')).hide();
+            saveThenDecide(action);
+        });
+
+        // Event delegation for unpicked targets
+        document.getElementById('unpickedItemsBody')?.addEventListener('click', function (e) {
+            const btn = e.target.closest('.add-unpicked-btn');
+            if (btn) {
+                const indId = parseInt(btn.getAttribute('data-indicator-id'));
+                const index = deanReviewData.unpicked.findIndex(x => x.indicator_id === indId);
+                if (index > -1) {
+                    const ind = deanReviewData.unpicked[index];
+                    deanReviewData.unpicked.splice(index, 1);
+
+                    deanReviewItems.push({
+                        item_id: null,
+                        indicator_id: ind.indicator_id,
+                        indicator_description: ind.indicator_description,
+                        category_name: ind.category_name,
+                        original_quantity: -1,
+                        reviewed_quantity: 1,
+                        item_remarks: '',
+                        is_new: true
+                    });
+
+                    populateReviewItems(deanReviewItems);
+                    populateUnpickedItems(deanReviewData.unpicked);
+                }
+            }
+        });
+
+        // Event delegation for removing Dean-added review items
+        document.getElementById('reviewItemsBody')?.addEventListener('click', function (e) {
+            const btn = e.target.closest('.remove-dean-added-btn');
+            if (btn) {
+                const indId = parseInt(btn.getAttribute('data-indicator-id'));
+                const index = deanReviewItems.findIndex(x => x.indicator_id === indId);
+                if (index > -1) {
+                    const item = deanReviewItems[index];
+                    deanReviewItems.splice(index, 1);
+
+                    deanReviewData.unpicked.push({
+                        indicator_id: item.indicator_id,
+                        indicator_description: item.indicator_description,
+                        category_name: item.category_name
+                    });
+
+                    deanReviewData.unpicked.sort((a, b) => {
+                        if (a.category_name !== b.category_name) {
+                            return a.category_name.localeCompare(b.category_name);
+                        }
+                        return a.indicator_id - b.indicator_id;
+                    });
+
+                    populateReviewItems(deanReviewItems);
+                    populateUnpickedItems(deanReviewData.unpicked);
+                }
+            }
+        });
+
+        // Event delegation for updating input values in memory
+        document.getElementById('reviewItemsBody')?.addEventListener('input', function (e) {
+            const input = e.target;
+            if (input.classList.contains('review-qty')) {
+                const itemIdAttr = input.getAttribute('data-item-id');
+                const indIdAttr = input.getAttribute('data-indicator-id');
+                const val = parseInt(input.value) || 0;
+                if (itemIdAttr && itemIdAttr !== 'null' && itemIdAttr !== 'undefined') {
+                    const item = deanReviewItems.find(x => x.item_id === parseInt(itemIdAttr));
+                    if (item) item.reviewed_quantity = val;
+                } else if (indIdAttr) {
+                    const item = deanReviewItems.find(x => x.indicator_id === parseInt(indIdAttr));
+                    if (item) item.reviewed_quantity = val;
+                }
+            } else if (input.classList.contains('review-remark')) {
+                const itemIdAttr = input.getAttribute('data-item-id');
+                const indIdAttr = input.getAttribute('data-indicator-id');
+                const val = input.value;
+                if (itemIdAttr && itemIdAttr !== 'null' && itemIdAttr !== 'undefined') {
+                    const item = deanReviewItems.find(x => x.item_id === parseInt(itemIdAttr));
+                    if (item) item.item_remarks = val;
+                } else if (indIdAttr) {
+                    const item = deanReviewItems.find(x => x.indicator_id === parseInt(indIdAttr));
+                    if (item) item.item_remarks = val;
+                }
+            }
+        });
+    });
+
+    function openDeanReview(empId) {
+        // Reset button states from any previous action
+        const approveBtn = document.getElementById('btnDeanApprove');
+        const rejectBtn = document.getElementById('btnDeanReject');
+        approveBtn.disabled = false;
+        approveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Approve & Lock';
+        rejectBtn.disabled = false;
+        rejectBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+
+        const loader = document.getElementById('modalLoader');
+        const body = document.getElementById('modalBody');
+        const footer = document.getElementById('modalFooter');
+        loader.style.display = 'block';
+        body.style.display = 'none';
+        footer.style.display = 'none';
+
+        document.getElementById('modalFacultyName').textContent = 'Loading...';
+        document.getElementById('modalFacultyRank').textContent = '';
+        document.getElementById('modalStatusBadge').textContent = '';
+        document.getElementById('deanOverallRemarks').value = '';
+
+        fetch(`/dean/review_draft_fetch/${empId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    loader.style.display = 'none';
+                    return;
+                }
+
+                deanReviewData = data;
+                deanReviewItems = data.items || [];
+
+                // Header
+                document.getElementById('modalFacultyName').textContent = data.faculty_name;
+                document.getElementById('modalFacultyRank').textContent =
+                    (data.academic_rank || '') + (data.designation ? ' | ' + data.designation : '') + ' | ' + (data.assigned_program || '');
+
+                const statusEl = document.getElementById('modalStatusBadge');
+                if (data.overall_status === 'Approved') {
+                    statusEl.className = 'badge bg-success fs-6 px-3 py-2';
+                    statusEl.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Approved';
+                } else if (data.overall_status === 'Rejected') {
+                    statusEl.className = 'badge bg-danger fs-6 px-3 py-2';
+                    statusEl.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Returned';
+                } else {
+                    statusEl.className = 'badge bg-warning text-dark fs-6 px-3 py-2';
+                    statusEl.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Pending Review';
+                }
+
+                document.getElementById('deanOverallRemarks').value = data.overall_remarks || '';
+                document.getElementById('modalDeanReviewId').value = data.review_id;
+                document.getElementById('modalDeanEmpId').value = data.emp_id;
+
+                // Populate submitted targets
+                populateReviewItems(data.items);
+
+                // Populate unpicked indicators
+                populateUnpickedItems(data.unpicked || []);
+
+                loader.style.display = 'none';
+                body.style.display = 'block';
+                footer.style.display = 'block';
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Failed to load review data.');
+                loader.style.display = 'none';
+            });
+    }
+
+    function populateReviewItems(items) {
+        const tbody = document.getElementById('reviewItemsBody');
+        tbody.innerHTML = '';
+        let currentCat = '';
+
+        // Sort items by category rank
+        const catOrder = {
+            'A. Instructions': 1,
+            'Custom Target Items': 2,
+            'A. Research': 3,
+            'B. Extension Services / Training / Advisory': 4,
+            'Support Functions': 5
+        };
+        items.sort((a, b) => {
+            const rankA = catOrder[a.category_name] || 6;
+            const rankB = catOrder[b.category_name] || 6;
+            if (rankA !== rankB) return rankA - rankB;
+            return (a.item_id || 0) - (b.item_id || 0);
+        });
+
+        items.forEach(item => {
+            if (item.category_name !== currentCat) {
+                currentCat = item.category_name;
+                tbody.innerHTML += `<tr class="table-secondary"><td colspan="5" class="fw-bold text-uppercase text-dark small py-2">${currentCat}</td></tr>`;
+            }
+            const isLocked = deanReviewData.overall_status === 'Approved' || deanReviewData.overall_status === 'Rejected';
+
+            // Original Qty display: if -1, show badge "Added by Dean"
+            const origQtyDisplay = item.original_quantity === -1
+                ? '<span class="badge bg-info text-dark">Added by Dean</span>'
+                : item.original_quantity;
+
+            tbody.innerHTML += `
+            <tr class="${item.original_quantity === -1 ? 'table-info' : ''}">
                 <td class="small text-muted">${item.category_name || ''}</td>
                 <td>
                     ${item.indicator_description}
                     ${item.is_custom == 1 ? '<span class="badge bg-warning text-dark ms-1">Custom</span>' : ''}
                 </td>
-                <td class="text-center">${item.original_quantity}</td>
+                <td class="text-center">${origQtyDisplay}</td>
                 <td class="text-center">
                     <input type="number" class="form-control form-control-sm text-center fw-bold review-qty"
-                           data-item-id="${item.item_id}" value="${item.reviewed_quantity}" min="0"
+                           data-item-id="${item.item_id}" data-indicator-id="${item.indicator_id}" 
+                           value="${item.reviewed_quantity}" min="0"
                            ${isLocked ? 'disabled' : ''}>
                 </td>
                 <td>
-                    <input type="text" class="form-control form-control-sm review-remark"
-                           data-item-id="${item.item_id}" value="${item.item_remarks || ''}"
-                           placeholder="Optional note..." ${isLocked ? 'disabled' : ''}>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="text" class="form-control form-control-sm review-remark"
+                               data-item-id="${item.item_id}" data-indicator-id="${item.indicator_id}" 
+                               value="${item.item_remarks || ''}"
+                               placeholder="Optional note..." ${isLocked ? 'disabled' : ''} style="flex: 1;">
+                        ${item.original_quantity === -1 && !isLocked ? `
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0 remove-dean-added-btn" 
+                                data-indicator-id="${item.indicator_id}" title="Remove target">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                        ` : ''}
+                    </div>
                 </td>
             </tr>
         `;
-    });
-}
-
-function populateUnpickedItems(items) {
-    const tbody = document.getElementById('unpickedItemsBody');
-    tbody.innerHTML = '';
-    if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">All available indicators have been selected by the faculty.</td></tr>';
-        return;
+        });
     }
-    let currentCat = '';
-    items.forEach(ind => {
-        if (ind.category_name !== currentCat) {
-            currentCat = ind.category_name;
-            tbody.innerHTML += `<tr class="table-secondary"><td colspan="4" class="fw-bold text-uppercase text-dark small">${currentCat}</td></tr>`;
+
+    function populateUnpickedItems(items) {
+        const tbody = document.getElementById('unpickedItemsBody');
+        tbody.innerHTML = '';
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">All available indicators have been selected by the faculty.</td></tr>';
+            return;
         }
-        tbody.innerHTML += `
+        let currentCat = '';
+        items.forEach(ind => {
+            if (ind.category_name !== currentCat) {
+                currentCat = ind.category_name;
+                tbody.innerHTML += `<tr class="table-secondary"><td colspan="3" class="fw-bold text-uppercase text-dark small py-2">${currentCat}</td></tr>`;
+            }
+            tbody.innerHTML += `
             <tr class="table-warning">
                 <td class="small text-muted">${ind.category_name || ''}</td>
                 <td>${ind.indicator_description}</td>
                 <td class="text-center">
-                    <input type="number" class="form-control form-control-sm text-center fw-bold unpicked-qty"
-                           data-indicator-id="${ind.indicator_id}" value="0" min="0">
-                </td>
-                <td>
-                    <input type="text" class="form-control form-control-sm unpicked-remark"
-                           data-indicator-id="${ind.indicator_id}" value=""
-                           placeholder="Reason for adding...">
+                    <button type="button" class="btn btn-sm btn-success add-unpicked-btn fw-bold"
+                            data-indicator-id="${ind.indicator_id}">
+                        <i class="bi bi-plus-lg me-1"></i> Add
+                    </button>
                 </td>
             </tr>
         `;
-    });
-}
+        });
+    }
 
-function saveThenDecide(action) {
-    // Auto-save all pending edits before approving or rejecting
-    const btn = document.getElementById(action === 'Approved' ? 'btnDeanApprove' : 'btnDeanReject');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving & processing...';
+    function saveThenDecide(action) {
+        // Auto-save all pending edits before approving or rejecting
+        const btn = document.getElementById(action === 'Approved' ? 'btnDeanApprove' : 'btnDeanReject');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving & processing...';
 
-    const reviewId = document.getElementById('modalDeanReviewId').value;
-    if (!reviewId) { btn.disabled = false; return; }
+        const reviewId = document.getElementById('modalDeanReviewId').value;
+        if (!reviewId) { btn.disabled = false; return; }
 
-    // Collect current item values from the DOM
-    const items = [];
-    document.querySelectorAll('.review-qty').forEach(inp => {
-        const itemId = parseInt(inp.getAttribute('data-item-id'));
-        const qty = parseInt(inp.value) || 0;
-        const remark = document.querySelector(`.review-remark[data-item-id="${itemId}"]`)?.value || '';
-        items.push({ item_id: itemId, reviewed_quantity: qty, item_remarks: remark });
-    });
-    document.querySelectorAll('.unpicked-qty').forEach(inp => {
-        const qty = parseInt(inp.value) || 0;
-        if (qty > 0) {
-            const indicatorId = parseInt(inp.getAttribute('data-indicator-id'));
-            const remark = document.querySelector(`.unpicked-remark[data-indicator-id="${indicatorId}"]`)?.value || '';
-            items.push({ indicator_id: indicatorId, reviewed_quantity: qty, item_remarks: remark, is_new: true });
-        }
-    });
+        const items = [];
+        document.querySelectorAll('.review-qty').forEach(inp => {
+            const itemIdAttr = inp.getAttribute('data-item-id');
+            const indIdAttr = inp.getAttribute('data-indicator-id');
+            const qty = parseInt(inp.value) || 0;
 
-    // First save all items
-    fetch('{{ url_for("dean.save_review_items") }}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ review_id: reviewId, items: items })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (!data.success) {
-            showToast('danger', data.message || 'Failed to save changes.');
-            btn.disabled = false;
-            btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+            if (itemIdAttr && itemIdAttr !== 'null' && itemIdAttr !== 'undefined') {
+                const itemId = parseInt(itemIdAttr);
+                const remark = document.querySelector(`.review-remark[data-item-id="${itemId}"]`)?.value || '';
+                items.push({ item_id: itemId, reviewed_quantity: qty, item_remarks: remark });
+            } else if (indIdAttr) {
+                const indicatorId = parseInt(indIdAttr);
+                const remark = document.querySelector(`.review-remark[data-indicator-id="${indicatorId}"]`)?.value || '';
+                items.push({ indicator_id: indicatorId, reviewed_quantity: qty, item_remarks: remark, is_new: true });
+            }
+        });
+
+        // First save all items
+        fetch('{{ url_for("dean.save_review_items") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ review_id: reviewId, items: items })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    showToast('danger', data.message || 'Failed to save changes.');
+                    btn.disabled = false;
+                    btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+                    return;
+                }
+                // Now submit the decision
+                submitDeanDecision(action);
+            })
+            .catch(err => {
+                showToast('danger', 'Network error saving changes.');
+                btn.disabled = false;
+                btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+            });
+    }
+
+    function saveDeanReviewItems() {
+        const reviewId = document.getElementById('modalDeanReviewId').value;
+        if (!reviewId) return;
+
+        const items = [];
+        document.querySelectorAll('.review-qty').forEach(inp => {
+            const itemIdAttr = inp.getAttribute('data-item-id');
+            const indIdAttr = inp.getAttribute('data-indicator-id');
+            const qty = parseInt(inp.value) || 0;
+
+            if (itemIdAttr && itemIdAttr !== 'null' && itemIdAttr !== 'undefined') {
+                const itemId = parseInt(itemIdAttr);
+                const remark = document.querySelector(`.review-remark[data-item-id="${itemId}"]`)?.value || '';
+                items.push({ item_id: itemId, reviewed_quantity: qty, item_remarks: remark });
+            } else if (indIdAttr) {
+                const indicatorId = parseInt(indIdAttr);
+                const remark = document.querySelector(`.review-remark[data-indicator-id="${indicatorId}"]`)?.value || '';
+                items.push({ indicator_id: indicatorId, reviewed_quantity: qty, item_remarks: remark, is_new: true });
+            }
+        });
+
+        const btn = document.getElementById('btnDeanSaveAll');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        fetch('{{ url_for("dean.save_review_items") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ review_id: reviewId, items: items })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', data.message);
+                    // Re-fetch to update review items with their actual item_ids from database
+                    const empId = document.getElementById('modalDeanEmpId').value;
+                    fetch(`/dean/review_draft_fetch/${empId}`)
+                        .then(res => res.json())
+                        .then(newData => {
+                            if (!newData.error) {
+                                deanReviewItems = newData.items || [];
+                                populateReviewItems(deanReviewItems);
+                            }
+                        });
+                } else {
+                    showToast('danger', data.message);
+                }
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
+            })
+            .catch(err => {
+                showToast('danger', 'Network error saving changes.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
+            });
+    }
+
+    function submitDeanDecision(action) {
+        const reviewId = document.getElementById('modalDeanReviewId').value;
+        const remarks = document.getElementById('deanOverallRemarks').value.trim();
+
+        if (action === 'Rejected' && !remarks) {
+            alert('Please provide overall remarks when rejecting.');
+            document.getElementById('deanOverallRemarks').focus();
+
+            // Restore button state
+            const btnApprove = document.getElementById('btnDeanApprove');
+            const btnReject = document.getElementById('btnDeanReject');
+            if (btnApprove) {
+                btnApprove.disabled = false;
+                btnApprove.innerHTML = '<i class="bi bi-check-circle me-1"></i> Approve & Lock';
+            }
+            if (btnReject) {
+                btnReject.disabled = false;
+                btnReject.innerHTML = '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+            }
             return;
         }
-        // Now submit the decision
-        submitDeanDecision(action);
-    })
-    .catch(err => {
-        showToast('danger', 'Network error saving changes.');
-        btn.disabled = false;
-        btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
-    });
-}
+        const btn = action === 'Approved' ? document.getElementById('btnDeanApprove') : document.getElementById('btnDeanReject');
+        const alreadyProcessing = btn.disabled;
 
-function saveDeanReviewItems() {
-    const reviewId = document.getElementById('modalDeanReviewId').value;
-    if (!reviewId) return;
-
-    const items = [];
-    document.querySelectorAll('.review-qty').forEach(inp => {
-        const itemId = parseInt(inp.getAttribute('data-item-id'));
-        const qty = parseInt(inp.value) || 0;
-        const remark = document.querySelector(`.review-remark[data-item-id="${itemId}"]`)?.value || '';
-        items.push({ item_id: itemId, reviewed_quantity: qty, item_remarks: remark });
-    });
-
-    // For unpicked items, create new draft entries
-    document.querySelectorAll('.unpicked-qty').forEach(inp => {
-        const qty = parseInt(inp.value) || 0;
-        if (qty > 0) {
-            const indicatorId = parseInt(inp.getAttribute('data-indicator-id'));
-            const remark = document.querySelector(`.unpicked-remark[data-indicator-id="${indicatorId}"]`)?.value || '';
-            items.push({ indicator_id: indicatorId, reviewed_quantity: qty, item_remarks: remark, is_new: true });
-        }
-    });
-
-    const btn = document.getElementById('btnDeanSaveAll');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
-
-    fetch('{{ url_for("dean.save_review_items") }}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ review_id: reviewId, items: items })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            showToast('success', data.message);
-        } else {
-            showToast('danger', data.message);
-        }
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
-    })
-    .catch(err => {
-        showToast('danger', 'Network error saving changes.');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-save me-2"></i>Save All Changes';
-    });
-}
-
-function submitDeanDecision(action) {
-    const reviewId = document.getElementById('modalDeanReviewId').value;
-    const remarks = document.getElementById('deanOverallRemarks').value.trim();
-
-    if (action === 'Rejected' && !remarks) {
-        alert('Please provide overall remarks when rejecting.');
-        document.getElementById('deanOverallRemarks').focus();
-        return;
+        fetch('{{ url_for("dean.submit_review_decision") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ review_id: reviewId, action: action, overall_remarks: remarks })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', data.message);
+                    // Update status badge in modal
+                    const badge = document.getElementById('modalStatusBadge');
+                    badge.className = 'badge ' + (action === 'Approved' ? 'bg-success' : 'bg-danger') + ' fs-6 px-3 py-2';
+                    badge.innerHTML = '<i class="bi ' + (action === 'Approved' ? 'bi-check-circle-fill' : 'bi-x-circle-fill') + ' me-1"></i>' + (action === 'Approved' ? 'Approved' : 'Returned');
+                    // Update row status in listing
+                    const empId = document.getElementById('modalDeanEmpId').value;
+                    const statusCell = document.getElementById('status-cell-' + empId);
+                    if (statusCell) {
+                        statusCell.innerHTML = action === 'Approved'
+                            ? '<span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>'
+                            : '<span class="badge bg-danger px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>Returned</span>';
+                    }
+                    // Close modal after 1.5s
+                    setTimeout(() => {
+                        const modalEl = document.getElementById('reviewDeanModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }, 1500);
+                } else {
+                    showToast('danger', data.message);
+                    // Restore button state on error
+                    btn.disabled = false;
+                    btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+                }
+            })
+            .catch(err => {
+                showToast('danger', 'Network error submitting decision.');
+                btn.disabled = false;
+                btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
+            });
     }
-    const btn = action === 'Approved' ? document.getElementById('btnDeanApprove') : document.getElementById('btnDeanReject');
-    // If saveThenDecide already disabled the button, it already shows "Saving & processing..."
-    const alreadyProcessing = btn.disabled;
 
-    fetch('{{ url_for("dean.submit_review_decision") }}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ review_id: reviewId, action: action, overall_remarks: remarks })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            showToast('success', data.message);
-            // Update status badge in modal
-            const badge = document.getElementById('modalStatusBadge');
-            badge.className = 'badge ' + (action === 'Approved' ? 'bg-success' : 'bg-danger') + ' fs-6 px-3 py-2';
-            badge.innerHTML = '<i class="bi ' + (action === 'Approved' ? 'bi-check-circle-fill' : 'bi-x-circle-fill') + ' me-1"></i>' + (action === 'Approved' ? 'Approved' : 'Returned');
-            // Update row status in listing
-            const empId = document.getElementById('modalDeanEmpId').value;
-            const statusCell = document.getElementById('status-cell-' + empId);
-            if (statusCell) {
-                statusCell.innerHTML = action === 'Approved'
-                    ? '<span class="badge bg-success px-3 py-2"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>'
-                    : '<span class="badge bg-danger px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>Returned</span>';
-            }
-            // Close modal after 1.5s
-            setTimeout(() => {
-                const modalEl = document.getElementById('reviewDeanModal');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-            }, 1500);
-        } else {
-            showToast('danger', data.message);
-        }
-        if (!alreadyProcessing) {
-            btn.disabled = false;
-            btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
-        }
-    })
-    .catch(err => {
-        showToast('danger', 'Network error submitting decision.');
-        if (!alreadyProcessing) {
-            btn.disabled = false;
-            btn.innerHTML = action === 'Approved' ? '<i class="bi bi-check-circle me-1"></i> Approve & Lock' : '<i class="bi bi-x-circle me-1"></i> Reject & Return';
-        }
-    });
-}
-
-// Toast notification helper
-function showToast(type, message) {
-    const container = document.querySelector('.flash-container') || document.querySelector('.dipcr-main');
-    if (!container) return;
-    const div = document.createElement('div');
-    div.className = `alert alert-${type} alert-dismissible fade show shadow-sm`;
-    div.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-    container.prepend(div);
-    setTimeout(() => div.remove(), 5000);
-}
+    // Toast notification helper
+    function showToast(type, message) {
+        const container = document.querySelector('.flash-container') || document.querySelector('.dipcr-main');
+        if (!container) return;
+        const div = document.createElement('div');
+        div.className = `alert alert-${type} alert-dismissible fade show shadow-sm`;
+        div.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        container.prepend(div);
+        setTimeout(() => div.remove(), 5000);
+    }
 
     function generateSummary() {
         // This would trigger PDF generation

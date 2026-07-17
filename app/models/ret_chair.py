@@ -65,6 +65,10 @@ def save_ret_rule(conn, cursor, term_id, academic_rank, research_selections, ext
 
 def get_ret_rules(cursor, term_id):
     from app.models.connection import timed_query
+    # Filters by mi.term_id so rules effectively reset each term — intentional design.
+    # When a new term is opened, new indicator IDs are created and old rule-indicator
+    # references no longer match the current term's indicators, making the table appear
+    # empty and prompting the RET Chair to reconfigure for the new term.
     query = """
         SELECT r.rule_id, r.academic_rank, r.required_selections, mi.indicator_id, mi.indicator_description, tc.category_name, rri.target_quantity
         FROM tbl_ret_rules r
@@ -72,19 +76,28 @@ def get_ret_rules(cursor, term_id):
         JOIN tbl_master_indicators mi ON rri.indicator_id = mi.indicator_id
         JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
         WHERE mi.term_id = %s
+        ORDER BY r.academic_rank, tc.category_name
     """
-    # FIX: Run the timed query directly but process the results instead of immediate return
-    timed_query(cursor, query, (term_id,), label="get_ret_rules")
-    rows = cursor.fetchall()
+    # BUGFIX: timed_query() internally calls cursor.fetchall() and returns the rows.
+    # The old code discarded the return value and called cursor.fetchall() again,
+    # which always returned [] because the cursor was already exhausted.
+    rows = timed_query(cursor, query, (term_id,), label="get_ret_rules")
     rules_dict = {}
 
     for r in rows:
-        rule_id, rank, required, ind_id, desc, category, qty = r
+        rule_id = r['rule_id']
+        rank    = r['academic_rank']
+        required = r['required_selections']
+        ind_id   = r['indicator_id']
+        desc     = r['indicator_description']
+        category = r['category_name']
+        qty      = r['target_quantity']
+
         if rank not in rules_dict:
             rules_dict[rank] = {
                 'rule_id': rank,  # Use rank string as rule_id for frontend delete forms
                 'academic_rank': rank,
-                'research_required': 0, 
+                'research_required': 0,
                 'extension_required': 0,
                 'research_indicators': [],
                 'extension_indicators': []

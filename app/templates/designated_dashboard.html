@@ -13,8 +13,14 @@
 <div class="nav-label">Performance</div>
 <button class="nav-item" data-section="designated-dpcr" onclick="showSection('designated-dpcr')">
     <i class="bi bi-file-earmark-text-fill"></i>
-    <span class="nav-text">My DPCR</span>
+    <span class="nav-text">My IPCR</span>
 </button>
+{% if dean_review and dean_review.overall_status == 'Approved' %}
+<button class="nav-item" data-section="nav-evidence" onclick="showSection('nav-evidence')">
+    <i class="bi bi-cloud-upload-fill"></i>
+    <span class="nav-text">Evidence Gathering</span>
+</button>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -28,18 +34,23 @@
 
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card shadow-sm border-0 border-start border-primary border-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <div class="card shadow-sm border-0 border-start border-primary border-4"
+                style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                 <div class="card-body py-4">
-                    <h6 class="text-primary fw-bold text-uppercase mb-1"><i class="bi bi-person-badge me-2"></i>My Profile</h6>
-                    <p class="mb-1 text-muted small"><strong>Rank:</strong> <span class="text-dark">{{ academic_rank or 'Not Assigned' }}</span></p>
-                    <p class="mb-0 text-muted small"><strong>Designation:</strong> <span class="text-dark">{{ designation or 'None' }}</span></p>
+                    <h6 class="text-primary fw-bold text-uppercase mb-1"><i class="bi bi-person-badge me-2"></i>My
+                        Profile</h6>
+                    <p class="mb-1 text-muted small"><strong>Rank:</strong> <span class="text-dark">{{ academic_rank or
+                            'Not Assigned' }}</span></p>
+                    <p class="mb-0 text-muted small"><strong>Designation:</strong> <span class="text-dark">{{
+                            designation or 'None' }}</span></p>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
                 <div class="card-body py-4 d-flex flex-column justify-content-center">
-                    <h6 class="text-success fw-bold text-uppercase mb-1"><i class="bi bi-calendar-check me-2"></i>Current Term</h6>
+                    <h6 class="text-success fw-bold text-uppercase mb-1"><i
+                            class="bi bi-calendar-check me-2"></i>Current Term</h6>
                     {% if active_term %}
                     <h3 class="text-dark mb-1">{{ active_term.academic_year }}</h3>
                     <p class="text-muted small mb-0">{{ active_term.semester }}</p>
@@ -55,102 +66,146 @@
 <div id="designated-dpcr" class="dashboard-section">
     <div class="page-header d-flex justify-content-between align-items-center">
         <div>
-            <h2>My DPCR Targets</h2>
+            <h2>My IPCR Targets</h2>
             <p>Review your assigned targets and configure your customized commitment targets.</p>
         </div>
-        <button type="button" class="btn btn-primary fw-bold shadow-sm" 
-                data-bs-toggle="modal" data-bs-target="#addTargetModal"
-                {% if has_submitted %}disabled{% endif %}>
+        <button type="button" class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal"
+            data-bs-target="#addTargetModal" {% if not can_edit %}disabled{% endif %}>
             <i class="bi bi-plus-lg me-2"></i> Add Target
         </button>
     </div>
 
     {% if not active_term %}
     <div class="alert alert-warning border-0 shadow-sm" style="border-radius: 10px;">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i> There is no active term set by the administration. You cannot manage targets right now.
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> There is no active term set by the administration. You
+        cannot manage targets right now.
     </div>
     {% else %}
-    
+
     <form id="dpcrForm" action="{{ url_for('designated.submit_designated_ipcr_route') }}" method="POST">
         <input type="hidden" name="term_id" value="{{ active_term.term_id }}">
-        
-        <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
-            <div class="card-header bg-primary text-white border-0 py-3">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i>Target Selection</h5>
-                <p class="small mb-0 opacity-75">Select targets to manage and submit</p>
+
+        {% set categories = [
+        {'id': 'instructions', 'name': 'A. Instructions', 'icon': 'bi-star-fill', 'class': 'bg-primary text-white',
+        'subtitle': 'Assigned teaching and instructional workloads'},
+        {'id': 'support', 'name': 'Support Functions', 'icon': 'bi-tools', 'class': 'bg-warning text-dark border-0',
+        'subtitle': 'Assigned administrative and support workloads'}
+        ] %}
+
+        {% for cat in categories %}
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+            <div class="card-header border-0 py-3 {{ cat.class }}">
+                <h5 class="mb-0 fw-bold"><i class="bi {{ cat.icon }} me-2"></i>{{ cat.name }}</h5>
+                <p class="small mb-0 opacity-75">{{ cat.subtitle }}</p>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th width="40" class="text-center"></th>
-                                <th>Indicator</th>
+                                {% if can_edit %}
+                                <th width="50" class="text-center">Select</th>
+                                {% endif %}
+                                <th class="ps-4">Indicator</th>
                                 <th class="text-center" width="150">Target Qty</th>
                                 <th class="text-center" width="120">Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% if dpcr_targets|length > 0 %}
-                                {% for target in dpcr_targets %}
-                                <tr>
-                                    <td class="text-center">
-                                        <input type="checkbox" name="selected_indicators[]" class="form-check-input strategic-checkbox" 
-                                               value="{{ target.indicator_id }}" style="transform: scale(1.3);"
-                                               {% if has_submitted %}checked disabled{% endif %}>
-                                    </td>
-                                    <td class="py-3">
-                                        <span class="badge {% if target.category_name == 'Custom Target Items' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %} mb-1">
-                                            {{ target.category_name or 'Standard' }}
-                                        </span>
-                                        <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
-                                        {# Show 'Added by Dean' badge for Dean-added indicators #}
-                                        {% if target.original_quantity == -1 %}
-                                        <div class="mt-1 p-2 rounded" style="background: #f3e8ff; border-left: 3px solid #7c3aed;">
-                                            <small class="text-dark"><i class="bi bi-plus-circle-fill me-1" style="color: #7c3aed;"></i><strong>Added by Dean</strong>
-                                            {% if target.dean_remarks %} &mdash; {{ target.dean_remarks }}{% endif %}</small>
-                                        </div>
-                                        {% else %}
-                                            {# Show Dean's per-item remark if present #}
-                                            {% if target.dean_remarks %}
-                                            <div class="mt-1 p-2 rounded" style="background: #e8f4ff; border-left: 3px solid #6366F1;">
-                                                <small class="text-dark"><i class="bi bi-chat-square-text-fill me-1" style="color: #6366F1;"></i><strong>Dean's note:</strong> {{ target.dean_remarks }}</small>
-                                            </div>
-                                            {% endif %}
-                                            {# Show quantity change indicator #}
-                                            {% if target.original_quantity is not none and target.reviewed_quantity is not none and target.original_quantity != target.reviewed_quantity %}
-                                            <div class="mt-1 p-1 rounded text-center" style="background: #fff3cd; font-size: 11px;">
-                                                <span class="text-muted">Original: <strong>{{ target.original_quantity }}</strong></span>
-                                                <i class="bi bi-arrow-right mx-1"></i>
-                                                <span class="text-primary fw-bold">Dean revised: <strong>{{ target.reviewed_quantity }}</strong></span>
-                                            </div>
-                                            {% endif %}
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <input type="number" class="form-control form-control-sm text-center fw-bold shadow-sm" 
-                                               name="target_qty_{{ target.indicator_id }}" 
-                                               value="{{ target.total_target_value or 0 }}" min="0"
-                                               {% if has_submitted %}readonly{% endif %}>
-                                    </td>
-                                    <td class="text-center">
-                                        {% if target.status == 'Approved' %}
-                                        <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>
-                                        {% elif target.status == 'Rejected' %}
-                                        <span class="badge bg-danger"><i class="bi bi-x-circle-fill me-1"></i>Returned</span>
-                                        {% elif target.status == 'Pending Review' %}
-                                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">{{ target.status }}</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
+                        <tbody id="tbody-{{ cat.id }}">
+                            {% set ns = namespace(count=0) %}
+                            {% for target in dpcr_targets %}
+                            {% if target.category_name == cat.name %}
+                            {% if can_edit or target.is_selected %}
+                            {% set ns.count = ns.count + 1 %}
+                            <tr {% if target.is_selected and can_edit %}class="table-active-row"
+                                style="background-color: rgba(13, 110, 253, 0.05);" {% endif %}>
+                                {% if can_edit %}
+                                <td class="text-center">
+                                    <input type="checkbox" name="selected_indicators[]"
+                                        class="form-check-input strategic-checkbox" value="{{ target.indicator_id }}"
+                                        style="transform: scale(1.3);" {% if target.is_selected %}checked{% endif %}>
+                                </td>
+                                {% endif %}
+                                <td class="py-3 {% if not can_edit %}ps-4{% endif %}">
+                                    {% if target.is_custom %}
+                                    <span class="badge bg-warning text-dark border mb-1">Custom Target</span>
+                                    {% else %}
+                                    <span class="badge bg-light text-dark border mb-1">Standard</span>
+                                    {% endif %}
+                                    <p class="mb-0 small text-secondary">{{ target.indicator_description }}</p>
+                                    {# Show 'Added by Dean' badge for Dean-added indicators #}
+                                    {% if target.original_quantity == -1 %}
+                                    <div class="mt-1 p-2 rounded"
+                                        style="background: #f3e8ff; border-left: 3px solid #7c3aed;">
+                                        <small class="text-dark"><i class="bi bi-plus-circle-fill me-1"
+                                                style="color: #7c3aed;"></i><strong>Added by Dean</strong>
+                                            {% if target.dean_remarks %} &mdash; {{ target.dean_remarks }}{% endif
+                                            %}</small>
+                                    </div>
+                                    {% else %}
+                                    {# Show Dean's per-item remark if present #}
+                                    {% if target.dean_remarks %}
+                                    <div class="mt-1 p-2 rounded"
+                                        style="background: #e8f4ff; border-left: 3px solid #6366F1;">
+                                        <small class="text-dark"><i class="bi bi-chat-square-text-fill me-1"
+                                                style="color: #6366F1;"></i><strong>Dean's note:</strong> {{
+                                            target.dean_remarks }}</small>
+                                    </div>
+                                    {% endif %}
+                                    {# Show quantity change indicator #}
+                                    {% if target.original_quantity is not none and target.reviewed_quantity is not none
+                                    and target.original_quantity != target.reviewed_quantity %}
+                                    <div class="mt-1 p-1 rounded text-center"
+                                        style="background: #fff3cd; font-size: 11px;">
+                                        <span class="text-muted">Original: <strong>{{ target.original_quantity
+                                                }}</strong></span>
+                                        <i class="bi bi-arrow-right mx-1"></i>
+                                        <span class="text-primary fw-bold">Dean revised: <strong>{{
+                                                target.reviewed_quantity }}</strong></span>
+                                    </div>
+                                    {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if can_edit %}
+                                    <input type="number"
+                                        class="form-control form-control-sm text-center fw-bold shadow-sm"
+                                        name="target_qty_{{ target.indicator_id }}"
+                                        value="{{ target.total_target_value or 0 }}" min="0" {% if target.is_selected
+                                        %}style="background-color: #e8f4ff; border-color: #0d6efd;" {% endif %}>
+                                    {% else %}
+                                    <span class="fw-bold fs-5 text-primary">{{ target.total_target_value or 0 }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if target.status == 'Approved' %}
+                                    <span class="badge bg-success"><i
+                                            class="bi bi-check-circle-fill me-1"></i>Approved</span>
+                                    {% elif target.status == 'Rejected' %}
+                                    <span class="badge bg-danger"><i
+                                            class="bi bi-x-circle-fill me-1"></i>Returned</span>
+                                    {% elif target.status == 'Pending Review' %}
+                                    <span class="badge bg-warning text-dark"><i
+                                            class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ target.status or 'Draft' }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endif %}
+                            {% endfor %}
+
+                            {% if ns.count == 0 %}
                             <tr>
-                                <td colspan="4" class="text-center py-5 text-muted">
-                                    <i class="bi bi-inbox fs-1 d-block mb-2 text-light"></i>
-                                    No targets have been assigned to you yet.
+                                <td colspan="{% if can_edit %}4{% else %}3{% endif %}"
+                                    class="text-center py-4 text-muted small">
+                                    {% if can_edit %}
+                                    No indicators available in this category. Click "Add Target" to create a custom
+                                    target.
+                                    {% else %}
+                                    No committed targets in this category.
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endif %}
@@ -159,49 +214,54 @@
                 </div>
             </div>
         </div>
+        {% endfor %}
 
-        {% if not has_submitted %}
+        {% if can_edit %}
         <div class="mt-4 text-end">
             <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="submitBtn">
-                <i class="bi bi-send-check-fill me-2"></i> Submit IPCR for Approval
+                <i class="bi bi-send-check-fill me-2"></i>
+                {% if has_submitted %}Re-submit IPCR for Approval{% else %}Submit IPCR for Approval{% endif %}
             </button>
         </div>
-        {% else %}
-            {% if dean_review and dean_review.overall_status == 'Approved' %}
-            <div class="alert border-0 shadow-sm mt-4" style="background: linear-gradient(135deg, #f0fff4 0%, #dcffe4 100%); border-left: 5px solid #198754 !important; border-radius: 10px;">
-                <div class="d-flex align-items-start gap-3">
-                    <i class="bi bi-check-circle-fill text-success fs-4 mt-1"></i>
-                    <div>
-                        <h6 class="fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-2"></i>Approved by the Dean</h6>
-                        {% if dean_review.overall_remarks %}
-                        <p class="mb-0 text-dark"><strong>Dean's Remarks:</strong> {{ dean_review.overall_remarks }}</p>
-                        {% endif %}
-                    </div>
+        {% endif %}
+
+        {% if has_submitted %}
+        {% if dean_review and dean_review.overall_status == 'Approved' %}
+        <div class="alert border-0 shadow-sm mt-4"
+            style="background: linear-gradient(135deg, #f0fff4 0%, #dcffe4 100%); border-left: 5px solid #198754 !important; border-radius: 10px;">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bi bi-check-circle-fill text-success fs-4 mt-1"></i>
+                <div>
+                    <h6 class="fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-2"></i>Approved by the
+                        Dean</h6>
+                    {% if dean_review.overall_remarks %}
+                    <p class="mb-0 text-dark"><strong>Dean's Remarks:</strong> {{ dean_review.overall_remarks }}</p>
+                    {% endif %}
                 </div>
             </div>
-            {% elif dean_review and dean_review.overall_status == 'Rejected' %}
-            <div class="alert border-0 shadow-sm mt-4" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 5px solid #ffc107 !important; border-radius: 10px;">
-                <div class="d-flex align-items-start gap-3">
-                    <i class="bi bi-exclamation-circle-fill text-warning fs-4 mt-1" style="color: #d97706 !important;"></i>
-                    <div>
-                        <h6 class="fw-bold mb-1" style="color: #b45309 !important;"><i class="bi bi-arrow-counterclockwise me-2"></i>Returned by the Dean</h6>
-                        {% if dean_review.overall_remarks %}
-                        <p class="mb-0 text-dark"><strong>Dean's Remarks:</strong> {{ dean_review.overall_remarks }}</p>
-                        {% endif %}
-                        <small class="text-muted">Review the Dean's changes and remarks below, then re-submit.</small>
-                    </div>
-                </div>
-                <div class="mt-3 text-end">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold rounded-pill" id="reSubmitBtn">
-                        <i class="bi bi-send-check-fill me-2"></i> Re-submit for Approval
-                    </button>
+        </div>
+        {% elif dean_review and dean_review.overall_status == 'Rejected' %}
+        <div class="alert border-0 shadow-sm mt-4"
+            style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 5px solid #ffc107 !important; border-radius: 10px;">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bi bi-exclamation-circle-fill text-warning fs-4 mt-1" style="color: #d97706 !important;"></i>
+                <div>
+                    <h6 class="fw-bold mb-1" style="color: #b45309 !important;"><i
+                            class="bi bi-arrow-counterclockwise me-2"></i>Returned by the Dean</h6>
+                    {% if dean_review.overall_remarks %}
+                    <p class="mb-0 text-dark"><strong>Dean's Remarks:</strong> {{ dean_review.overall_remarks }}</p>
+                    {% endif %}
+                    <small class="text-muted">Review the Dean's changes and remarks below, adjust them as needed, and
+                        re-submit.</small>
                 </div>
             </div>
-            {% else %}
-            <div class="alert border-0 shadow-sm mt-4 text-center fw-bold" style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); border-left: 5px solid #ff9800 !important; border-radius: 10px;">
-                <i class="bi bi-hourglass-split me-2"></i> Submitted — awaiting review by the Dean.
-            </div>
-            {% endif %}
+        </div>
+        {% elif dean_review and dean_review.overall_status == 'Pending' or not dean_review %}
+        <div class="alert border-0 shadow-sm mt-4 text-center fw-bold"
+            style="background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); border-left: 5px solid #ff9800 !important; border-radius: 10px;">
+            <i class="bi bi-hourglass-split me-2"></i> Submitted — awaiting review by the Dean.
+        </div>
+        {% endif %}
         {% endif %}
     </form>
     {% endif %}
@@ -217,23 +277,24 @@
             <div class="modal-body p-4">
                 <form id="addTargetForm">
                     <div class="mb-3">
-                         <label class="form-label small fw-bold">Indicator Type</label>
-                              <select class="form-select" name="Indicator" required>
-                                   <option value="Instructions">Instructions</option>
-                                   <option value="Admin">Admin</option>
-                                   <option value="Support">Support</option>
-                               </select>
+                        <label class="form-label small fw-bold">Indicator Type</label>
+                        <select class="form-select" name="Indicator" required>
+                            <option value="Instructions">Instructions</option>
+                            <option value="Support">Support</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="targetDescription" class="form-label fw-bold">Target Description <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control form-control-lg" id="targetDescription" 
-                               placeholder="e.g., Number of workshops conducted" required>
+                        <label for="targetDescription" class="form-label fw-bold">Target Description <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg" id="targetDescription"
+                            placeholder="e.g., Number of workshops conducted" required>
                     </div>
 
                     <div class="mb-0">
-                        <label for="targetQuantity" class="form-label fw-bold">Target Quantity <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control form-control-lg" id="targetQuantity" 
-                               min="1" value="1" placeholder="e.g., 5" required>
+                        <label for="targetQuantity" class="form-label fw-bold">Target Quantity <span
+                                class="text-danger">*</span></label>
+                        <input type="number" class="form-control form-control-lg" id="targetQuantity" min="1" value="1"
+                            placeholder="e.g., 5" required>
                     </div>
                 </form>
             </div>
@@ -251,87 +312,292 @@
     .strategic-checkbox {
         cursor: pointer;
     }
+
     .strategic-checkbox:checked {
         background-color: #0d6efd;
         border-color: #0d6efd;
     }
+
     .form-control-sm:focus {
         border-color: #0d6efd;
         box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     }
 </style>
 
+{% if dean_review and dean_review.overall_status == 'Approved' %}
+<div id="nav-evidence" class="dashboard-section">
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Evidence Gathering</h2>
+            <p>Upload your evidence and report accomplishment details for your locked commitment targets.</p>
+        </div>
+        <span class="badge bg-dark px-3 py-2 fs-6 shadow-sm">
+            <i class="bi bi-lock-fill me-2"></i>Locked &amp; Committed
+        </span>
+    </div>
+
+    <div class="alert border-0 shadow-sm mb-4" role="alert"
+        style="background: linear-gradient(135deg, #eaf2ff 0%, #dbe9ff 100%); border-left: 5px solid #0d6efd !important; border-radius: 10px;">
+        <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-info-circle-fill text-primary fs-4 mt-1"></i>
+            <div>
+                <h6 class="fw-bold text-primary mb-1">Committed Evaluation Targets</h6>
+                <p class="mb-0 text-muted small">Please fill out the accomplishment boxes and upload necessary files for
+                    verification by your department dean.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Accomplishments Column -->
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                <div
+                    class="card-header bg-primary text-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-check-fill me-2"></i>My Evidence Submission
+                        Checklist</h5>
+                    {% set selected_targets_count = namespace(count=0) %}
+                    {% for target in dpcr_targets %}
+                    {% if target.is_selected %}
+                    {% set selected_targets_count.count = selected_targets_count.count + 1 %}
+                    {% endif %}
+                    {% endfor %}
+                    <span class="badge bg-light text-primary fw-semibold">{{ selected_targets_count.count }} Target{{
+                        's' if selected_targets_count.count != 1 }} Locked</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4" width="40%">Target Indicator</th>
+                                    <th class="text-center" width="10%">Target Qty</th>
+                                    <th class="text-center" width="15%">Accomplished Qty</th>
+                                    <th class="ps-3" width="35%">Accomplishment Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for target in dpcr_targets %}
+                                {% if target.is_selected %}
+                                <tr>
+                                    <td class="ps-4 py-4">
+                                        <span class="badge bg-light text-dark border mb-1">{{ target.category_name or
+                                            'Standard' }}</span>
+                                        {% if target.is_custom %}
+                                        <span class="badge bg-warning text-dark border mb-1">Custom Target</span>
+                                        {% endif %}
+                                        <p class="mb-0 small fw-semibold text-dark">{{ target.indicator_description }}
+                                        </p>
+                                    </td>
+                                    <td class="text-center fw-bold fs-5 text-primary">
+                                        {{ target.total_target_value or 0 }}
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="number" class="form-control form-control-sm text-center mx-auto"
+                                            style="max-width: 80px;" min="0" placeholder="0"
+                                            name="accomplished_qty_{{ target.target_id or target.indicator_id }}">
+                                    </td>
+                                    <td class="pe-4 py-4">
+                                        <div class="mb-0">
+                                            <textarea class="form-control form-control-sm accomplishment-textarea"
+                                                rows="2"
+                                                placeholder="Describe actual results achieved (e.g. 'Conducted 18 class lectures, prepared syllabus...')"></textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end mb-4">
+                <button type="button" class="btn btn-success btn-lg px-5 shadow fw-bold rounded-pill"
+                    onclick="simulateSaveEvidence()">
+                    <i class="bi bi-cloud-upload-fill me-2"></i>Save &amp; Submit Evidence
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const addTargetBtn = document.getElementById('addTargetBtn');
         const addTargetForm = document.getElementById('addTargetForm');
         const modalElement = document.getElementById('addTargetModal');
-        const tbody = document.querySelector('#dpcrForm table tbody');
 
-        addTargetBtn.addEventListener('click', function() {
-            // Collect custom payload values
-            const category = addTargetForm.querySelector('[name="Indicator"]').value;
-            const description = document.getElementById('targetDescription').value.trim();
-            const quantity = document.getElementById('targetQuantity').value;
-
-            // Quick Frontend Validation check
-            if (!description || !quantity || parseInt(quantity) < 1) {
-                alert('Please fill in all required fields and provide a valid quantity of at least 1.');
-                return;
+        // Checkbox highlighting logic
+        function highlightQtyInput(cb) {
+            const row = cb.closest('tr');
+            const qtyInput = row.querySelector('input[type="number"]');
+            if (qtyInput) {
+                if (cb.checked) {
+                    row.classList.add('table-active-row');
+                    row.style.backgroundColor = 'rgba(13, 110, 253, 0.05)';
+                    qtyInput.classList.add('border-primary');
+                    qtyInput.style.backgroundColor = '#e8f4ff';
+                } else {
+                    row.classList.remove('table-active-row');
+                    row.style.backgroundColor = '';
+                    qtyInput.classList.remove('border-primary');
+                    qtyInput.style.backgroundColor = '';
+                }
             }
+        }
 
-            // Remove placeholder row if it exists
-            const placeholderRow = tbody.querySelector('td[colspan="3"]');
-            if (placeholderRow) {
-                tbody.innerHTML = '';
+        document.querySelectorAll('.strategic-checkbox').forEach(cb => {
+            cb.addEventListener('change', function () {
+                highlightQtyInput(this);
+            });
+            // Initial highlight for pre-checked active inputs
+            if (cb.checked && !cb.disabled) {
+                highlightQtyInput(cb);
             }
-
-            // Create and append custom target row
-            const customRow = document.createElement('tr');
-            customRow.className = 'custom-target-row';
-            customRow.innerHTML = `
-                <td class="text-center">
-                    <input type="checkbox" class="form-check-input" checked disabled style="transform: scale(1.3);">
-                </td>
-                <td class="py-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <span class="badge bg-warning text-dark border mb-1">Custom Target (${category})</span>
-                            <p class="mb-0 small text-secondary">${description}</p>
-                            <input type="hidden" name="custom_descriptions[]" value="${description}">
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); checkEmptyTable();">
-                            <i class="bi bi-trash-fill"></i>
-                        </button>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <input type="number" class="form-control form-control-sm text-center fw-bold shadow-sm" 
-                           name="custom_quantities[]" value="${quantity}" readonly style="width: 100%;">
-                </td>
-            `;
-
-            tbody.appendChild(customRow);
-
-            // Close Bootstrap context modal cleanly and reset form
-            const bootstrapModal = bootstrap.Modal.getInstance(modalElement);
-            bootstrapModal.hide();
-            addTargetForm.reset();
         });
+
+        if (addTargetBtn) {
+            addTargetBtn.addEventListener('click', function () {
+                // Collect custom payload values
+                const categorySelect = addTargetForm.querySelector('[name="Indicator"]').value; // 'Instructions' or 'Support'
+                const description = document.getElementById('targetDescription').value.trim();
+                const quantity = document.getElementById('targetQuantity').value;
+
+                // Quick Frontend Validation check
+                if (!description || !quantity || parseInt(quantity) < 1) {
+                    alert('Please fill in all required fields and provide a valid quantity of at least 1.');
+                    return;
+                }
+
+                // Client-side Duplicate Description Check
+                let isDuplicate = false;
+                document.querySelectorAll('#dpcrForm tbody tr').forEach(row => {
+                    const descEl = row.querySelector('p.mb-0.small.text-secondary');
+                    if (descEl && descEl.textContent.trim().toLowerCase() === description.toLowerCase()) {
+                        isDuplicate = true;
+                    }
+                });
+                if (isDuplicate) {
+                    alert('A target with this description already exists in your list.');
+                    return;
+                }
+
+                // Determine target table and category name
+                let categoryId = 'support';
+                let categoryName = 'Support Functions';
+                if (categorySelect === 'Instructions') {
+                    categoryId = 'instructions';
+                    categoryName = 'A. Instructions';
+                }
+
+                const tbody = document.getElementById(`tbody-${categoryId}`);
+
+                // Remove placeholder row if it exists
+                const placeholderRow = tbody.querySelector('td[colspan]');
+                if (placeholderRow) {
+                    tbody.innerHTML = '';
+                }
+
+                // Create and append custom target row
+                const customRow = document.createElement('tr');
+                customRow.className = 'custom-target-row';
+                customRow.innerHTML = `
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" checked disabled style="transform: scale(1.3);">
+                    </td>
+                    <td class="py-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="badge bg-warning text-dark border mb-1">Custom Target</span>
+                                <p class="mb-0 small text-secondary">${description}</p>
+                                <input type="hidden" name="custom_descriptions[]" value="${description}">
+                                <input type="hidden" name="custom_categories[]" value="${categoryName}">
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); checkEmptyTable('${categoryId}');">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <input type="number" class="form-control form-control-sm text-center fw-bold shadow-sm" 
+                               name="custom_quantities[]" value="${quantity}" readonly style="width: 100%;">
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-secondary">Draft</span>
+                    </td>
+                `;
+
+                tbody.appendChild(customRow);
+
+                // Close Bootstrap context modal cleanly and reset form
+                const bootstrapModal = bootstrap.Modal.getInstance(modalElement);
+                bootstrapModal.hide();
+                addTargetForm.reset();
+            });
+        }
+
+        // Form Validation on Submit
+        const form = document.getElementById('dpcrForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const checkedBoxes = form.querySelectorAll('.strategic-checkbox:checked');
+                const customDescriptions = form.querySelectorAll('input[name="custom_descriptions[]"]');
+
+                if (checkedBoxes.length === 0 && customDescriptions.length === 0) {
+                    alert('Please select at least one standard target or add a custom target before submitting.');
+                    e.preventDefault();
+                    return;
+                }
+
+                let valid = true;
+                let firstInvalidInput = null;
+                checkedBoxes.forEach(cb => {
+                    const row = cb.closest('tr');
+                    // Find either standard or existing custom target qty input
+                    const qtyInput = row.querySelector(`input[name="target_qty_${cb.value}"]`);
+                    if (qtyInput) {
+                        const qty = parseInt(qtyInput.value) || 0;
+                        if (qty <= 0) {
+                            qtyInput.classList.add('is-invalid');
+                            valid = false;
+                            if (!firstInvalidInput) {
+                                firstInvalidInput = qtyInput;
+                            }
+                        } else {
+                            qtyInput.classList.remove('is-invalid');
+                        }
+                    }
+                });
+
+                if (!valid) {
+                    alert('All selected targets must have a quantity greater than 0.');
+                    if (firstInvalidInput) {
+                        firstInvalidInput.focus();
+                    }
+                    e.preventDefault();
+                }
+            });
+        }
     });
 
-    function checkEmptyTable() {
-        const tbody = document.querySelector('#dpcrForm table tbody');
-        if (tbody.children.length === 0) {
+    function checkEmptyTable(categoryId) {
+        const tbody = document.getElementById(`tbody-${categoryId}`);
+        if (tbody && tbody.children.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="3" class="text-center py-5 text-muted">
-                        <i class="bi bi-inbox fs-1 d-block mb-2 text-light"></i>
-                        No targets have been assigned to you yet.
+                    <td colspan="4" class="text-center py-4 text-muted small">
+                        No indicators available in this category. Click "Add Target" to create a custom target.
                     </td>
                 </tr>
             `;
         }
+    }
+
+    function simulateSaveEvidence() {
+        alert("Draft evidence and accomplishments saved successfully!\n(Note: This is a front-end simulation for Phase 3 evidence gathering.)");
     }
 </script>
 {% endblock %}

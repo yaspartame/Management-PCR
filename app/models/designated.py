@@ -53,21 +53,31 @@ def submit_designated_ipcr(conn, cursor, emp_id, term_id, selected_targets, cust
             if not text_clean:
                 continue
 
-            # Step A: Identify or provision the specific 'Custom Target Items' category block
-            cursor.execute("SELECT category_id FROM tbl_target_categories WHERE category_name = 'Custom Target Items'")
+            # Step A: Identify or provision the specific category block dynamically
+            cat_name = custom.get('category_name', 'Support Functions')
+            cursor.execute("SELECT category_id FROM tbl_target_categories WHERE category_name = %s", (cat_name,))
             cat_row = cursor.fetchone()
             if cat_row:
                 category_id = cat_row[0]
             else:
-                cursor.execute("INSERT INTO tbl_target_categories (category_name) VALUES ('Custom Target Items')")
+                cursor.execute("INSERT INTO tbl_target_categories (category_name) VALUES (%s)", (cat_name,))
                 category_id = cursor.lastrowid
 
             # Step B: Upstream runtime injection into master indicators (Explicitly flagged as is_custom = 1)
+            # Reuses existing indicator if description, term_id, category_id, and is_custom match
             cursor.execute("""
-                INSERT INTO tbl_master_indicators (category_id, indicator_description, efficiency_type, term_id, is_custom)
-                VALUES (%s, %s, 'Output-Based', %s, 1)
-            """, (category_id, text_clean, term_id))
-            new_indicator_id = cursor.lastrowid
+                SELECT indicator_id FROM tbl_master_indicators 
+                WHERE indicator_description = %s AND term_id = %s AND category_id = %s AND is_custom = 1
+            """, (text_clean, term_id, category_id))
+            existing_ind = cursor.fetchone()
+            if existing_ind:
+                new_indicator_id = existing_ind[0]
+            else:
+                cursor.execute("""
+                    INSERT INTO tbl_master_indicators (category_id, indicator_description, efficiency_type, term_id, is_custom)
+                    VALUES (%s, %s, 'Output-Based', %s, 1)
+                """, (category_id, text_clean, term_id))
+                new_indicator_id = cursor.lastrowid
 
             # Step C: Downstream projection into the unified draft staging table via the generated relational ID
             cursor.execute("""

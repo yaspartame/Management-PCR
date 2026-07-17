@@ -503,70 +503,17 @@
     document.addEventListener("DOMContentLoaded", function() {
         const rankSelect = document.getElementById('academic_rank');
         const checkboxes = document.querySelectorAll('.indicator-checkbox');
-        const researchCheckboxes = document.querySelectorAll('.research-indicator-checkbox');
-        const extensionCheckboxes = document.querySelectorAll('.extension-indicator-checkbox');
-        const resSelectionsInput = document.getElementById('research_selections');
-        const extSelectionsInput = document.getElementById('extension_selections');
-        
-        function updateLimits() {
-            const rankVal = rankSelect.value;
-            if (!rankVal) return;
-            
-            const resRequired = parseInt(resSelectionsInput.value) || 0;
-            const extRequired = parseInt(extSelectionsInput.value) || 0;
-            
-            // Enforce Research Limits
-            const resChecked = Array.from(researchCheckboxes).filter(cb => cb.checked);
-            researchCheckboxes.forEach(cb => {
-                const qtyInput = document.getElementById('qty_' + cb.value);
-                if (resRequired <= 0) {
-                    cb.checked = false;
-                    cb.disabled = true;
-                    if (qtyInput) {
-                        qtyInput.disabled = true;
-                        qtyInput.value = 1;
-                    }
-                } else if (resChecked.length >= resRequired) {
-                    if (!cb.checked) {
-                        cb.disabled = true;
-                    } else {
-                        cb.disabled = false;
-                    }
-                } else {
-                    cb.disabled = false;
-                }
-            });
-            
-            // Enforce Extension Limits
-            const extChecked = Array.from(extensionCheckboxes).filter(cb => cb.checked);
-            extensionCheckboxes.forEach(cb => {
-                const qtyInput = document.getElementById('qty_' + cb.value);
-                if (extRequired <= 0) {
-                    cb.checked = false;
-                    cb.disabled = true;
-                    if (qtyInput) {
-                        qtyInput.disabled = true;
-                        qtyInput.value = 1;
-                    }
-                } else if (extChecked.length >= extRequired) {
-                    if (!cb.checked) {
-                        cb.disabled = true;
-                    } else {
-                        cb.disabled = false;
-                    }
-                } else {
-                    cb.disabled = false;
-                }
-            });
-        }
         
         function toggleCheckboxes() {
             const rankVal = rankSelect.value;
             const disabled = !rankVal;
             
+            // Only lock/unlock based on whether a rank is selected.
+            // The "Required" count controls how many faculty MUST pick,
+            // NOT which indicators the chair can make available.
             checkboxes.forEach(cb => {
                 cb.disabled = disabled;
-                if(disabled) {
+                if (disabled) {
                     cb.checked = false;
                     const qtyInput = document.getElementById('qty_' + cb.value);
                     if (qtyInput) {
@@ -575,13 +522,9 @@
                     }
                 }
             });
-            
-            if (!disabled) {
-                updateLimits();
-            }
         }
         
-        // Listeners for checkbox state changes to enable/disable quantities and enforce limits
+        // Toggle quantity inputs based on checkbox state
         checkboxes.forEach(cb => {
             cb.addEventListener('change', function() {
                 const qtyInput = document.getElementById('qty_' + cb.value);
@@ -591,21 +534,10 @@
                         qtyInput.value = 1;
                     }
                 }
-                updateLimits();
             });
         });
         
-        // Listeners for Required fields
-        if(resSelectionsInput) {
-            resSelectionsInput.addEventListener('input', updateLimits);
-            resSelectionsInput.addEventListener('change', updateLimits);
-        }
-        if(extSelectionsInput) {
-            extSelectionsInput.addEventListener('input', updateLimits);
-            extSelectionsInput.addEventListener('change', updateLimits);
-        }
-        
-        if(rankSelect) {
+        if (rankSelect) {
             rankSelect.addEventListener('change', toggleCheckboxes);
             toggleCheckboxes(); // run on load
         }
