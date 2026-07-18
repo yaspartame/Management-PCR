@@ -19,6 +19,10 @@ app = Flask(__name__)
 # Set a secret key for secure sessions (login cookies)
 app.secret_key = os.getenv('SECRET_KEY', 'dipcr_version_13_secret_key')
 
+# Configure upload settings
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads', 'evidence')
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB limit
+
 # Initialize DB connection pool at startup
 from app.models.connection import init_db_pool
 init_db_pool()

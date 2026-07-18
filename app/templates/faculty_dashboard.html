@@ -512,8 +512,7 @@
                     class="card-header bg-primary text-white border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-check-fill me-2"></i>My Evidence Submission
                         Checklist</h5>
-                    <span class="badge bg-light text-primary fw-semibold">{{ assigned_targets|length }} Target{{ 's' if
-                        assigned_targets|length != 1 }} Locked</span>
+                    <span class="badge bg-light text-primary fw-semibold">{{ assigned_targets|length }} Target{{ 's' if assigned_targets|length != 1 }} Locked</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -521,9 +520,9 @@
                             <thead class="table-light">
                                 <tr>
                                     <th class="ps-4" width="40%">Target Indicator</th>
-                                    <th class="text-center" width="10%">Target Qty</th>
+                                    <th class="text-center" width="15%">Target Qty</th>
                                     <th class="text-center" width="15%">Accomplished Qty</th>
-                                    <th class="ps-3" width="35%">Accomplishment / File Submission</th>
+                                    <th class="ps-3" width="30%">Evidence Submissions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -537,35 +536,84 @@
                                         {% else %}
                                         <span class="badge bg-light text-dark border mb-1">{{ target.category_name }}</span>
                                         {% endif %}
-                                        <p class="mb-0 small fw-semibold text-dark">{{ target.indicator_description }}
-                                        </p>
+                                        <p class="mb-0 small fw-semibold text-dark">{{ target.indicator_description }}</p>
                                     </td>
                                     <td class="text-center fw-bold fs-5 text-primary">
                                         {{ target.assigned_quantity }}
                                     </td>
-                                    <td class="text-center">
-                                        <input type="number" class="form-control form-control-sm text-center mx-auto"
-                                            style="max-width: 80px;" min="0" placeholder="0"
-                                            name="accomplished_qty_{{ target.target_id }}">
+                                    <td class="text-center fw-bold fs-5">
+                                        {% if target.actual_quantity >= target.assigned_quantity %}
+                                            <span class="badge bg-success px-3 py-2 rounded-pill shadow-sm text-white" style="font-size: 0.85rem;"><i class="bi bi-check-circle-fill me-1"></i>{{ target.actual_quantity }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary px-3 py-2 rounded-pill shadow-sm text-white" style="font-size: 0.85rem;">{{ target.actual_quantity }}</span>
+                                        {% endif %}
                                     </td>
                                     <td class="pe-4 py-4">
-                                        {% if 'Research' in target.category_name or 'Extension' in target.category_name
-                                        or 'RET' in target.category_name %}
-                                        <div
-                                            class="upload-area p-3 bg-light rounded text-center border border-dashed border-secondary border-opacity-50 hover-shadow transition-all">
-                                            <i class="bi bi-cloud-arrow-up text-primary fs-3 d-block mb-1"></i>
-                                            <small class="text-muted d-block mb-2">Upload research artifact,
-                                                certificate, or paper (.pdf, .zip, max 10MB)</small>
-                                            <input type="file" class="form-control form-control-sm text-center mx-auto"
-                                                style="max-width: 320px;" name="evidence_file_{{ target.target_id }}">
+                                        <div class="d-flex flex-column gap-2">
+                                            {% if target.evidence_list %}
+                                                {% for ev in target.evidence_list %}
+                                                <div class="p-2 border rounded bg-white shadow-xs d-flex align-items-center justify-content-between gap-3" style="border-radius: 8px;">
+                                                    <div class="d-flex align-items-center gap-2 overflow-hidden text-start">
+                                                        <i class="bi bi-file-earmark-arrow-up-fill text-primary fs-4"></i>
+                                                        <div class="text-start text-truncate" style="max-width: 250px;">
+                                                            {% set filename_parts = ev.file_path.split('/') %}
+                                                            {% set clean_name = filename_parts[-1][33:] %}
+                                                            <a href="/static/{{ ev.file_path }}" target="_blank" class="small fw-semibold text-decoration-none text-dark" title="View/Download">{{ clean_name }}</a>
+                                                            <div class="text-muted" style="font-size: 0.75rem;">
+                                                                Qty: {{ ev.actual_qty_Q }}
+                                                                {% if ev.is_co_authored %}
+                                                                    &bull; <span class="text-purple">Co-authored (by {{ ev.uploaded_by }})</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        {% if ev.verification_status == 'Approved' %}
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.72rem;">Approved</span>
+                                                        {% elif ev.verification_status == 'Rejected' %}
+                                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.72rem;" title="Remarks: {{ ev.supervisor_comment or 'No comment' }}">Rejected</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.72rem;">Pending</span>
+                                                        {% endif %}
+                                                        
+                                                        {% if ev.verification_status == 'Pending' %}
+                                                            {% if ev.is_co_authored %}
+                                                                <form action="{{ url_for('faculty.faculty_unclaim_evidence') }}" method="POST" class="m-0 d-inline">
+                                                                    <input type="hidden" name="co_author_id" value="{{ ev.co_author_id }}">
+                                                                    <input type="hidden" name="target_id" value="{{ target.target_id }}">
+                                                                    <button type="submit" class="btn btn-link text-danger p-0 border-0 align-middle" title="Unlink Co-authored paper">
+                                                                        <i class="bi bi-trash-fill"></i>
+                                                                    </button>
+                                                                </form>
+                                                            {% else %}
+                                                                <form action="{{ url_for('faculty.faculty_delete_evidence') }}" method="POST" class="m-0 d-inline">
+                                                                    <input type="hidden" name="evidence_id" value="{{ ev.evidence_id }}">
+                                                                    <button type="submit" class="btn btn-link text-danger p-0 border-0 align-middle" title="Delete evidence file">
+                                                                        <i class="bi bi-trash-fill"></i>
+                                                                    </button>
+                                                                </form>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted small italic text-start d-block mb-1">No evidence uploaded yet.</span>
+                                            {% endif %}
+                                            
+                                            <div class="d-flex gap-2 mt-2">
+                                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-3 fw-bold rounded-pill"
+                                                    onclick="openUploadModal('{{ target.target_id }}', '{{ target.indicator_id }}', {{ 'true' if 'Research' in target.category_name else 'false' }}, '{{ target.indicator_description|replace('\'', '\\\'')|replace('\"', '\\\"') }}')">
+                                                    <i class="bi bi-cloud-arrow-up-fill me-1"></i>Upload File
+                                                </button>
+                                                {% if 'Research' in target.category_name %}
+                                                    <button type="button" class="btn btn-sm btn-outline-purple py-1 px-3 fw-bold rounded-pill"
+                                                        onclick="openClaimModal('{{ target.target_id }}', '{{ target.indicator_id }}')">
+                                                        <i class="bi bi-link-45deg me-1"></i>Link Co-authored
+                                                    </button>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                        {% else %}
-                                        <div class="mb-0">
-                                            <textarea class="form-control form-control-sm accomplishment-textarea"
-                                                rows="2"
-                                                placeholder="Describe actual results achieved (e.g. 'Conducted 18 class lectures, prepared syllabus...')"></textarea>
-                                        </div>
-                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -574,23 +622,9 @@
                     </div>
                 </div>
             </div>
-
-            <div class="text-end mb-4">
-                <button type="button" class="btn btn-success btn-lg px-5 shadow fw-bold rounded-pill"
-                    onclick="simulateSaveEvidence()">
-                    <i class="bi bi-cloud-upload-fill me-2"></i>Save &amp; Submit Evidence
-                </button>
-            </div>
         </div>
     </div>
 </div>
-
-<!-- Evidence Mock Toast/Modal script -->
-<script>
-    function simulateSaveEvidence() {
-        alert("Draft evidence and accomplishments saved successfully!\n(Note: This is a front-end simulation for Phase 3 evidence gathering.)");
-    }
-</script>
 {% endif %}
 
 <style>
@@ -608,6 +642,22 @@
     .form-check-input:checked {
         background-color: #198754;
         border-color: #198754;
+    }
+
+    .text-purple {
+        color: #6f42c1 !important;
+    }
+    .bg-purple {
+        background-color: #6f42c1 !important;
+    }
+    .btn-outline-purple {
+        color: #6f42c1;
+        border-color: #6f42c1;
+    }
+    .btn-outline-purple:hover {
+        color: #fff;
+        background-color: #6f42c1;
+        border-color: #6f42c1;
     }
 </style>
 
@@ -755,10 +805,172 @@
         });
     }
 
+    // Process 6 Modal helpers
+    window.openUploadModal = function (targetId, indicatorId, isResearch, description) {
+        document.getElementById('uploadTargetId').value = targetId;
+        document.getElementById('uploadIndicatorDesc').textContent = description;
+        document.getElementById('evidenceFile').value = '';
+        document.getElementById('evidenceQty').value = '1';
+        
+        const coAuthorSection = document.getElementById('coAuthorSection');
+        const coAuthorList = document.getElementById('coAuthorList');
+        coAuthorList.innerHTML = '';
+        
+        if (isResearch) {
+            coAuthorSection.style.display = 'block';
+            coAuthorList.innerHTML = '<p class="text-muted small">Loading eligible co-authors...</p>';
+            fetch(`/faculty/eligible_co_authors/${indicatorId}`)
+                .then(res => res.json())
+                .then(data => {
+                    coAuthorList.innerHTML = '';
+                    if (data.success && data.co_authors.length > 0) {
+                        data.co_authors.forEach(fac => {
+                            const div = document.createElement('div');
+                            div.className = 'form-check mb-2 text-start';
+                            div.innerHTML = `
+                                <input class="form-check-input" type="checkbox" name="co_authors[]" value="${fac.emp_id}" id="co_author_${fac.emp_id}">
+                                <label class="form-check-label small" for="co_author_${fac.emp_id}">
+                                    ${fac.name}
+                                </label>
+                            `;
+                            coAuthorList.appendChild(div);
+                        });
+                    } else {
+                        coAuthorList.innerHTML = '<p class="text-muted small text-start">No other faculty have this indicator committed.</p>';
+                    }
+                })
+                .catch(err => {
+                    coAuthorList.innerHTML = '<p class="text-danger small text-start">Error loading co-authors.</p>';
+                });
+        } else {
+            coAuthorSection.style.display = 'none';
+        }
+        
+        const myModal = new bootstrap.Modal(document.getElementById('uploadEvidenceModal'));
+        myModal.show();
+    };
+
+    window.openClaimModal = function (targetId, indicatorId) {
+        document.getElementById('claimTargetId').value = targetId;
+        const listBody = document.getElementById('claimEvidenceListBody');
+        listBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Loading unclaimed documents...</td></tr>';
+        
+        fetch(`/faculty/unclaimed_co_authored_evidence/${indicatorId}`)
+            .then(res => res.json())
+            .then(data => {
+                listBody.innerHTML = '';
+                if (data.success && data.evidence_list.length > 0) {
+                    data.evidence_list.forEach(item => {
+                        const parts = item.file_path.split('/');
+                        const cleanName = parts[parts.length - 1].substring(33);
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="small fw-semibold text-dark text-start">${cleanName}</td>
+                            <td class="text-center small">${item.actual_qty_Q}</td>
+                            <td class="small text-secondary text-start">${item.uploaded_by}</td>
+                            <td class="text-end">
+                                <form action="/faculty/claim_evidence" method="POST" class="m-0">
+                                    <input type="hidden" name="co_author_id" value="${item.co_author_id}">
+                                    <input type="hidden" name="target_id" value="${targetId}">
+                                    <button type="submit" class="btn btn-sm btn-primary py-1 px-3 fw-bold rounded-pill">
+                                        Link File
+                                    </button>
+                                </form>
+                            </td>
+                        `;
+                        listBody.appendChild(row);
+                    });
+                } else {
+                    listBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No unclaimed co-authored files found for this indicator.</td></tr>';
+                }
+            })
+            .catch(err => {
+                listBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Error loading co-authored files.</td></tr>';
+            });
+            
+        const myModal = new bootstrap.Modal(document.getElementById('claimEvidenceModal'));
+        myModal.show();
+    };
+
     // Initial check
     updateSelectionCount();
     });
 </script>
+
+<!-- Upload Evidence Modal -->
+<div class="modal fade" id="uploadEvidenceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-primary text-white border-0 py-3" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cloud-upload-fill me-2"></i>Upload Evidence</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/faculty/upload_evidence" method="POST" enctype="multipart/form-data">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="target_id" id="uploadTargetId">
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-semibold text-secondary">Indicator</label>
+                        <p id="uploadIndicatorDesc" class="form-control-plaintext small fw-bold text-dark bg-light p-2 rounded border text-start"></p>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label for="evidenceFile" class="form-label fw-semibold text-secondary">Select File</label>
+                        <input type="file" class="form-control" id="evidenceFile" name="file" required>
+                        <small class="text-muted">Allowed formats: .pdf, .png, .jpg, .jpeg, .docx (Max 10MB)</small>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label for="evidenceQty" class="form-label fw-semibold text-secondary">Accomplished Qty (Q)</label>
+                        <input type="number" class="form-control" id="evidenceQty" name="quantity" min="1" value="1" required style="max-width: 120px;">
+                        <small class="text-muted">Specify how many accomplishments this document represents.</small>
+                    </div>
+                    <div id="coAuthorSection" class="mb-3 text-start" style="display: none;">
+                        <label class="form-label fw-semibold text-purple"><i class="bi bi-people-fill me-1"></i>Tag Co-Authors</label>
+                        <div id="coAuthorList" class="p-3 border rounded bg-light" style="max-height: 200px; overflow-y: auto;">
+                            <!-- Checkboxes will be populated dynamically -->
+                        </div>
+                        <small class="text-muted">Tagged co-authors will see this paper in their co-authored list to link/claim it.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-3 bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                    <button type="button" class="btn btn-secondary fw-semibold px-4 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-semibold px-4 rounded-pill">Upload & Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Link Co-authored Evidence Modal -->
+<div class="modal fade" id="claimEvidenceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-purple text-white border-0 py-3" style="border-top-left-radius: 16px; border-top-right-radius: 16px; background-color: #6f42c1;">
+                <h5 class="modal-title fw-bold"><i class="bi bi-link-45deg me-2"></i>Link Co-authored Document</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="claimTargetId">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start">File Name</th>
+                                <th class="text-center">Qty (Q)</th>
+                                <th class="text-start">Uploaded By</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="claimEvidenceListBody">
+                            <!-- Populated dynamically via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3 bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                <button type="button" class="btn btn-secondary fw-semibold px-4 rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Custom Confirmation Modal -->
 <div class="modal fade" id="customConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">

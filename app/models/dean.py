@@ -305,6 +305,38 @@ def submit_dean_review_decision(cursor, conn, review_id, action, overall_remarks
             WHERE dr.review_id = %s
         """, (action, review_id))
 
+        # Process 6: If approved, commit to tbl_committed_targets
+        if action == 'Approved':
+            # Get emp_id and term_id
+            cursor.execute("SELECT emp_id, term_id FROM tbl_ipcr_dean_review WHERE review_id = %s", (review_id,))
+            review_info = cursor.fetchone()
+            if review_info:
+                emp_id, term_id = review_info[0], review_info[1]
+                
+                # Fetch approved items
+                cursor.execute("""
+                    SELECT dt.indicator_id, COALESCE(dri.reviewed_quantity, dt.proposed_quantity)
+                    FROM tbl_draft_targets dt
+                    JOIN tbl_ipcr_dean_review_items dri ON dt.draft_id = dri.draft_id
+                    WHERE dri.review_id = %s
+                """, (review_id,))
+                approved_items = cursor.fetchall()
+                
+                # Delete existing committed targets
+                cursor.execute("""
+                    DELETE FROM tbl_committed_targets 
+                    WHERE emp_id = %s AND indicator_id IN (
+                        SELECT indicator_id FROM tbl_master_indicators WHERE term_id = %s
+                    )
+                """, (emp_id, term_id))
+                
+                # Insert into tbl_committed_targets
+                for indicator_id, qty in approved_items:
+                    cursor.execute("""
+                        INSERT INTO tbl_committed_targets (emp_id, indicator_id, assigned_quantity, status, actual_quantity)
+                        VALUES (%s, %s, %s, 'Approved', 0)
+                    """, (emp_id, indicator_id, qty))
+
         conn.commit()
         return True, f"Draft IPCR {action.lower()} successfully."
     except Exception as e:

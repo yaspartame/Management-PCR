@@ -39,6 +39,14 @@ def designated_dashboard():
     if active_term:
         term_id = active_term['term_id']
         
+        # Check if committed targets exist for evidence gathering
+        cursor.execute("""
+            SELECT COUNT(*) FROM tbl_committed_targets ct
+            JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
+            WHERE ct.emp_id = %s AND mi.term_id = %s
+        """, (emp_id, term_id))
+        is_committed = cursor.fetchone()[0] > 0
+
         # Check if the user has already submitted
         sub_result = timed_query(cursor, """
             SELECT COUNT(*) as cnt FROM tbl_draft_targets dt
@@ -66,7 +74,17 @@ def designated_dashboard():
             else:
                 can_edit = False
 
-        if can_edit:
+        if is_committed:
+            can_edit = False
+            has_submitted = True
+            from app.models.designated import get_designated_committed_targets
+            from app.models.faculty import get_evidence_by_target
+            dpcr_targets = get_designated_committed_targets(cursor, emp_id, term_id)
+            for t in dpcr_targets:
+                t['is_selected'] = True
+                t['total_target_value'] = t['assigned_quantity']
+                t['evidence_list'] = get_evidence_by_target(cursor, t['target_id'], emp_id, t['indicator_id'])
+        elif can_edit:
             # Load standard selectable indicators
             standard_targets = get_designated_selectable_indicators(cursor, term_id)
             
@@ -190,6 +208,101 @@ def submit_designated_ipcr_route():
             flash(msg, "danger")
     except Exception as e:
         flash(f"Error submitting IPCR: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('designated.designated_dashboard'))
+
+
+# ──────────────────────────────────────────────
+# Process 6: Evidence Management Routes
+# ──────────────────────────────────────────────
+
+from flask import current_app
+import uuid
+import os
+from werkzeug.utils import secure_filename
+
+@designated_bp.route('/upload_evidence', methods=['POST'])
+@role_required('DESIGNATED_FACULTY')
+def designated_upload_evidence():
+    emp_id = session.get('user_id')
+    target_id = request.form.get('target_id')
+    quantity = request.form.get('quantity', '1')
+    
+    if not target_id:
+        flash("Invalid target ID.", "danger")
+        return redirect(url_for('designated.designated_dashboard'))
+        
+    try:
+        qty_val = int(quantity)
+    except ValueError:
+        qty_val = 1
+
+    file = request.files.get('file')
+    if not file or file.filename == '':
+        flash("Please select a file to upload.", "danger")
+        return redirect(url_for('designated.designated_dashboard'))
+
+    # Check file extension
+    allowed_extensions = {'pdf', 'png', 'jpg', 'jpeg', 'docx'}
+    filename = file.filename
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    if ext not in allowed_extensions:
+        flash(f"Unsupported file format. Allowed formats: {', '.join(allowed_extensions)}", "danger")
+        return redirect(url_for('designated.designated_dashboard'))
+
+    # Save the file
+    upload_dir = current_app.config['UPLOAD_FOLDER']
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir, exist_ok=True)
+
+    unique_filename = f"{uuid.uuid4().hex}_{secure_filename(filename)}"
+    file_path = os.path.join(upload_dir, unique_filename)
+    file.save(file_path)
+
+    # Save path relative to static
+    relative_path = f"uploads/evidence/{unique_filename}"
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import upload_evidence_item
+        upload_evidence_item(cursor, int(target_id), relative_path, qty_val)
+        conn.commit()
+        flash("Evidence uploaded successfully!", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error uploading evidence: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('designated.designated_dashboard'))
+
+
+@designated_bp.route('/delete_evidence', methods=['POST'])
+@role_required('DESIGNATED_FACULTY')
+def designated_delete_evidence():
+    evidence_id = request.form.get('evidence_id')
+    if not evidence_id:
+        flash("Invalid evidence ID.", "danger")
+        return redirect(url_for('designated.designated_dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import delete_evidence_item
+        success = delete_evidence_item(cursor, int(evidence_id))
+        if success:
+            conn.commit()
+            flash("Evidence removed successfully.", "success")
+        else:
+            flash("Evidence item not found.", "danger")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error deleting evidence: {str(e)}", "danger")
     finally:
         cursor.close()
         conn.close()

@@ -62,6 +62,11 @@ def faculty_dashboard():
 
         if is_locked:
             has_submitted = True
+            from app.models.faculty import get_faculty_committed_targets, get_evidence_by_target
+            assigned_targets = get_faculty_committed_targets(cursor, emp_id, term_id)
+            # Fetch evidence for each target
+            for target in assigned_targets:
+                target['evidence_list'] = get_evidence_by_target(cursor, target['target_id'], emp_id, target['indicator_id'])
 
     cursor.close()
     conn.close()
@@ -172,6 +177,198 @@ def faculty_lock_ipcr():
             flash(msg, "danger")
     except Exception as e:
         flash(f"Error locking IPCR: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('faculty.faculty_dashboard'))
+
+
+# ──────────────────────────────────────────────
+# Process 6: Evidence Management Routes
+# ──────────────────────────────────────────────
+
+from flask import current_app, jsonify
+import uuid
+import os
+from werkzeug.utils import secure_filename
+
+@faculty_bp.route('/upload_evidence', methods=['POST'])
+@role_required('FACULTY')
+def faculty_upload_evidence():
+    emp_id = session.get('user_id')
+    target_id = request.form.get('target_id')
+    quantity = request.form.get('quantity', '1')
+    co_authors_raw = request.form.getlist('co_authors[]')
+    
+    if not target_id:
+        flash("Invalid target ID.", "danger")
+        return redirect(url_for('faculty.faculty_dashboard'))
+        
+    try:
+        qty_val = int(quantity)
+    except ValueError:
+        qty_val = 1
+
+    file = request.files.get('file')
+    if not file or file.filename == '':
+        flash("Please select a file to upload.", "danger")
+        return redirect(url_for('faculty.faculty_dashboard'))
+
+    # Check file extension
+    allowed_extensions = {'pdf', 'png', 'jpg', 'jpeg', 'docx'}
+    filename = file.filename
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    if ext not in allowed_extensions:
+        flash(f"Unsupported file format. Allowed formats: {', '.join(allowed_extensions)}", "danger")
+        return redirect(url_for('faculty.faculty_dashboard'))
+
+    # Save the file
+    upload_dir = current_app.config['UPLOAD_FOLDER']
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir, exist_ok=True)
+
+    unique_filename = f"{uuid.uuid4().hex}_{secure_filename(filename)}"
+    file_path = os.path.join(upload_dir, unique_filename)
+    file.save(file_path)
+
+    # Save path relative to static
+    relative_path = f"uploads/evidence/{unique_filename}"
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import upload_evidence_item, add_co_authors_to_evidence
+        evidence_id = upload_evidence_item(cursor, int(target_id), relative_path, qty_val)
+        
+        # Parse co-authors list
+        co_author_ids = []
+        for x in co_authors_raw:
+            if x.isdigit():
+                co_author_ids.append(int(x))
+                
+        if co_author_ids:
+            add_co_authors_to_evidence(cursor, evidence_id, co_author_ids)
+            
+        conn.commit()
+        flash("Evidence uploaded successfully!", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error uploading evidence: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('faculty.faculty_dashboard'))
+
+
+@faculty_bp.route('/delete_evidence', methods=['POST'])
+@role_required('FACULTY')
+def faculty_delete_evidence():
+    evidence_id = request.form.get('evidence_id')
+    if not evidence_id:
+        flash("Invalid evidence ID.", "danger")
+        return redirect(url_for('faculty.faculty_dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import delete_evidence_item
+        success = delete_evidence_item(cursor, int(evidence_id))
+        if success:
+            conn.commit()
+            flash("Evidence removed successfully.", "success")
+        else:
+            flash("Evidence item not found.", "danger")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error deleting evidence: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('faculty.faculty_dashboard'))
+
+
+@faculty_bp.route('/eligible_co_authors/<int:indicator_id>')
+@role_required('FACULTY')
+def faculty_eligible_co_authors(indicator_id):
+    emp_id = session.get('user_id')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import get_eligible_co_authors_for_indicator
+        faculty_list = get_eligible_co_authors_for_indicator(cursor, indicator_id, emp_id)
+        return jsonify({'success': True, 'co_authors': faculty_list})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@faculty_bp.route('/unclaimed_co_authored_evidence/<int:indicator_id>')
+@role_required('FACULTY')
+def faculty_unclaimed_co_authored_evidence(indicator_id):
+    emp_id = session.get('user_id')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import get_unclaimed_co_authored_evidence
+        evidence_list = get_unclaimed_co_authored_evidence(cursor, emp_id, indicator_id)
+        return jsonify({'success': True, 'evidence_list': evidence_list})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@faculty_bp.route('/claim_evidence', methods=['POST'])
+@role_required('FACULTY')
+def faculty_claim_evidence():
+    co_author_id = request.form.get('co_author_id')
+    target_id = request.form.get('target_id')
+    if not co_author_id or not target_id:
+        flash("Invalid claim payload.", "danger")
+        return redirect(url_for('faculty.faculty_dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import claim_co_authored_evidence
+        claim_co_authored_evidence(cursor, int(co_author_id), int(target_id))
+        conn.commit()
+        flash("Co-authored evidence linked successfully!", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error linking co-authored evidence: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('faculty.faculty_dashboard'))
+
+
+@faculty_bp.route('/unclaim_evidence', methods=['POST'])
+@role_required('FACULTY')
+def faculty_unclaim_evidence():
+    co_author_id = request.form.get('co_author_id')
+    target_id = request.form.get('target_id')
+    if not co_author_id or not target_id:
+        flash("Invalid claim payload.", "danger")
+        return redirect(url_for('faculty.faculty_dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        from app.models.faculty import unclaim_co_authored_evidence
+        unclaim_co_authored_evidence(cursor, int(co_author_id), int(target_id))
+        conn.commit()
+        flash("Co-authored evidence unlinked successfully.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error unlinking co-authored evidence: {str(e)}", "danger")
     finally:
         cursor.close()
         conn.close()

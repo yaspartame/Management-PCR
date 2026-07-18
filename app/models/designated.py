@@ -90,3 +90,21 @@ def submit_designated_ipcr(conn, cursor, emp_id, term_id, selected_targets, cust
     except Exception as e:
         conn.rollback()
         return False, str(e)
+
+
+# ──────────────────────────────────────────────
+# Process 6: Evidence Gathering Helpers
+# ──────────────────────────────────────────────
+
+def get_designated_committed_targets(cursor, emp_id, term_id):
+    from app.models.connection import timed_query
+    query = """
+        SELECT ct.target_id, ct.indicator_id, ct.assigned_quantity, ct.actual_quantity, ct.status,
+               mi.indicator_description, tc.category_name, mi.is_custom
+        FROM tbl_committed_targets ct
+        JOIN tbl_master_indicators mi ON ct.indicator_id = mi.indicator_id
+        LEFT JOIN tbl_target_categories tc ON mi.category_id = tc.category_id
+        WHERE ct.emp_id = %s AND mi.term_id = %s
+        ORDER BY tc.category_name, mi.indicator_id
+    """
+    return timed_query(cursor, query, (emp_id, term_id), label="get_designated_committed_targets")
